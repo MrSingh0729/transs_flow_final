@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h4 class="mb-3">Operator Qualification Check Form</h4>
+    <form method="post" enctype="multipart/form-data" id="qualification-form">
+        {% csrf_token %}
+        <div class="row">
+            {% for field in form.visible_fields %}
+                <div class="col-md-6 mb-3" id="field-{{ field.name }}">
+                    <label for="{{ field.id_for_label }}" class="form-label"><b>{{ field.label }}</b></label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="text-danger small">{{ field.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-success px-4">Save</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Show/hide barcode scan field dynamically
+    document.addEventListener('DOMContentLoaded', function() {
+        const jobCardField = document.getElementById('id_key_station_job_card_status');
+        const scanField = document.getElementById('field-scanned_barcode_image');
+
+        function toggleScanField() {
+            if (jobCardField.value === 'Have') {
+                scanField.style.display = 'block';
+            } else {
+                scanField.style.display = 'none';
+                // Optional: clear file input when hiding
+                const input = document.getElementById('id_scanned_barcode_image');
+                if (input) input.value = '';
+            }
+        }
+
+        jobCardField.addEventListener('change', toggleScanField);
+        toggleScanField(); // run once on page load
+    });
+</script>
+{% endblock %}

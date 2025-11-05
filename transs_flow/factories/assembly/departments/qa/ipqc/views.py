@@ -6,10 +6,10 @@ from django.utils import timezone
 from django import forms
 import json
 from accounts.models import Employee
-from .forms import WorkInfoForm, IPQCAssemblyAuditForm, FIELDS_WITH_REMARKS, BTBFitmentChecksheetForm, AssDummyTestForm, IPQCDisassembleCheckListForm, NCIssueTrackingForm, ESDComplianceChecklistForm, DustCountCheckForm, TestingFirstArticleInspectionForm
+from .forms import WorkInfoForm, IPQCAssemblyAuditForm, FIELDS_WITH_REMARKS, BTBFitmentChecksheetForm, AssDummyTestForm, IPQCDisassembleCheckListForm, NCIssueTrackingForm, ESDComplianceChecklistForm, DustCountCheckForm, TestingFirstArticleInspectionForm, OperatorQualificationCheckForm
 from .services import write_to_bitable, write_to_bitable_dynamic, date_to_ms
 from datetime import timedelta, datetime, date
-from .models import IPQCWorkInfo, DynamicForm, DynamicFormField, DynamicFormSubmission, IPQCAssemblyAudit, BTBFitmentChecksheet, AssDummyTest, IPQCDisassembleCheckList, NCIssueTracking, ESDComplianceChecklist, DustCountCheck, TestingFirstArticleInspection
+from .models import IPQCWorkInfo, DynamicForm, DynamicFormField, DynamicFormSubmission, IPQCAssemblyAudit, BTBFitmentChecksheet, AssDummyTest, IPQCDisassembleCheckList, NCIssueTracking, ESDComplianceChecklist, DustCountCheck, TestingFirstArticleInspection, OperatorQualificationCheck
 import pandas as pd
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
@@ -1681,3 +1681,45 @@ class TestingFAIDetailsJsonView(LoginRequiredMixin, DetailView):
                 data['photos'].append({'url': file.url, 'label': label})
  
         return JsonResponse(data)
+    
+    
+class OperatorQualificationCheckCreateView(CreateView):
+    model = OperatorQualificationCheck
+    form_class = OperatorQualificationCheckForm
+    template_name = 'ipqc/operator_qualification_form.html'
+    success_url = reverse_lazy('operator_qualification_list')
+
+    def get_initial(self):
+        """Pre-fill basic info from IPQCWorkInfo for current logged-in user."""
+        initial = super().get_initial()
+        user = self.request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            try:
+                latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                initial.update({
+                    'date': latest_work_info.date,
+                    'shift': latest_work_info.shift,
+                    'emp_id': latest_work_info.emp_id,
+                    'name': latest_work_info.name,
+                    'section': getattr(latest_work_info, 'section', ''),
+                    'line': latest_work_info.line,
+                    'group': latest_work_info.group,
+                    'model': latest_work_info.model,
+                    'color': latest_work_info.color,
+                })
+            except IPQCWorkInfo.DoesNotExist:
+                messages.warning(self.request, "⚠️ No pre-filled work information found.")
+        
+        return initial
+
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Operator Qualification record saved successfully.")
+        return super().form_valid(form)
+    
+class OperatorQualificationCheckListView(ListView):
+    model = OperatorQualificationCheck
+    template_name = 'ipqc/operator_qualification_list.html'
+    context_object_name = 'records'
+    ordering = ['-created_at']

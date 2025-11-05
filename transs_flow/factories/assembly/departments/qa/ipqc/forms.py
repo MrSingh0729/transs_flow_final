@@ -1,9 +1,10 @@
 from django import forms
 from django.db import models 
-from .models import IPQCWorkInfo, DynamicForm, DynamicFormField, IPQCAssemblyAudit, BTBFitmentChecksheet, AssDummyTest, IPQCDisassembleCheckList, NCIssueTracking, ESDComplianceChecklist, DustCountCheck, TestingFirstArticleInspection, FORM_CHOICES, FORM_APPROVAL, FAI_SITUATION_CHOICES, FORM_RESULT_CHOICES
+from .models import IPQCWorkInfo, DynamicForm, DynamicFormField, IPQCAssemblyAudit, BTBFitmentChecksheet, AssDummyTest, IPQCDisassembleCheckList, NCIssueTracking, ESDComplianceChecklist, DustCountCheck, TestingFirstArticleInspection, OperatorQualificationCheck, FORM_CHOICES, FORM_APPROVAL, FAI_SITUATION_CHOICES, FORM_RESULT_CHOICES
 from django.db import connections
 from django.utils import timezone
 import mimetypes
+
 
 
 class WorkInfoForm(forms.ModelForm):
@@ -594,3 +595,33 @@ class  TestingFirstArticleInspectionForm(forms. ModelForm):
         if commit:
             instance.save()
         return instance
+    
+class OperatorQualificationCheckForm(forms.ModelForm):
+    class Meta:
+        model = OperatorQualificationCheck
+        fields = '__all__'
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'job_card_verification_summary': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add Bootstrap-style classes for form control
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+        
+        # Make basic info read-only (auto-filled)
+        readonly_fields = [
+            'emp_id', 'name', 'date', 'shift',
+            'section', 'line', 'group', 'model', 'color'
+        ]
+        for field in readonly_fields:
+            if field in self.fields:
+                self.fields[field].widget.attrs['readonly'] = True
+
+        # Initially hide the scan image field
+        self.fields['scanned_barcode_image'].widget.attrs.update({
+            'style': 'display:none;',
+            'class': 'form-control-file'
+        })

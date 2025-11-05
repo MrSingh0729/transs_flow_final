@@ -833,7 +833,73 @@ class  TestingFirstArticleInspection(models. Model):
         path = reverse('testing_fai_public_update', args=[str(self.public_token)])
         return request.build_absolute_uri(path) if request else path
 
+class OperatorQualificationCheck(models.Model):
+    JOB_CARD_STATUS = [
+    ('Have', 'Have'),
+    ('Not Have', 'NO'),
+    ('NA', 'Not Applicable'),
+]
+    TRAINING_STATUS = [
+    ('Done', 'Done'),
+    ('Pending', 'Pending'),
+    ('NA', 'Not Applicable'),
+]
+    OPERATOR_STATUS = [
+    ('Old', 'Old'),
+    ('New', 'New'),
+    ('Rotating', 'Rotating'),
+]
+    PQE_INFO_STATUS = [
+    ('Training Pending', 'Training Pending'),
+    ('Already Done', 'Already Done'),
+    ('Replace Operator', 'Replace Operator'),
+]
+    PQE_TRAINING_STATUS = [
+    ('Done', 'Done'),
+    ('Training Pending', 'Training Pending'),
+    ('Already Done', 'Already Done'),
+    ('Replace Operator', 'Replace Operator'),
+]
+    OPERATOR_QUALIFICATION = [
+    ('Trained', 'Trained'),
+    ('Not Trained', 'Not Trained'),
+    ('Replace Operator', 'Replace Operator'),
+]
+    
+    # Basic Information
+    emp_id = models.CharField(max_length=20, null=True, blank=True)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    date = models.DateField()
+    shift = models.CharField(max_length=20)
+    section = models.CharField(max_length=50)
+    line = models.CharField(max_length=50)
+    group = models.CharField(max_length=50)
+    model = models.CharField(max_length=100)
+    color = models.CharField(max_length=50)
+    
+    
+    # Job Card Scanning
+    key_station_name = models.TextField(verbose_name="Select/Write the key station number")
+    key_station_job_card_status = models.CharField(max_length=50, choices=JOB_CARD_STATUS, verbose_name="Check whether the key station operator has a job card, if not, it is considered a new operator")
+    scanned_barcode_image = models.ImageField(upload_to='ipqc/manpower/barcode_scans/', blank=True, null=True, verbose_name="Optional scan snapshot (image)", help_text="Image captured during scanning, optional")
+    
+    # Verification Fields
+    key_station_operator_status = models.CharField(max_length=50, choices=OPERATOR_STATUS, verbose_name="Select Key station operator status: old/new/rotating operator")
+    new_or_rotating_operator_status = models.CharField(max_length=50, choices=PQE_INFO_STATUS, verbose_name="IPQC monitoring for new or rotating operators at specific stations (e.g., BTB, TRC)")
+    check_operator_work_instruction = models.CharField(max_length=50, choices=OPERATOR_QUALIFICATION, verbose_name="Check whether the operator has a work instruction, if not, it is considered a new operator, and the PQE should be notified for training")
+    operator_job_card_image = models.ImageField(upload_to='ipqc/manpower/jobcard/', blank=True, null=True, verbose_name="Upload operator job card image for record")
+    pqe_training_and_verification_status = models.CharField(max_length=50, choices=PQE_TRAINING_STATUS, verbose_name="Summary: PQE training and verification process (5 cycles, 5 samples, Dummy test)")
+    job_card_verification_summary = models.TextField(verbose_name="Summary: Verify operator job card; if missing, monitor and perform Dummy test")
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Operator Qualification Procedure"
+        verbose_name_plural = "Operator Qualification Procedures"
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.date} - {self.emp_id} - {self.model})"
 
 
 
