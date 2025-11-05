@@ -1,0 +1,619 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}IPQC Disassemble Checklist{% endblock title %}
+
+{% block content %}
+<!-- Page Title -->
+<h1 class="text-2xl font-bold text-gray-900 mb-6">IPQC Disassemble Checklist Records</h1>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ ipqc_disassemble_stats.today|default:"0" }}</div>
+        <div class="metric-label">Today's Records</div>
+      </div>
+      <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-calendar-day text-purple-600"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ ipqc_disassemble_stats.week|default:"0" }}</div>
+        <div class="metric-label">This Week</div>
+      </div>
+      <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-calendar-week text-indigo-600"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ ipqc_disassemble_stats.total|default:"0" }}</div>
+        <div class="metric-label">Total Records</div>
+      </div>
+      <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-database text-gray-600"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Bar -->
+<div class="bg-white shadow-md rounded-xl p-4 mb-6">
+  <form method="get" class="flex flex-col sm:flex-row gap-3">
+    <div class="flex-1">
+      <input type="text" name="q" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" 
+             placeholder="Search by Name, Employee ID, Model, Color..." value="{{ request.GET.q }}">
+    </div>
+    <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+      <i class="fas fa-search"></i> Search
+    </button>
+    {% if request.GET.q %}
+    <a href="{% url 'ipqc_disassemble_list' %}" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+      <i class="fas fa-times"></i> Clear
+    </a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Records Table -->
+<div class="bg-white shadow-md rounded-xl overflow-hidden">
+  <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between gap-3 sm:items-center">
+    <h5 class="text-lg font-bold text-gray-900">Recent IPQC Disassemble Records</h5>
+    <a href="{% url 'ipqc_disassemble_add' %}" 
+       class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-center transition">
+      <i class="fas fa-plus"></i> Add New Record
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shift</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Line</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Model</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Color</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for record in records %}
+        <tr class="hover:bg-gray-50 transition">
+          <td class="px-3 sm:px-6 py-3 text-gray-900 font-medium">{{ record.date|date:"Y-m-d" }}</td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700">
+            <span class="px-2 py-1 text-xs rounded-full bg-gray-100">{{ record.shift }}</span>
+          </td>
+          <td class="px-3 sm:px-6 py-3">
+            <div>
+              <div class="text-gray-900 font-medium">{{ record.name }}</div>
+              <div class="text-xs text-gray-500">{{ record.emp_id }}</div>
+            </div>
+          </td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700 hidden md:table-cell">{{ record.line }}</td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700 hidden md:table-cell">{{ record.model }}</td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700 hidden lg:table-cell">{{ record.color }}</td>
+          <td class="px-3 sm:px-6 py-3">
+            {% if record.get_overall_status == 'PASS' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">PASS</span>
+            {% elif record.get_overall_status == 'FAIL' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">FAIL</span>
+            {% else %}
+              <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">MIXED</span>
+            {% endif %}
+          </td>
+          <td class="px-3 sm:px-6 py-3">
+            <div class="flex gap-2">
+              <a href="#" onclick="event.preventDefault(); showIPQCDisassembleDetails({{ record.id }})" 
+                 class="text-purple-600 font-semibold text-xs sm:text-sm hover:underline">
+                <i class="fas fa-eye"></i> View
+              </a>
+              {% if record.defect_photo %}
+              <a href="{{ record.defect_photo.url }}" target="_blank" 
+                 class="text-blue-600 font-semibold text-xs sm:text-sm hover:underline" title="View Defect Photo">
+                <i class="fas fa-camera"></i>
+              </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-6 text-gray-500">No records found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="mt-6 flex justify-center">
+  <nav class="flex items-center space-x-1">
+    {% if page_obj.has_previous %}
+      <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-double-left"></i>
+      </a>
+      <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-left"></i>
+      </a>
+    {% endif %}
+
+    <span class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-right"></i>
+      </a>
+      <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-double-right"></i>
+      </a>
+    {% endif %}
+  </nav>
+</div>
+{% endif %}
+
+<!-- Details Modal -->
+<div id="ipqcDisassembleDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl w-[95%] sm:w-[90%] md:w-[80%] lg:w-[70%] max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center px-4 sm:px-6 py-4 border-b">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-800">IPQC Disassemble Details</h2>
+      <button onclick="closeIPQCDisassembleDetails()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+    </div>
+    <div id="ipqcDisassembleModalBody" class="p-4 sm:p-6">
+      <p class="text-gray-500 text-center">Loading...</p>
+    </div>
+  </div>
+</div>
+
+<!-- CSS Styles -->
+<style>
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+</style>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+  function showIPQCDisassembleDetails(pk) {
+    const modal = document.getElementById('ipqcDisassembleDetailsModal');
+    const modalBody = document.getElementById('ipqcDisassembleModalBody');
+    modal.classList.remove('hidden');
+    modalBody.innerHTML = `<p class='text-gray-500 text-center'>Loading...</p>`;
+
+    fetch(`/ipqc/disassemble/details/${pk}/`)
+      .then(res => {
+        console.log('Response status:', res.status);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        console.log('Received data:', data);
+        modalBody.innerHTML = buildDetailsUI(data);
+      })
+      .catch(error => {
+        console.error('Error details:', error);
+        modalBody.innerHTML = `<p class='text-red-500 text-center'>Error loading details: ${error.message}</p>`;
+      });
+  }
+
+  function closeIPQCDisassembleDetails() {
+    document.getElementById('ipqcDisassembleDetailsModal').classList.add('hidden');
+  }
+
+  function buildDetailsUI(data) {
+    let html = '<div class="space-y-6">';
+    
+    // Basic Information Section
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-info-circle text-purple-500"></i> Basic Information
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+    `;
+    
+    const basicFields = [
+      ['date', 'Date'],
+      ['shift', 'Shift'], 
+      ['emp_id', 'Employee ID'],
+      ['name', 'Name'],
+      ['section', 'Section'],
+      ['line', 'Line'],
+      ['group', 'Group'],
+      ['model', 'Model'],
+      ['color', 'Color']
+    ];
+    
+    basicFields.forEach(([key, label]) => {
+      if (data[key]) {
+        html += `
+          <div class="bg-gray-50 p-3 rounded">
+            <div class="text-xs text-gray-500">${label}</div>
+            <div class="font-semibold text-sm">${data[key]}</div>
+          </div>`;
+      }
+    });
+    
+    html += '</div></div>';
+
+    // Quick Status Overview
+    const statusFields = [
+      'color_match', 'cam_lens_assembly', 'cam_lens_cleanliness', 'key_feel', 
+      'key_alignment', 'screw_missing', 'screw_loose', 'screw_spec',
+      'front_housing_damage', 'back_housing_damage', 'housing_snap_fit', 'proof_label_position'
+    ];
+    
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-eye text-green-500"></i> Appearance / Assembly Status
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+    `;
+    
+    statusFields.forEach(field => {
+      if (data[field]) {
+        const value = data[field];
+        let bgColor = 'bg-gray-100';
+        let textColor = 'text-gray-700';
+        let icon = '';
+        
+        if (value === 'OK') {
+          bgColor = 'bg-green-100';
+          textColor = 'text-green-700';
+          icon = '✅ ';
+        } else if (value === 'Not OK') {
+          bgColor = 'bg-red-100';
+          textColor = 'text-red-700';
+          icon = '❌ ';
+        } else if (value === 'NA') {
+          bgColor = 'bg-yellow-100';
+          textColor = 'text-yellow-700';
+          icon = '➖ ';
+        }
+        
+        const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        html += `
+          <div class="${bgColor} ${textColor} p-2 rounded text-center text-xs">
+            <div class="font-semibold">${icon}${value}</div>
+            <div class="opacity-75 mt-1">${label}</div>
+          </div>`;
+      }
+    });
+    
+    html += '</div></div>';
+
+    // Assembly SOP Status
+    const assemblyFields = [
+      'tp_sop', 'mic_solder', 'led_solder', 'lcd_stick', 'speaker_solder',
+      'motor_solder', 'key_solder', 'sim_subboard_solder', 'subboard_solder',
+      'camera_solder', 'receiver_solder'
+    ];
+    
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-tools text-purple-500"></i> Assembly SOP Compliance
+        </h3>
+        <div class="grid grid-cols-3 md:grid-cols-4 gap-2">
+    `;
+    
+    assemblyFields.forEach(field => {
+      if (data[field]) {
+        const value = data[field];
+        let icon = '';
+        let color = 'text-gray-600';
+        
+        if (value === 'OK') {
+          icon = '✅';
+          color = 'text-green-600';
+        } else if (value === 'Not OK') {
+          icon = '❌';
+          color = 'text-red-600';
+        } else if (value === 'NA') {
+          icon = '➖';
+          color = 'text-yellow-600';
+        }
+        
+        const label = field.replace(/_/g, ' ').replace('sop', 'SOP').replace(/\b\w/g, l => l.toUpperCase());
+        html += `
+          <div class="text-center p-2 border rounded">
+            <div class="${color} text-lg">${icon}</div>
+            <div class="text-xs text-gray-600 mt-1">${label}</div>
+          </div>`;
+      }
+    });
+    
+    html += '</div></div>';
+
+    // Component Check Status
+    const componentFields = [
+      'coaxial_line', 'antenna_shrapnel', 'antenna_fpc', 'conductive_fabric',
+      'insulation_paste', 'ins_paste_cover', 'lcd_fpc_defect', 'tp_fpc_defect',
+      'key_fpc_solder', 'keypad_defect', 'mainboard_component_ok', 'solder_splash',
+      'foam_stick', 'cam_glue', 'led_position'
+    ];
+    
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-microchip text-indigo-500"></i> Component Check
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+    `;
+    
+    componentFields.forEach(field => {
+      if (data[field]) {
+        const value = data[field];
+        let bgColor = 'bg-gray-50';
+        let textColor = 'text-gray-700';
+        let icon = '';
+        
+        if (value === 'OK') {
+          bgColor = 'bg-green-50';
+          textColor = 'text-green-700';
+          icon = '✅ ';
+        } else if (value === 'Not OK') {
+          bgColor = 'bg-red-50';
+          textColor = 'text-red-700';
+          icon = '❌ ';
+        } else if (value === 'NA') {
+          bgColor = 'bg-yellow-50';
+          textColor = 'text-yellow-700';
+          icon = '➖ ';
+        }
+        
+        const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        html += `
+          <div class="${bgColor} border rounded p-2">
+            <div class="${textColor} font-semibold text-sm">${icon}${value}</div>
+            <div class="text-xs text-gray-500">${label}</div>
+          </div>`;
+      }
+    });
+    
+    html += '</div></div>';
+
+    // Glue & Measurements
+    if (data.glue_weight_1 || data.glue_weight_2 || data.glue_weight_3 || data.jig_fixture_test || data.glue_location) {
+      html += `
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-vial text-yellow-500"></i> Glue & Measurements
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+      `;
+      
+      if (data.jig_fixture_test) {
+        html += `<div class="bg-blue-50 p-3 rounded">
+          <div class="text-xs text-blue-600">Jig/Fixture Test</div>
+          <div class="font-semibold text-blue-700">${data.jig_fixture_test}</div>
+        </div>`;
+      }
+      
+      if (data.glue_location) {
+        html += `<div class="bg-blue-50 p-3 rounded">
+          <div class="text-xs text-blue-600">Glue Location</div>
+          <div class="font-semibold text-blue-700">${data.glue_location}</div>
+        </div>`;
+      }
+      
+      ['glue_weight_1', 'glue_weight_2', 'glue_weight_3'].forEach((field, index) => {
+        if (data[field]) {
+          html += `<div class="bg-green-50 p-3 rounded">
+            <div class="text-xs text-green-600">Glue Weight ${index + 1}</div>
+            <div class="font-semibold text-green-700">${data[field]}g</div>
+          </div>`;
+        }
+      });
+      
+      html += '</div></div>';
+    }
+
+    // Photos Section
+    if (data.photos && data.photos.length > 0) {
+      html += `
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-camera text-blue-500"></i> Evidence Photos
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      `;
+      
+      data.photos.forEach(photo => {
+        html += `
+          <div class="border rounded-lg overflow-hidden hover:shadow-lg transition cursor-pointer"
+               onclick="openPhotoPreview('${photo.url}', '${photo.label}')">
+            <img src="${photo.url}" alt="${photo.label}" class="w-full h-40 object-cover">
+            <div class="text-center py-2 text-xs text-gray-600 bg-gray-50">${photo.label}</div>
+          </div>`;
+      });
+      
+      html += '</div></div>';
+    }
+
+    // Additional Information
+    if (data.defect_cause || data.imei1 || data.imei2 || data.pqe || data.pe || data.apd_ll) {
+      html += `
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-clipboard text-gray-500"></i> Additional Information
+          </h3>
+          <div class="space-y-3">
+      `;
+      
+      if (data.imei1) {
+        html += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+          <span class="font-semibold text-gray-700">IMEI 1:</span>
+          <span class="font-mono text-gray-900">${data.imei1}</span>
+        </div>`;
+      }
+      
+      if (data.imei2) {
+        html += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+          <span class="font-semibold text-gray-700">IMEI 2:</span>
+          <span class="font-mono text-gray-900">${data.imei2}</span>
+        </div>`;
+      }
+      
+      if (data.pqe) {
+        html += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+          <span class="font-semibold text-gray-700">PQE:</span>
+          <span class="text-gray-900">${data.pqe}</span>
+        </div>`;
+      }
+      
+      if (data.pe) {
+        html += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+          <span class="font-semibold text-gray-700">PE:</span>
+          <span class="text-gray-900">${data.pe}</span>
+        </div>`;
+      }
+      
+      if (data.apd_ll) {
+        html += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+          <span class="font-semibold text-gray-700">APD LL:</span>
+          <span class="text-gray-900">${data.apd_ll}</span>
+        </div>`;
+      }
+      
+      if (data.defect_cause) {
+        html += `
+          <div>
+            <div class="font-semibold text-gray-700 mb-2">Defect Cause / Remarks:</div>
+            <p class="text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-sm">${data.defect_cause}</p>
+          </div>`;
+      }
+      
+      html += '</div></div>';
+    }
+
+    // Created timestamp
+    if (data.created_at) {
+      html += `
+        <div class="text-center text-xs text-gray-500 border-t pt-3">
+          Created: ${data.created_at}
+        </div>`;
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  // Photo preview functions (reuse from your working version)
+  function openPhotoPreview(url, label) {
+    if (document.getElementById('photoPreviewOverlay')) return;
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'photoPreviewOverlay';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4';
+    overlay.style.backdropFilter = 'blur(4px)';
+
+    const container = document.createElement('div');
+    container.className = 'relative w-full max-w-4xl mx-auto';
+
+    container.innerHTML = `
+        <div class="bg-white rounded-lg overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between px-4 py-3 bg-gray-100 border-b">
+                <h2 id="photoPreviewLabel" class="text-sm sm:text-base font-semibold text-gray-800 truncate" style="max-width: 80%;">${escapeHtml(label)}</h2>
+                <div class="flex items-center gap-2">
+                    <a id="photoDownloadBtn" href="${url}" download class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <button id="photoCloseBtn" aria-label="Close preview" class="text-gray-700 hover:text-gray-900 text-2xl leading-none bg-transparent border-0">&times;</button>
+                </div>
+            </div>
+            <div class="flex-1 flex items-center justify-center bg-black p-2">
+                <img id="photoPreviewImg" src="${url}" alt="${escapeHtml(label)}" class="max-h-[80vh] w-auto object-contain rounded-md" />
+            </div>
+        </div>
+    `;
+
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closePhotoPreview();
+    });
+
+    const btn = document.getElementById('photoCloseBtn');
+    btn.addEventListener('click', closePhotoPreview);
+
+    function escHandler(e) {
+        if (e.key === 'Escape') closePhotoPreview();
+    }
+    document.addEventListener('keydown', escHandler);
+    overlay._escHandler = escHandler;
+  }
+
+  function closePhotoPreview() {
+    const overlay = document.getElementById('photoPreviewOverlay');
+    if (!overlay) return;
+
+    if (overlay._escHandler) {
+        document.removeEventListener('keydown', overlay._escHandler);
+    }
+    overlay.remove();
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+
+  function escapeHtml(str) {
+    if (!str && str !== 0) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+  }
+</script>
+{% endblock %}

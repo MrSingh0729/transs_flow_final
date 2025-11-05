@@ -1,0 +1,14 @@
+{% comment %}
+This partial template displays a single check field with its label and a colored status badge.
+Usage: {% include 'ipqc/partials/check_display.html' with field=fai_record.some_check label="Some Check" %}
+{% endcomment %}
+<div>
+    <strong>{{ label }}:</strong>
+    {% if field == 'OK' %}
+        <span class="ml-2 px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 font-semibold">OK</span>
+    {% elif field == 'Not OK' %}
+        <span class="ml-2 px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 font-semibold">Not OK</span>
+    {% else %}
+        <span class="ml-2 px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 font-semibold">NA</span>
+    {% endif %}
+</div>

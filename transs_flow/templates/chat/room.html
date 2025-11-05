@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto holographic-card p-4 rounded-2xl shadow-xl border border-cyan-500">
+  <h1 class="text-2xl font-bold mb-4 glow-text"><i class="fas fa-comments"></i> {{ room.display_name_for(request.user) }}</h1>
+
+  <div id="chatLog" class="h-96 overflow-y-auto bg-gray-900 p-4 rounded-lg cyber-border">
+    {% for msg in messages %}
+    <div class="mb-2">
+      <div class="text-xs text-gray-400">{{ msg.sender.full_name }} • {{ msg.created_at|date:"H:i" }}</div>
+      <div class="p-2 bg-gray-800 rounded">{{ msg.content }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-4 flex space-x-2">
+    <input id="messageInput" type="text"
+           class="flex-1 p-2 rounded bg-gray-800 border border-cyan-400 focus:ring focus:ring-cyan-300"
+           placeholder="Type a message...">
+    <button id="sendBtn" class="cyber-button px-4 py-2 rounded text-white">
+      <i class="fas fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+const socket = new WebSocket(`${wsScheme}://${window.location.host}/ws/chat/{{ room.id }}/`);
+const chatLog = document.getElementById("chatLog");
+const input = document.getElementById("messageInput");
+
+socket.onmessage = e => {
+  const data = JSON.parse(e.data);
+  if (data.message) {
+    const el = document.createElement("div");
+    el.className = "mb-2";
+    el.innerHTML = `<div class='text-xs text-gray-400'>${data.sender_name} • ${new Date(data.created_at).toLocaleTimeString()}</div>
+                    <div class='p-2 bg-gray-800 rounded'>${data.message}</div>`;
+    chatLog.appendChild(el);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+};
+
+document.getElementById("sendBtn").onclick = sendMessage;
+input.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+
+function sendMessage() {
+  const message = input.value.trim();
+  if (message) {
+    socket.send(JSON.stringify({ message }));
+    input.value = "";
+  }
+}
+</script>
+{% endblock %}

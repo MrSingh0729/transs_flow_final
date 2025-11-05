@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit IPQC Assembly Audit{% endblock title %}
+{% block content %}
+<div class="pc-container">
+    <div class="pc-content">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="card shadow-sm">
+                    <!-- Header is updated for the Edit view -->
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="card-title mb-0">Edit IPQC Assembly Audit</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="accordion" id="auditFormAccordion">
+
+                                <!-- BASIC INFO ACCORDION ITEM -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingBasic">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBasic" aria-expanded="true" aria-controls="collapseBasic">
+                                            <i class="bi bi-person-badge me-2"></i> Basic Information (Read-Only)
+                                        </button>
+                                    </h2>
+                                    <div id="collapseBasic" class="accordion-collapse collapse show" aria-labelledby="headingBasic" data-bs-parent="#auditFormAccordion">
+                                        <div class="accordion-body">
+                                            <span class="badge bg-secondary mb-3">This section is auto-filled from your last Work Info submission and cannot be edited.</span>
+                                            <div class="row">
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">Date</label>{{ form.date }}<div class="invalid-feedback d-block">{{ form.date.errors }}</div></div></div>
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">Shift</label>{{ form.shift }}<div class="invalid-feedback d-block">{{ form.shift.errors }}</div></div></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">Employee ID</label>{{ form.emp_id }}<div class="invalid-feedback d-block">{{ form.emp_id.errors }}</div></div></div>
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">Name</label>{{ form.name }}<div class="invalid-feedback d-block">{{ form.name.errors }}</div></div></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">Section</label>{{ form.section }}<div class="invalid-feedback d-block">{{ form.section.errors }}</div></div></div>
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">Line</label>{{ form.line }}<div class="invalid-feedback d-block">{{ form.line.errors }}</div></div></div>
+                                            </div>
+                                             <div class="row">
+                                                <div class="col-md-4"><div class="mb-3"><label class="form-label">Group</label>{{ form.group }}<div class="invalid-feedback d-block">{{ form.group.errors }}</div></div></div>
+                                                <div class="col-md-4"><div class="mb-3"><label class="form-label">Model</label>{{ form.model }}<div class="invalid-feedback d-block">{{ form.model.errors }}</div></div></div>
+                                                <div class="col-md-4"><div class="mb-3"><label class="form-label">Color</label>{{ form.color }}<div class="invalid-feedback d-block">{{ form.color.errors }}</div></div></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- MAN ACCORDION ITEM -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingMan">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMan" aria-expanded="false" aria-controls="collapseMan">
+                                            <i class="bi bi-people me-2"></i> MAN
+                                        </button>
+                                    </h2>
+                                    <div id="collapseMan" class="accordion-collapse collapse" aria-labelledby="headingMan" data-bs-parent="#auditFormAccordion">
+                                        <div class="accordion-body">
+                                            {% for audit_field, remark_field in man_fields %}
+                                                {% include 'ipqc/partials/audit_field.html' %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- MACHINE ACCORDION ITEM -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingMachine">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMachine" aria-expanded="false" aria-controls="collapseMachine">
+                                            <i class="bi bi-gear me-2"></i> MACHINE
+                                        </button>
+                                    </h2>
+                                    <div id="collapseMachine" class="accordion-collapse collapse" aria-labelledby="headingMachine" data-bs-parent="#auditFormAccordion">
+                                        <div class="accordion-body">
+                                            <h6 class="text-muted border-bottom pb-2 mb-3">Manufacture & Manual Inputs</h6>
+                                            <div class="row">
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">{{ form.manufacture.label }}</label>{{ form.manufacture }}<div class="invalid-feedback d-block">{{ form.manufacture.errors }}</div></div></div>
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">{{ form.work_order.label }}</label>{{ form.work_order }}<div class="invalid-feedback d-block">{{ form.work_order.errors }}</div></div></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4"><div class="mb-3"><label class="form-label">{{ form.brand.label }}</label>{{ form.brand }}<div class="invalid-feedback d-block">{{ form.brand.errors }}</div></div></div>
+                                                <div class="col-md-4"><div class="mb-3"><label class="form-label">{{ form.material_code.label }}</label>{{ form.material_code }}<div class="invalid-feedback d-block">{{ form.material_code.errors }}</div></div></div>
+                                                <div class="col-md-4"><div class="mb-3"><label class="form-label">{{ form.wo_input_qty.label }}</label>{{ form.wo_input_qty }}<div class="invalid-feedback d-block">{{ form.wo_input_qty.errors }}</div></div></div>
+                                            </div>
+                                            <hr class="my-4">
+                                            <h6 class="text-muted border-bottom pb-2 mb-3">MACHINE Checks</h6>
+                                            {% for audit_field, remark_field in machine_fields %}
+                                                {% include 'ipqc/partials/audit_field.html' %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- MATERIAL ACCORDION ITEM -->
+                                <div class="accordion-item">
+                                     <h2 class="accordion-header" id="headingMaterial">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaterial" aria-expanded="false" aria-controls="collapseMaterial">
+                                            <i class="bi bi-box-seam me-2"></i> MATERIAL
+                                        </button>
+                                    </h2>
+                                    <div id="collapseMaterial" class="accordion-collapse collapse" aria-labelledby="headingMaterial" data-bs-parent="#auditFormAccordion">
+                                        <div class="accordion-body">
+                                            {% for audit_field, remark_field in material_fields %}{% include 'ipqc/partials/audit_field.html' %}{% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- METHOD ACCORDION ITEM -->
+                                <div class="accordion-item">
+                                     <h2 class="accordion-header" id="headingMethod">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMethod" aria-expanded="false" aria-controls="collapseMethod">
+                                            <i class="bi bi-list-check me-2"></i> METHOD
+                                        </button>
+                                    </h2>
+                                    <div id="collapseMethod" class="accordion-collapse collapse" aria-labelledby="headingMethod" data-bs-parent="#auditFormAccordion">
+                                        <div class="accordion-body">
+                                            {% for audit_field, remark_field in method_fields %}{% include 'ipqc/partials/audit_field.html' %}{% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ENVIRONMENT ACCORDION ITEM -->
+                                <div class="accordion-item">
+                                     <h2 class="accordion-header" id="headingEnvironment">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEnvironment" aria-expanded="false" aria-controls="collapseEnvironment">
+                                            <i class="bi bi-tree me-2"></i> ENVIRONMENT
+                                        </button>
+                                    </h2>
+                                    <div id="collapseEnvironment" class="accordion-collapse collapse" aria-labelledby="headingEnvironment" data-bs-parent="#auditFormAccordion">
+                                        <div class="accordion-body">
+                                            {% for audit_field, remark_field in environment_fields %}{% include 'ipqc/partials/audit_field.html' %}{% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TRC ACCORDION ITEM -->
+                                <div class="accordion-item">
+                                     <h2 class="accordion-header" id="headingTRC">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTRC" aria-expanded="false" aria-controls="collapseTRC">
+                                            <i class="bi bi-clipboard-data me-2"></i> TRC / FAI / DEFECT / SPOT CHECK
+                                        </button>
+                                    </h2>
+                                    <div id="collapseTRC" class="accordion-collapse collapse" aria-labelledby="headingTRC" data-bs-parent="#auditFormAccordion">
+                                        <div class="accordion-body">
+                                            {% for audit_field, remark_field in trc_fields %}{% include 'ipqc/partials/audit_field.html' %}{% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- FINAL SUBMIT & SIGNATURES ACCORDION ITEM -->
+                                <div class="accordion-item">
+                                     <h2 class="accordion-header" id="headingFinal">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFinal" aria-expanded="false" aria-controls="collapseFinal">
+                                            <i class="bi bi-check2-square me-2"></i> Final Review & Submission
+                                        </button>
+                                    </h2>
+                                    <div id="collapseFinal" class="accordion-collapse collapse" aria-labelledby="headingFinal" data-bs-parent="#auditFormAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-12"><div class="mb-3"><label class="form-label">{{ form.top3_defects.label }}</label>{{ form.top3_defects }}<div class="invalid-feedback d-block">{{ form.top3_defects.errors }}</div></div></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-12"><div class="mb-3"><label class="form-label">{{ form.remarks.label }}</label>{{ form.remarks }}<small class="form-text text-muted">Add any general remarks. Individual item remarks have been collected above.</small><div class="invalid-feedback d-block">{{ form.remarks.errors }}</div></div></div>
+                                            </div>
+                                            <hr>
+                                            <div class="row">
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">{{ form.ipqc_sign.label }}</label>{{ form.ipqc_sign }}<div class="invalid-feedback d-block">{{ form.ipqc_sign.errors }}</div></div></div>
+                                                <div class="col-md-6"><div class="mb-3"><label class="form-label">{{ form.pqe_tl_sign.label }}</label>{{ form.pqe_tl_sign }}<div class="invalid-feedback d-block">{{ form.pqe_tl_sign.errors }}</div></div></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                <button type="submit" class="btn btn-warning"><i class="bi bi-save me-2"></i>Update Audit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Logic to pre-populate individual remark fields from the aggregated text ---
+    const allRemarksTextarea = document.getElementById('id_remarks');
+    if (!allRemarksTextarea) return;
+
+    const allRemarksText = allRemarksTextarea.value.trim();
+    if (!allRemarksText) return;
+
+    // Split the aggregated text into individual remarks and general remarks
+    const parts = allRemarksText.split('\n\nGeneral Remarks:\n');
+    const individualRemarksText = parts[0];
+    const generalRemarksText = parts.length > 1 ? parts[1] : '';
+
+    // Set the main remarks textarea to show only the general remarks
+    allRemarksTextarea.value = generalRemarksText;
+
+    // Create a map of label -> remark for easy lookup
+    const remarkMap = {};
+    individualRemarksText.split('\n').forEach(line => {
+        const splitPos = line.indexOf(': ');
+        if (splitPos !== -1) {
+            // The label might have HTML tags from the model's verbose_name, so we strip them.
+            const label = line.substring(0, splitPos).replace(/<[^>]*>/g, '').trim();
+            const remark = line.substring(splitPos + 2);
+            remarkMap[label] = remark;
+        }
+    });
+
+    // Populate the individual remark textareas using the map
+    const allRemarkTextareas = document.querySelectorAll('textarea[id^="id_remark_"]');
+    allRemarkTextareas.forEach(textarea => {
+        const auditFieldId = textarea.id.replace('id_remark_', ''); // e.g., 'man_job_card'
+        // Find the label associated with the main audit field (e.g., for="id_man_job_card")
+        const auditFieldLabel = document.querySelector(`label[for="id_${auditFieldId}"]`);
+
+        if (auditFieldLabel) {
+            const labelText = auditFieldLabel.innerText.trim();
+            if (remarkMap[labelText]) {
+                textarea.value = remarkMap[labelText];
+            }
+        }
+    });
+    
+    // --- Initialize Tooltips and Accordions ---
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+{% endblock extra_js %}

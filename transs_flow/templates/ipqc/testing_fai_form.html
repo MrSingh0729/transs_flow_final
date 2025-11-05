@@ -1,0 +1,1288 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}First Article Inspection Form{% endblock %}
+{% block content %}
+<style>
+/* --- Responsive progress bar styles --- */
+.audit-form { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 16px; 
+    width: 100%; 
+}
+
+.step-indicator { 
+    background: white; 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    padding: 16px 12px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+}
+
+.step-progress { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 12px; 
+    position: relative; 
+}
+
+.step-progress::before { 
+    content: ''; 
+    position: absolute; 
+    top: 50%; 
+    left: 0; 
+    right: 0; 
+    height: 2px; 
+    background: var(--border); 
+    z-index: 0; 
+}
+
+.step-progress-line { 
+    position: absolute; 
+    top: 50%; 
+    left: 0; 
+    height: 2px; 
+    background: var(--primary); 
+    z-index: 1; 
+    transition: width 0.3s ease; 
+    transform: translateY(-50%); 
+}
+
+.step-item { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    position: relative; 
+    z-index: 2; 
+    cursor: pointer; 
+    flex-shrink: 0; 
+}
+
+.step-circle { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    border: 3px solid var(--border); 
+    background: white; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: 700; 
+    font-size: 14px; 
+    color: var(--text-light); 
+    transition: all 0.3s ease; 
+}
+
+.step-circle.active { 
+    background: var(--primary); 
+    color: white; 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); 
+}
+
+.step-circle.completed { 
+    background: var(--success); 
+    color: white; 
+    border-color: var(--success); 
+}
+
+.step-label { 
+    font-size: 11px; 
+    color: var(--text-secondary); 
+    text-align: center; 
+    margin-top: 6px; 
+    font-weight: 500; 
+    white-space: nowrap; 
+}
+
+@media (max-width: 640px) {
+    .step-label { display: none; }
+    .step-circle { width: 36px; height: 36px; font-size: 13px; }
+    .step-item { flex-shrink: 1; }
+}
+
+.form-section { 
+    background: white; 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    padding: 20px 16px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+}
+
+.section-header { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    margin-bottom: 16px; 
+    padding-bottom: 12px; 
+    border-bottom: 1px solid var(--border); 
+}
+
+.section-title { 
+    font-size: 18px; 
+    font-weight: 700; 
+    color: var(--text-primary); 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+}
+
+.section-icon { 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 8px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.form-grid { 
+    display: grid; 
+    gap: 16px; 
+    width: 100%; 
+}
+
+.form-group { 
+    display: flex; 
+    flex-direction: column; 
+    width: 100%; 
+}
+
+.form-group label { 
+    display: block; 
+    font-size: 14px; 
+    font-weight: 600; 
+    color: var(--text-primary); 
+    margin-bottom: 6px; 
+}
+
+.form-group input, .form-group select, .form-group textarea { 
+    width: 100%; 
+    padding: 12px; 
+    background: white; 
+    border: 2px solid var(--border); 
+    border-radius: 8px; 
+    color: var(--text-primary); 
+    font-size: 14px; 
+    transition: all 0.2s ease; 
+    font-family: inherit; 
+    box-sizing: border-box; 
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+    outline: none; 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); 
+}
+
+.form-group input[readonly] { 
+    background: var(--bg-secondary); 
+    cursor: not-allowed; 
+    color: var(--text-secondary); 
+}
+
+.form-group .is-invalid {
+    border-color: var(--danger) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.status-select { 
+    border-radius: 8px; 
+    font-weight: 500; 
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); 
+    background-repeat: no-repeat; 
+    background-position: right 12px center; 
+    background-size: 20px; 
+    padding-right: 44px; 
+    appearance: none; 
+}
+
+.status-select[value="OK"] { 
+    border-color: var(--success); 
+    background-color: rgba(34, 197, 94, 0.05); 
+}
+
+.status-select[value="Not OK"] { 
+    border-color: var(--danger); 
+    background-color: rgba(239, 68, 68, 0.05); 
+}
+
+.status-select[value="NA"] { 
+    border-color: var(--text-light); 
+    background-color: rgba(100, 116, 139, 0.05); 
+}
+
+.status-select[value="QUALIFIED"] { 
+    border-color: var(--success); 
+    background-color: rgba(34, 197, 94, 0.05); 
+}
+
+.status-select[value="UNQUALIFIED"] { 
+    border-color: var(--danger); 
+    background-color: rgba(239, 68, 68, 0.05); 
+}
+
+.form-group textarea { 
+    resize: vertical; 
+    min-height: 80px; 
+}
+
+.bottom-nav { 
+    position: sticky; 
+    bottom: 0; 
+    background: white; 
+    border-top: 1px solid var(--border); 
+    padding: 16px; 
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05); 
+}
+
+.nav-content { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    flex-wrap: wrap; 
+    gap: 12px; 
+}
+
+.progress-text { 
+    font-size: 14px; 
+    color: var(--text-secondary); 
+    font-weight: 500; 
+}
+
+.nav-buttons { 
+    display: flex; 
+    gap: 8px; 
+    flex-wrap: wrap; 
+}
+
+.nav-btn { 
+    padding: 10px 16px; 
+    border-radius: 8px; 
+    font-weight: 600; 
+    font-size: 13px; 
+    border: none; 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 6px; 
+    min-width: 80px; 
+}
+
+.nav-btn:disabled { 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+}
+
+.nav-btn-secondary { 
+    background: white; 
+    color: var(--text-secondary); 
+    border: 2px solid var(--border); 
+}
+
+.nav-btn-primary { 
+    background: var(--primary); 
+    color: white; 
+}
+
+.nav-btn-success { 
+    background: var(--success); 
+    color: white; 
+}
+
+.error-message { 
+    color: var(--danger); 
+    font-size: 12px; 
+    margin-top: 4px; 
+}
+
+.alert { 
+    padding: 12px 16px; 
+    margin-bottom: 20px; 
+    border-radius: 8px; 
+    border: 1px solid transparent; 
+}
+
+.alert-danger { 
+    color: #721c24; 
+    background-color: #f8d7da; 
+    border-color: #f5c6cb; 
+}
+
+.alert-success { 
+    color: #155724; 
+    background-color: #d4edda; 
+    border-color: #c3e6cb; 
+}
+
+.alert-warning { 
+    color: #856404; 
+    background-color: #fff3cd; 
+    border-color: #ffeaa7; 
+}
+
+/* New styles for the success section */
+.success-section {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+.success-section h2 {
+    margin-bottom: 16px;
+    color: #0f5132;
+}
+.url-display-box {
+    background: white;
+    border: 1px dashed #a9dcb5;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 16px;
+    word-break: break-all;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+.url-display-box p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #0f5132;
+    flex-grow: 1;
+}
+
+@media (min-width: 768px) {
+    .form-grid { 
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+        gap: 20px; 
+    }
+    .form-section { 
+        padding: 24px; 
+        margin-bottom: 24px; 
+    }
+    .section-title { 
+        font-size: 20px; 
+    }
+}
+</style>
+
+<!-- Messages and errors -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+{% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        <strong>Error:</strong>
+        <ul>
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<div class="audit-form">
+    <!-- This section will only be shown after a successful POST -->
+    {% if form.instance.public_url %}
+    <div class="success-section">
+        <h2><i class="fas fa-check-circle"></i> FAI Record Created Successfully!</h2>
+        <p>The record has been saved. You can now share the following link with the Quality Engineer for confirmation.</p>
+        <div class="url-display-box">
+            <p id="publicUrl">{{ form.instance.public_url }}</p>
+            <button class="nav-btn nav-btn-primary" onclick="copyPublicUrl()">
+                <i class="fas fa-copy"></i> Copy Link
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Step Progress Indicator -->
+    <div class="step-indicator">
+        <div class="step-progress">
+            <div class="step-progress-line" id="progressLine" style="width: 0%;"></div>
+            <div class="step-item" onclick="goToStep(1)">
+                <div class="step-circle active" id="step1">1</div>
+                <div class="step-label">Basic Info</div>
+            </div>
+            <div class="step-item" onclick="goToStep(2)">
+                <div class="step-circle" id="step2">2</div>
+                <div class="step-label">Order & Software</div>
+            </div>
+            <div class="step-item" onclick="goToStep(3)">
+                <div class="step-circle" id="step3">3</div>
+                <div class="step-label">Visual & Labels</div>
+            </div>
+            <div class="step-item" onclick="goToStep(4)">
+                <div class="step-circle" id="step4">4</div>
+                <div class="step-label">Functional</div>
+            </div>
+            <div class="step-item" onclick="goToStep(5)">
+                <div class="step-circle" id="step5">5</div>
+                <div class="step-label">Reliability</div>
+            </div>
+            <div class="step-item" onclick="goToStep(6)">
+                <div class="step-circle" id="step6">6</div>
+                <div class="step-label">Final Results</div>
+            </div>
+        </div>
+        <div class="progress-text">
+            Step <span id="currentStep">1</span> of 6
+        </div>
+    </div>
+
+    <form method="post" id="ipqcForm" enctype="multipart/form-data" onsubmit="return validateForm()">
+        {% csrf_token %}
+
+        <!-- STEP 1: Basic Information -->
+        <div class="form-section" id="step1-content">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-sky-100">
+                        <i class="fas fa-info-circle text-sky-600"></i>
+                    </div>
+                    Basic Information
+                </h2>
+                <div class="step-circle active">1</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+                    {{ form.date|attr:"readonly" }}
+                    {% if form.date.errors %}<div class="error-message">{{ form.date.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.shift.id_for_label }}">{{ form.shift.label }}</label>
+                    {{ form.shift|attr:"readonly" }}
+                    {% if form.shift.errors %}<div class="error-message">{{ form.shift.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.emp_id.id_for_label }}">{{ form.emp_id.label }}</label>
+                    {{ form.emp_id|attr:"readonly" }}
+                    {% if form.emp_id.errors %}<div class="error-message">{{ form.emp_id.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                    {{ form.name|attr:"readonly" }}
+                    {% if form.name.errors %}<div class="error-message">{{ form.name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.section.id_for_label }}">{{ form.section.label }}</label>
+                    {{ form.section|attr:"readonly" }}
+                    {% if form.section.errors %}<div class="error-message">{{ form.section.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.line.id_for_label }}">{{ form.line.label }}</label>
+                    {{ form.line|attr:"readonly" }}
+                    {% if form.line.errors %}<div class="error-message">{{ form.line.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.group.id_for_label }}">{{ form.group.label }}</label>
+                    {{ form.group|attr:"readonly" }}
+                    {% if form.group.errors %}<div class="error-message">{{ form.group.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.model.id_for_label }}">{{ form.model.label }}</label>
+                    {{ form.model|attr:"readonly" }}
+                    {% if form.model.errors %}<div class="error-message">{{ form.model.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.color.id_for_label }}">{{ form.color.label }}</label>
+                    {{ form.color|attr:"readonly" }}
+                    {% if form.color.errors %}<div class="error-message">{{ form.color.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: Order & Software -->
+        <div class="form-section" id="step2-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-green-100">
+                        <i class="fas fa-cogs text-green-600"></i>
+                    </div>
+                    Order & Software
+                </h2>
+                <div class="step-circle">2</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.production_work_order_no.id_for_label }}">{{ form.production_work_order_no.label }}</label>
+                    {{ form.production_work_order_no|attr:"required" }}
+                    {% if form.production_work_order_no.errors %}<div class="error-message">{{ form.production_work_order_no.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.first_article_type.id_for_label }}">{{ form.first_article_type.label }}</label>
+                    {{ form.first_article_type|attr:"required" }}
+                    {% if form.first_article_type.errors %}<div class="error-message">{{ form.first_article_type.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.software_ver_check.id_for_label }}">{{ form.software_ver_check.label }}</label>
+                    {{ form.software_ver_check|attr:"required" }}
+                    {% if form.software_ver_check.errors %}<div class="error-message">{{ form.software_ver_check.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.android_ver_check.id_for_label }}">{{ form.android_ver_check.label }}</label>
+                    {{ form.android_ver_check|attr:"required" }}
+                    {% if form.android_ver_check.errors %}<div class="error-message">{{ form.android_ver_check.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.memory_inbuilt_check.id_for_label }}">{{ form.memory_inbuilt_check.label }}</label>
+                    {{ form.memory_inbuilt_check|attr:"required" }}
+                    {% if form.memory_inbuilt_check.errors %}<div class="error-message">{{ form.memory_inbuilt_check.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.order_confirm_check.id_for_label }}">{{ form.order_confirm_check.label }}</label>
+                    {{ form.order_confirm_check|attr:"required" }}
+                    {% if form.order_confirm_check.errors %}<div class="error-message">{{ form.order_confirm_check.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- STEP 3: Visual & Labels -->
+        <div class="form-section" id="step3-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-purple-100">
+                        <i class="fas fa-eye text-purple-600"></i>
+                    </div>
+                    Visual & Labels
+                </h2>
+                <div class="step-circle">3</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.label_check.id_for_label }}">{{ form.label_check.label }}</label>
+                    {{ form.label_check|attr:"required" }}
+                    {% if form.label_check.errors %}
+                        <div class="error-message">{{ form.label_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.label_check_evidence.id_for_label }}">{{ form.label_check_evidence.label }}</label>
+                    {{ form.label_check_evidence|attr:"required" }}
+                    {% if form.label_check_evidence.errors %}
+                        <div class="error-message">{{ form.label_check_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.label_position_check.id_for_label }}">{{ form.label_position_check.label }}</label>
+                    {{ form.label_position_check|attr:"required" }}
+                    {% if form.label_position_check.errors %}
+                        <div class="error-message">{{ form.label_position_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.label_position_check_evidence.id_for_label }}">{{ form.label_position_check_evidence.label }}</label>
+                    {{ form.label_position_check_evidence|attr:"required" }}
+                    {% if form.label_position_check_evidence.errors %}
+                        <div class="error-message">{{ form.label_position_check_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.visual_inspection_handset.id_for_label }}">{{ form.visual_inspection_handset.label }}</label>
+                    {{ form.visual_inspection_handset|attr:"required" }}
+                    {% if form.visual_inspection_handset.errors %}
+                        <div class="error-message">{{ form.visual_inspection_handset.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.logo_check.id_for_label }}">{{ form.logo_check.label }}</label>
+                    {{ form.logo_check|attr:"required" }}
+                    {% if form.logo_check.errors %}
+                        <div class="error-message">{{ form.logo_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.logo_check_evidence.id_for_label }}">{{ form.logo_check_evidence.label }}</label>
+                    {{ form.logo_check_evidence|attr:"required" }}
+                    {% if form.logo_check_evidence.errors %}
+                        <div class="error-message">{{ form.logo_check_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.assembly_battery_check.id_for_label }}">{{ form.assembly_battery_check.label }}</label>
+                    {{ form.assembly_battery_check|attr:"required" }}
+                    {% if form.assembly_battery_check.errors %}
+                        <div class="error-message">{{ form.assembly_battery_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.assembly_battery_check_evidence.id_for_label }}">{{ form.assembly_battery_check_evidence.label }}</label>
+                    {{ form.assembly_battery_check_evidence|attr:"required" }}
+                    {% if form.assembly_battery_check_evidence.errors %}
+                        <div class="error-message">{{ form.assembly_battery_check_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.net_color_check.id_for_label }}">{{ form.net_color_check.label }}</label>
+                    {{ form.net_color_check|attr:"required" }}
+                    {% if form.net_color_check.errors %}
+                        <div class="error-message">{{ form.net_color_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.tp_with_key_check.id_for_label }}">{{ form.tp_with_key_check.label }}</label>
+                    {{ form.tp_with_key_check|attr:"required" }}
+                    {% if form.tp_with_key_check.errors %}
+                        <div class="error-message">{{ form.tp_with_key_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.screw_check.id_for_label }}">{{ form.screw_check.label }}</label>
+                    {{ form.screw_check|attr:"required" }}
+                    {% if form.screw_check.errors %}
+                        <div class="error-message">{{ form.screw_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 4: Functional Tests -->
+        <div class="form-section" id="step4-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-blue-100">
+                        <i class="fas fa-mobile-alt text-blue-600"></i>
+                    </div>
+                    Functional Tests
+                </h2>
+                <div class="step-circle">4</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.tp_with_charge_test.id_for_label }}">{{ form.tp_with_charge_test.label }}</label>
+                    {{ form.tp_with_charge_test|attr:"required" }}
+                    {% if form.tp_with_charge_test.errors %}
+                        <div class="error-message">{{ form.tp_with_charge_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.charge_15min_test.id_for_label }}">{{ form.charge_15min_test.label }}</label>
+                    {{ form.charge_15min_test|attr:"required" }}
+                    {% if form.charge_15min_test.errors %}
+                        <div class="error-message">{{ form.charge_15min_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.boot_time_test.id_for_label }}">{{ form.boot_time_test.label }}</label>
+                    {{ form.boot_time_test|attr:"required" }}
+                    {% if form.boot_time_test.errors %}
+                        <div class="error-message">{{ form.boot_time_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.boot_time_test_evidence.id_for_label }}">{{ form.boot_time_test_evidence.label }}</label>
+                    {{ form.boot_time_test_evidence|attr:"required" }}
+                    {% if form.boot_time_test_evidence.errors %}
+                        <div class="error-message">{{ form.boot_time_test_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.init_settings_test.id_for_label }}">{{ form.init_settings_test.label }}</label>
+                    {{ form.init_settings_test|attr:"required" }}
+                    {% if form.init_settings_test.errors %}
+                        <div class="error-message">{{ form.init_settings_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.buttons_keys_test.id_for_label }}">{{ form.buttons_keys_test.label }}</label>
+                    {{ form.buttons_keys_test|attr:"required" }}
+                    {% if form.buttons_keys_test.errors %}
+                        <div class="error-message">{{ form.buttons_keys_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.touch_screen_pen_test.id_for_label }}">{{ form.touch_screen_pen_test.label }}</label>
+                    {{ form.touch_screen_pen_test|attr:"required" }}
+                    {% if form.touch_screen_pen_test.errors %}
+                        <div class="error-message">{{ form.touch_screen_pen_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.calling_test.id_for_label }}">{{ form.calling_test.label }}</label>
+                    {{ form.calling_test|attr:"required" }}
+                    {% if form.calling_test.errors %}
+                        <div class="error-message">{{ form.calling_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.bluetooth_test.id_for_label }}">{{ form.bluetooth_test.label }}</label>
+                    {{ form.bluetooth_test|attr:"required" }}
+                    {% if form.bluetooth_test.errors %}
+                        <div class="error-message">{{ form.bluetooth_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.flashlight_test.id_for_label }}">{{ form.flashlight_test.label }}</label>
+                    {{ form.flashlight_test|attr:"required" }}
+                    {% if form.flashlight_test.errors %}
+                        <div class="error-message">{{ form.flashlight_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.camera_flash_test.id_for_label }}">{{ form.camera_flash_test.label }}</label>
+                    {{ form.camera_flash_test|attr:"required" }}
+                    {% if form.camera_flash_test.errors %}
+                        <div class="error-message">{{ form.camera_flash_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.camera_photo_test.id_for_label }}">{{ form.camera_photo_test.label }}</label>
+                    {{ form.camera_photo_test|attr:"required" }}
+                    {% if form.camera_photo_test.errors %}
+                        <div class="error-message">{{ form.camera_photo_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.camera_front_test_evidence.id_for_label }}">{{ form.camera_front_test_evidence.label }}</label>
+                    {{ form.camera_front_test_evidence|attr:"required" }}
+                    {% if form.camera_front_test_evidence.errors %}
+                        <div class="error-message">{{ form.camera_front_test_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.camera_back_test_evidence.id_for_label }}">{{ form.camera_back_test_evidence.label }}</label>
+                    {{ form.camera_back_test_evidence|attr:"required" }}
+                    {% if form.camera_back_test_evidence.errors %}
+                        <div class="error-message">{{ form.camera_back_test_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.camera_dark_test.id_for_label }}">{{ form.camera_dark_test.label }}</label>
+                    {{ form.camera_dark_test|attr:"required" }}
+                    {% if form.camera_dark_test.errors %}
+                        <div class="error-message">{{ form.camera_dark_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.camera_dark_test_evidence.id_for_label }}">{{ form.camera_dark_test_evidence.label }}</label>
+                    {{ form.camera_dark_test_evidence|attr:"required" }}
+                    {% if form.camera_dark_test_evidence.errors %}
+                        <div class="error-message">{{ form.camera_dark_test_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.camera_long_distance_check.id_for_label }}">{{ form.camera_long_distance_check.label }}</label>
+                    {{ form.camera_long_distance_check|attr:"required" }}
+                    {% if form.camera_long_distance_check.errors %}
+                        <div class="error-message">{{ form.camera_long_distance_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.highlight_defect_check.id_for_label }}">{{ form.highlight_defect_check.label }}</label>
+                    {{ form.highlight_defect_check|attr:"required" }}
+                    {% if form.highlight_defect_check.errors %}
+                        <div class="error-message">{{ form.highlight_defect_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.multimedia_play_test.id_for_label }}">{{ form.multimedia_play_test.label }}</label>
+                    {{ form.multimedia_play_test|attr:"required" }}
+                    {% if form.multimedia_play_test.errors %}
+                        <div class="error-message">{{ form.multimedia_play_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.fm_play_test.id_for_label }}">{{ form.fm_play_test.label }}</label>
+                    {{ form.fm_play_test|attr:"required" }}
+                    {% if form.fm_play_test.errors %}
+                        <div class="error-message">{{ form.fm_play_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.tv_fn_test.id_for_label }}">{{ form.tv_fn_test.label }}</label>
+                    {{ form.tv_fn_test|attr:"required" }}
+                    {% if form.tv_fn_test.errors %}
+                        <div class="error-message">{{ form.tv_fn_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.taping_fn_test.id_for_label }}">{{ form.taping_fn_test.label }}</label>
+                    {{ form.taping_fn_test|attr:"required" }}
+                    {% if form.taping_fn_test.errors %}
+                        <div class="error-message">{{ form.taping_fn_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.shaking_screen_test.id_for_label }}">{{ form.shaking_screen_test.label }}</label>
+                    {{ form.shaking_screen_test|attr:"required" }}
+                    {% if form.shaking_screen_test.errors %}
+                        <div class="error-message">{{ form.shaking_screen_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.wifi_test.id_for_label }}">{{ form.wifi_test.label }}</label>
+                    {{ form.wifi_test|attr:"required" }}
+                    {% if form.wifi_test.errors %}
+                        <div class="error-message">{{ form.wifi_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.gravity_sensor_test.id_for_label }}">{{ form.gravity_sensor_test.label }}</label>
+                    {{ form.gravity_sensor_test|attr:"required" }}
+                    {% if form.gravity_sensor_test.errors %}
+                        <div class="error-message">{{ form.gravity_sensor_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.light_distance_sensor_test.id_for_label }}">{{ form.light_distance_sensor_test.label }}</label>
+                    {{ form.light_distance_sensor_test|attr:"required" }}
+                    {% if form.light_distance_sensor_test.errors %}
+                        <div class="error-message">{{ form.light_distance_sensor_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.hall_fn_test.id_for_label }}">{{ form.hall_fn_test.label }}</label>
+                    {{ form.hall_fn_test|attr:"required" }}
+                    {% if form.hall_fn_test.errors %}
+                        <div class="error-message">{{ form.hall_fn_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.qr_scan_test.id_for_label }}">{{ form.qr_scan_test.label }}</label>
+                    {{ form.qr_scan_test|attr:"required" }}
+                    {% if form.qr_scan_test.errors %}
+                        <div class="error-message">{{ form.qr_scan_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.ram_rom_cap_test.id_for_label }}">{{ form.ram_rom_cap_test.label }}</label>
+                    {{ form.ram_rom_cap_test|attr:"required" }}
+                    {% if form.ram_rom_cap_test.errors %}
+                        <div class="error-message">{{ form.ram_rom_cap_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.mode_switch_test.id_for_label }}">{{ form.mode_switch_test.label }}</label>
+                    {{ form.mode_switch_test|attr:"required" }}
+                    {% if form.mode_switch_test.errors %}
+                        <div class="error-message">{{ form.mode_switch_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.touch_in_dev_opt_test.id_for_label }}">{{ form.touch_in_dev_opt_test.label }}</label>
+                    {{ form.touch_in_dev_opt_test|attr:"required" }}
+                    {% if form.touch_in_dev_opt_test.errors %}
+                        <div class="error-message">{{ form.touch_in_dev_opt_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.mac_add_test.id_for_label }}">{{ form.mac_add_test.label }}</label>
+                    {{ form.mac_add_test|attr:"required" }}
+                    {% if form.mac_add_test.errors %}
+                        <div class="error-message">{{ form.mac_add_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.otg_fn_test.id_for_label }}">{{ form.otg_fn_test.label }}</label>
+                    {{ form.otg_fn_test|attr:"required" }}
+                    {% if form.otg_fn_test.errors %}
+                        <div class="error-message">{{ form.otg_fn_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 5: Reliability -->
+        <div class="form-section" id="step5-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-yellow-100">
+                        <i class="fas fa-shield-alt text-yellow-600"></i>
+                    </div>
+                    Reliability
+                </h2>
+                <div class="step-circle">5</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.tcard_sim_plug_test.id_for_label }}">{{ form.tcard_sim_plug_test.label }}</label>
+                    {{ form.tcard_sim_plug_test|attr:"required" }}
+                    {% if form.tcard_sim_plug_test.errors %}
+                        <div class="error-message">{{ form.tcard_sim_plug_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.focus_test.id_for_label }}">{{ form.focus_test.label }}</label>
+                    {{ form.focus_test|attr:"required" }}
+                    {% if form.focus_test.errors %}
+                        <div class="error-message">{{ form.focus_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.front_back_cam_test.id_for_label }}">{{ form.front_back_cam_test.label }}</label>
+                    {{ form.front_back_cam_test|attr:"required" }}
+                    {% if form.front_back_cam_test.errors %}
+                        <div class="error-message">{{ form.front_back_cam_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.slight_drop_test.id_for_label }}">{{ form.slight_drop_test.label }}</label>
+                    {{ form.slight_drop_test|attr:"required" }}
+                    {% if form.slight_drop_test.errors %}
+                        <div class="error-message">{{ form.slight_drop_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.slight_touch_test.id_for_label }}">{{ form.slight_touch_test.label }}</label>
+                    {{ form.slight_touch_test|attr:"required" }}
+                    {% if form.slight_touch_test.errors %}
+                        <div class="error-message">{{ form.slight_touch_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.coumpling_rf_test.id_for_label }}">{{ form.coumpling_rf_test.label }}</label>
+                    {{ form.coumpling_rf_test|attr:"required" }}
+                    {% if form.coumpling_rf_test.errors %}
+                        <div class="error-message">{{ form.coumpling_rf_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.power_consumption_test.id_for_label }}">{{ form.power_consumption_test.label }}</label>
+                    {{ form.power_consumption_test|attr:"required" }}
+                    {% if form.power_consumption_test.errors %}
+                        <div class="error-message">{{ form.power_consumption_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.high_temp_simul_test.id_for_label }}">{{ form.high_temp_simul_test.label }}</label>
+                    {{ form.high_temp_simul_test|attr:"required" }}
+                    {% if form.high_temp_simul_test.errors %}
+                        <div class="error-message">{{ form.high_temp_simul_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.factory_reset_fn_test.id_for_label }}">{{ form.factory_reset_fn_test.label }}</label>
+                    {{ form.factory_reset_fn_test|attr:"required" }}
+                    {% if form.factory_reset_fn_test.errors %}
+                        <div class="error-message">{{ form.factory_reset_fn_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.sar_value_test.id_for_label }}">{{ form.sar_value_test.label }}</label>
+                    {{ form.sar_value_test|attr:"required" }}
+                    {% if form.sar_value_test.errors %}
+                        <div class="error-message">{{ form.sar_value_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.factory_reset_call_noise_test.id_for_label }}">{{ form.factory_reset_call_noise_test.label }}</label>
+                    {{ form.factory_reset_call_noise_test|attr:"required" }}
+                    {% if form.factory_reset_call_noise_test.errors %}
+                        <div class="error-message">{{ form.factory_reset_call_noise_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.factory_reset_test.id_for_label }}">{{ form.factory_reset_test.label }}</label>
+                    {{ form.factory_reset_test|attr:"required" }}
+                    {% if form.factory_reset_test.errors %}
+                        <div class="error-message">{{ form.factory_reset_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.high_temp_boot_check.id_for_label }}">{{ form.high_temp_boot_check.label }}</label>
+                    {{ form.high_temp_boot_check|attr:"required" }}
+                    {% if form.high_temp_boot_check.errors %}
+                        <div class="error-message">{{ form.high_temp_boot_check.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.high_temp_engi_mode_test.id_for_label }}">{{ form.high_temp_engi_mode_test.label }}</label>
+                    {{ form.high_temp_engi_mode_test|attr:"required" }}
+                    {% if form.high_temp_engi_mode_test.errors %}
+                        <div class="error-message">{{ form.high_temp_engi_mode_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.high_temp_call_test.id_for_label }}">{{ form.high_temp_call_test.label }}</label>
+                    {{ form.high_temp_call_test|attr:"required" }}
+                    {% if form.high_temp_call_test.errors %}
+                        <div class="error-message">{{ form.high_temp_call_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.high_temp_charging_test.id_for_label }}">{{ form.high_temp_charging_test.label }}</label>
+                    {{ form.high_temp_charging_test|attr:"required" }}
+                    {% if form.high_temp_charging_test.errors %}
+                        <div class="error-message">{{ form.high_temp_charging_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.high_temp_camera_test.id_for_label }}">{{ form.high_temp_camera_test.label }}</label>
+                    {{ form.high_temp_camera_test|attr:"required" }}
+                    {% if form.high_temp_camera_test.errors %}
+                        <div class="error-message">{{ form.high_temp_camera_test.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.high_temp_camera_test_evidence.id_for_label }}">{{ form.high_temp_camera_test_evidence.label }}</label>
+                    {{ form.high_temp_camera_test_evidence|attr:"required" }}
+                    {% if form.high_temp_camera_test_evidence.errors %}
+                        <div class="error-message">{{ form.high_temp_camera_test_evidence.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 6: Final Results (Updated) -->
+        <div class="form-section" id="step6-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-red-100">
+                        <i class="fas fa-clipboard-check text-red-600"></i>
+                    </div>
+                    Final Inspection Results
+                </h2>
+                <div class="step-circle">6</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.shutdown_test.id_for_label }}">{{ form.shutdown_test.label }}</label>
+                    {{ form.shutdown_test|attr:"required" }}
+                    {% if form.shutdown_test.errors %}<div class="error-message">{{ form.shutdown_test.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.sample_serial_number.id_for_label }}">{{ form.sample_serial_number.label }}</label>
+                    {{ form.sample_serial_number|attr:"required" }}
+                    {% if form.sample_serial_number.errors %}<div class="error-message">{{ form.sample_serial_number.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.imei_number.id_for_label }}">{{ form.imei_number.label }}</label>
+                    {{ form.imei_number|attr:"required" }}
+                    {% if form.imei_number.errors %}<div class="error-message">{{ form.imei_number.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.imei_photo.id_for_label }}">{{ form.imei_photo.label }}</label>
+                    {{ form.imei_photo|attr:"required" }}
+                    {% if form.imei_photo.errors %}<div class="error-message">{{ form.imei_photo.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.visual_functional_result.id_for_label }}">{{ form.visual_functional_result.label }}</label>
+                    {{ form.visual_functional_result|attr:"required" }}
+                    {% if form.visual_functional_result.errors %}<div class="error-message">{{ form.visual_functional_result.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.reliability_result.id_for_label }}">{{ form.reliability_result.label }}</label>
+                    {{ form.reliability_result|attr:"required" }}
+                    {% if form.reliability_result.errors %}<div class="error-message">{{ form.reliability_result.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.inspector_name.id_for_label }}">{{ form.inspector_name.label }}</label>
+                    {{ form.inspector_name|attr:"readonly" }}
+                    {% if form.inspector_name.errors %}<div class="error-message">{{ form.inspector_name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.remarks.id_for_label }}">{{ form.remarks.label }}</label>
+                    {{ form.remarks }}
+                    {% if form.remarks.errors %}<div class="error-message">{{ form.remarks.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-content">
+            <div class="progress-text">
+                Section <span id="currentSection">1</span> of 6
+            </div>
+            <div class="nav-buttons">
+                <button type="button" onclick="previousStep()" id="prev-btn" class="nav-btn nav-btn-secondary" disabled>
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button type="button" onclick="nextStep()" id="next-btn" class="nav-btn nav-btn-primary">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" form="ipqcForm" id="submit-btn" class="nav-btn nav-btn-success" disabled>
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStep = 1; 
+const totalSteps = 6;
+
+function updateStepIndicator() {
+    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById('progressLine').style.width = progressPercentage + '%';
+    document.getElementById('currentStep').textContent = currentStep;
+    document.getElementById('currentSection').textContent = currentStep;
+    
+    for (let i = 1; i <= totalSteps; i++) {
+        const stepCircle = document.getElementById(`step${i}`); 
+        const stepContent = document.getElementById(`step${i}-content`);
+        
+        if (stepCircle) { 
+            stepCircle.classList.remove('active', 'completed');
+            if (i < currentStep) { 
+                stepCircle.classList.add('completed'); 
+                stepCircle.innerHTML = '✓'; 
+            }
+            else if (i === currentStep) { 
+                stepCircle.classList.add('active'); 
+                stepCircle.innerHTML = i; 
+            }
+            else { 
+                stepCircle.innerHTML = i; 
+            }
+        }
+        
+        if (stepContent) { 
+            stepContent.style.display = i === currentStep ? 'block' : 'none'; 
+        }
+    }
+    
+    document.getElementById('prev-btn').disabled = currentStep === 1;
+    document.getElementById('next-btn').disabled = currentStep === totalSteps;
+    document.getElementById('submit-btn').disabled = currentStep !== totalSteps;
+    
+    document.querySelector('.audit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function goToStep(step) { 
+    if (step >= 1 && step <= totalSteps) { 
+        currentStep = step; 
+        updateStepIndicator(); 
+    } 
+}
+
+function nextStep() { 
+    if (currentStep < totalSteps) { 
+        currentStep++; 
+        updateStepIndicator(); 
+    } 
+}
+
+function previousStep() { 
+    if (currentStep > 1) { 
+        currentStep--; 
+        updateStepIndicator(); 
+    } 
+}
+
+function validateForm() {
+    // Clear previous validation styles and messages
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    const existingErrorDiv = document.getElementById('form-validation-error');
+    if (existingErrorDiv) {
+        existingErrorDiv.remove();
+    }
+
+    // 1. Validate required fields, step by step
+    for (let step = 1; step <= totalSteps; step++) {
+        const currentStepDiv = document.getElementById(`step${step}-content`);
+        if (!currentStepDiv) continue;
+
+        let stepHasError = false;
+        const requiredFields = currentStepDiv.querySelectorAll('input[required], select[required], textarea[required]');
+
+        for (const field of requiredFields) {
+            // Skip readonly fields as they are pre-filled
+            if (field.hasAttribute('readonly')) {
+                continue;
+            }
+            
+            let isEmpty = false;
+            if (field.type === 'file') {
+                isEmpty = !field.files || field.files.length === 0;
+            } else { // Covers text, number, select, textarea
+                isEmpty = !field.value || field.value.trim() === '';
+            }
+
+            if (isEmpty) {
+                field.classList.add('is-invalid');
+                stepHasError = true;
+            }
+        }
+
+        // If the current step has any errors, jump to it and stop validation
+        if (stepHasError) {
+            const stepName = document.querySelector(`#step${step}-content .section-title`).textContent.trim();
+            const errorMessage = `Error in Step ${step}: Please fill in all required fields marked in red.`;
+            
+            let errorDiv = document.createElement('div'); 
+            errorDiv.id = 'form-validation-error';
+            errorDiv.className = 'alert alert-danger'; 
+            document.querySelector('.audit-form').insertBefore(
+                errorDiv, 
+                document.querySelector('.step-indicator')
+            );
+            errorDiv.innerHTML = `<strong>${errorMessage}</strong>`; 
+            
+            goToStep(step);
+            return false; // Stop form submission
+        }
+    }
+
+    // 2. If all required fields are filled, check for "Not OK" evidence
+    const selectFields = document.querySelectorAll('select[name]');
+    let hasNotOk = false;
+    
+    selectFields.forEach(select => { 
+        if (select.value === 'Not OK') { 
+            hasNotOk = true; 
+        } 
+    });
+    
+    if (hasNotOk) {
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        let hasPhoto = false;
+        
+        fileInputs.forEach(input => { 
+            if (input.files && input.files.length > 0) { 
+                hasPhoto = true; 
+            } 
+        });
+        
+        if (!hasPhoto) {
+            const errorMessage = 'Validation Error: One or more checks are marked "Not OK". Please provide photo evidence for these checks.'; 
+            let errorDiv = document.createElement('div'); 
+            errorDiv.id = 'form-validation-error';
+            errorDiv.className = 'alert alert-danger'; 
+            document.querySelector('.audit-form').insertBefore(
+                errorDiv, 
+                document.querySelector('.step-indicator')
+            );
+            errorDiv.innerHTML = `<strong>${errorMessage}</strong>`; 
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return false; // Stop form submission
+        }
+    }
+
+    // If all validations pass
+    return true; 
+}
+
+
+// New function to copy the public URL
+function copyPublicUrl() {
+    const urlText = document.getElementById('publicUrl').innerText;
+    navigator.clipboard.writeText(urlText).then(() => {
+        // You can add a small notification here if you want
+        alert('Public URL copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy URL: ', err);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() { 
+    updateStepIndicator(); 
+});
+</script>
+{% endblock content %}

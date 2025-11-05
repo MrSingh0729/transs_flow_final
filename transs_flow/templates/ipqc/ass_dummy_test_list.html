@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ass Dummy Test List{% endblock title %}
+
+{% block content %}
+<div class="pc-container">
+    <div class="pc-content">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="card-title mb-0">All Ass Dummy Tests</h4>
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Display Django messages -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <div class="table-responsive mt-3">
+                            <table class="table table-bordered table-hover table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Shift</th>
+                                        <th>Emp ID</th>
+                                        <th>Name</th>
+                                        <th>Area</th>
+                                        <th>Section</th>
+                                        <th>Line</th>
+                                        <th>Group</th>
+                                        <th>Model</th>
+                                        <th>Color</th>
+                                        <th>Test Stage</th>
+                                        <th>Test Item</th>
+                                        <th>Operator Name</th>
+                                        <th>Operator ID</th>
+                                        <th>Result</th>
+                                        <th>Cause</th>
+                                        <th>Measure</th>
+                                        <th>LL Confirm</th>
+                                        <th>Remark</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for test in tests %}
+                                        <tr>
+                                            <td>{{ test.date }}</td>
+                                            <td>{{ test.shift }}</td>
+                                            <td>{{ test.emp_id }}</td>
+                                            <td>{{ test.name }}</td>
+                                            <td>{{ test.area }}</td>
+                                            <td>{{ test.section }}</td>
+                                            <td>{{ test.line }}</td>
+                                            <td>{{ test.group }}</td>
+                                            <td>{{ test.model }}</td>
+                                            <td>{{ test.color }}</td>
+                                            <td>{{ test.test_stage }}</td>
+                                            <td>{{ test.test_item }}</td>
+                                            <td>{{ test.operator_name }}</td>
+                                            <td>{{ test.operator_id }}</td>
+                                            <td>{{ test.result }}</td>
+                                            <td>{{ test.cause }}</td>
+                                            <td>{{ test.measure }}</td>
+                                            <td>{{ test.ll_confirm }}</td>
+                                            <td>{{ test.remark }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="19" class="text-center">No records found.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    // Bootstrap tooltip initialization if needed
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock extra_js %}

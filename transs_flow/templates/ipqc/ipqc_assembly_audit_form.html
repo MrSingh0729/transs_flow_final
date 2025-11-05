@@ -1,0 +1,1357 @@
+{% extends 'base.html' %}
+
+{% block title %}Assembly Audit - IPQC{% endblock %}
+
+{% block content %}
+<style>
+/* Clean form styles */
+.audit-form {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+    width: 100%;
+}
+
+/* Step indicator */
+.step-indicator {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow-x: auto;
+}
+
+.step-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    position: relative;
+    min-width: 600px; /* Ensure minimum width for proper display */
+}
+
+.step-progress::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+}
+
+.step-progress-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 2px;
+    background: var(--primary);
+    z-index: 1;
+    transition: width 0.3s ease;
+    transform: translateY(-50%);
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-light);
+    transition: all 0.3s ease;
+}
+
+.step-circle.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+}
+
+.step-circle.completed {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.step-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Form sections */
+.form-section {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.form-section:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.section-title i {
+    font-size: 20px;
+}
+
+.section-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.form-grid {
+    display: grid;
+    gap: 16px;
+    width: 100%;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    word-wrap: break-word;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.form-group input[readonly] {
+    background: var(--bg-secondary);
+    cursor: not-allowed;
+    color: var(--text-secondary);
+}
+
+.form-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    padding-right: 44px;
+    appearance: none;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.status-select {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.status-select[value="OK"] {
+    border-color: var(--success);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.status-select[value="NOT_OK"] {
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.status-select[value="NA"] {
+    border-color: var(--text-light);
+    background: rgba(100, 116, 139, 0.05);
+}
+
+/* Remark field */
+.remark-container {
+    margin-top: 10px;
+    width: 100%;
+}
+
+.remark-toggle {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    max-width: 100%;
+}
+
+.remark-toggle:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.remark-field {
+    margin-top: 8px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.remark-field.show {
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Bottom navigation */
+.bottom-nav {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 16px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+    margin-top: 30px;
+    overflow-x: hidden;
+}
+
+.nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.nav-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.nav-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 80px;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.nav-btn-secondary {
+    background: white;
+    color: var(--text-secondary);
+    border: 2px solid var(--border);
+}
+
+.nav-btn-secondary:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.nav-btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.nav-btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
+.nav-btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.nav-btn-success:hover:not(:disabled) {
+    background: #16a34a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* Loading state */
+.loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Alert styles */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    flex-wrap: wrap;
+}
+
+.alert-success {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.alert-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Desktop styles */
+@media (min-width: 768px) {
+    .audit-form {
+        padding: 20px;
+    }
+    
+    .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .form-section {
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .section-header {
+        flex-wrap: nowrap;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+    }
+    
+    .section-title {
+        font-size: 20px;
+    }
+    
+    .section-title i {
+        font-size: 24px;
+    }
+    
+    .section-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .form-group label {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 12px 16px;
+        font-size: 15px;
+    }
+    
+    .form-group textarea {
+        min-height: 100px;
+    }
+    
+    .nav-content {
+        flex-wrap: nowrap;
+        gap: 20px;
+    }
+    
+    .nav-buttons {
+        gap: 12px;
+        flex: none;
+        width: auto;
+    }
+    
+    .nav-btn {
+        flex: none;
+        min-width: auto;
+        max-width: none;
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    .step-indicator {
+        padding: 20px;
+        margin-bottom: 24px;
+        overflow-x: visible;
+    }
+    
+    .step-progress {
+        min-width: auto;
+    }
+    
+    .step-label {
+        font-size: 12px;
+        margin-top: 8px;
+    }
+    
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+    }
+}
+
+/* Small mobile adjustments */
+@media (max-width: 480px) {
+    .audit-form {
+        padding: 12px 8px;
+    }
+    
+    .form-section {
+        padding: 16px 12px;
+        margin-bottom: 16px;
+    }
+    
+    .section-header {
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+        gap: 8px;
+    }
+    
+    .section-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    .bottom-nav {
+        padding: 12px 8px;
+    }
+    
+    .nav-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-width: 70px;
+    }
+    
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+    
+    .step-label {
+        font-size: 10px;
+        margin-top: 4px;
+    }
+}
+
+/* Touch optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .nav-btn {
+        min-height: 44px;
+    }
+    
+    .remark-toggle {
+        min-height: 44px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        min-height: 44px;
+    }
+}
+
+/* Ensure no horizontal overflow */
+body {
+    overflow-x: hidden;
+}
+
+html {
+    overflow-x: hidden;
+}
+
+main {
+    overflow-x: hidden;
+}
+
+/* Fix iOS Safari viewport issue */
+@supports (-webkit-touch-callout: none) {
+    .audit-form {
+        width: 100%;
+        max-width: 100vw;
+    }
+}
+</style>
+
+<div class="audit-form">
+    <!-- Step Progress Indicator -->
+    <div class="step-indicator">
+        <div class="step-progress">
+            <div class="step-progress-line" id="progressLine" style="width: 0%;"></div>
+            <div class="step-item" onclick="goToStep(1)">
+                <div class="step-circle active" id="step1">1</div>
+                <div class="step-label">Basic</div>
+            </div>
+            <div class="step-item" onclick="goToStep(2)">
+                <div class="step-circle" id="step2">2</div>
+                <div class="step-label">Manual</div>
+            </div>
+            <div class="step-item" onclick="goToStep(3)">
+                <div class="step-circle" id="step3">3</div>
+                <div class="step-label">Machine</div>
+            </div>
+            <div class="step-item" onclick="goToStep(4)">
+                <div class="step-circle" id="step4">4</div>
+                <div class="step-label">Material</div>
+            </div>
+            <div class="step-item" onclick="goToStep(5)">
+                <div class="step-circle" id="step5">5</div>
+                <div class="step-label">Method</div>
+            </div>
+            <div class="step-item" onclick="goToStep(6)">
+                <div class="step-circle" id="step6">6</div>
+                <div class="step-label">Environment</div>
+            </div>
+            <div class="step-item" onclick="goToStep(7)">
+                <div class="step-circle" id="step7">7</div>
+                <div class="step-label">Monitor</div>
+            </div>
+        </div>
+        <div class="progress-text">Step <span id="currentStep">1</span> of 7</div>
+    </div>
+
+    <!-- Form Container -->
+    <form method="post" id="auditForm">
+        {% csrf_token %}
+        
+        <!-- Step 1: Basic Information -->
+        <div class="form-section" id="step1-content">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-sky-100">
+                        <i class="fas fa-info-circle text-sky-600"></i>
+                    </div>
+                    Basic Information
+                </h2>
+                <div class="step-circle active">1</div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" name="date" id="date" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="shift">Shift</label>
+                    <input type="text" name="shift" id="shift" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="model">Model</label>
+                    <input type="text" name="model" id="model" value="{{ form.model.value|default:'--' }}" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="emp_id">Employee ID</label>
+                    <input type="text" name="emp_id" id="emp_id" readonly>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step 2: Manual -->
+        <div class="form-section" id="step2-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-green-100">
+                        <i class="fas fa-user-tie text-green-600"></i>
+                    </div>
+                    MAN (Manual)
+                </h2>
+                <div class="step-circle">2</div>
+            </div>
+            
+            <div class="form-grid">
+                {% for field, remark_field in man_fields %}
+                    <div class="form-group">
+                        <label>{{ field.label }}</label>
+                        <select name="{{ field.html_name }}" class="status-select">
+                            <option value="">Select</option>
+                            <option value="OK" {% if field.value == 'OK' %}selected{% endif %}>OK</option>
+                            <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
+                            <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
+                        </select>
+                        
+                        <div class="remark-container">
+                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
+                                    class="remark-toggle">
+                                <i class="fas fa-comment-alt"></i>
+                                Add Remark
+                            </button>
+                            
+                            <div class="remark-field" id="remark_{{ field.html_name }}">
+                                <textarea name="remark_{{ field.html_name }}" rows="3"
+                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Step 3: Machine -->
+        <div class="form-section" id="step3-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-orange-100">
+                        <i class="fas fa-cogs text-orange-600"></i>
+                    </div>
+                    MACHINE
+                </h2>
+                <div class="step-circle">3</div>
+            </div>
+            
+            <div class="form-grid">
+                {% for field, remark_field in machine_fields %}
+                    <div class="form-group">
+                        <label>{{ field.label }}</label>
+                        <select name="{{ field.html_name }}" class="status-select">
+                            <option value="">Select</option>
+                            <option value="OK" {% if field.value == 'OK' %}selected{% endif %}>OK</option>
+                            <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
+                            <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
+                        </select>
+                        
+                        <div class="remark-container">
+                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
+                                    class="remark-toggle">
+                                <i class="fas fa-comment-alt"></i>
+                                Add Remark
+                            </button>
+                            
+                            <div class="remark-field" id="remark_{{ field.html_name }}">
+                                <textarea name="remark_{{ field.html_name }}" rows="3"
+                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Step 4: Material -->
+        <div class="form-section" id="step4-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-pink-100">
+                        <i class="fas fa-box text-pink-600"></i>
+                    </div>
+                    MATERIAL
+                </h2>
+                <div class="step-circle">4</div>
+            </div>
+            
+            <div class="form-grid">
+                {% for field, remark_field in material_fields %}
+                    <div class="form-group">
+                        <label>{{ field.label }}</label>
+                        <select name="{{ field.html_name }}" class="status-select">
+                            <option value="">Select</option>
+                            <option value="OK" {% if field.value == 'OK' %}selected{% endif %}>OK</option>
+                            <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
+                            <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
+                        </select>
+                        
+                        <div class="remark-container">
+                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
+                                    class="remark-toggle">
+                                <i class="fas fa-comment-alt"></i>
+                                Add Remark
+                            </button>
+                            
+                            <div class="remark-field" id="remark_{{ field.html_name }}">
+                                <textarea name="remark_{{ field.html_name }}" rows="3"
+                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Step 5: Method -->
+        <div class="form-section" id="step5-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-yellow-100">
+                        <i class="fas fa-list-ol text-yellow-600"></i>
+                    </div>
+                    METHOD
+                </h2>
+                <div class="step-circle">5</div>
+            </div>
+            
+            <div class="form-grid">
+                {% for field, remark_field in method_fields %}
+                    <div class="form-group">
+                        <label>{{ field.label }}</label>
+                        <select name="{{ field.html_name }}" class="status-select">
+                            <option value="">Select</option>
+                            <option value="OK" {% if field.value == 'OK' %}selected{% endif %}>OK</option>
+                            <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
+                            <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
+                        </select>
+                        
+                        <div class="remark-container">
+                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
+                                    class="remark-toggle">
+                                <i class="fas fa-comment-alt"></i>
+                                Add Remark
+                            </button>
+                            
+                            <div class="remark-field" id="remark_{{ field.html_name }}">
+                                <textarea name="remark_{{ field.html_name }}" rows="3"
+                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Step 6: Environment -->
+        <div class="form-section" id="step6-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-blue-100">
+                        <i class="fas fa-leaf text-blue-600"></i>
+                    </div>
+                    ENVIRONMENT
+                </h2>
+                <div class="step-circle">6</div>
+            </div>
+            
+            <div class="form-grid">
+                {% for field, remark_field in environment_fields %}
+                    <div class="form-group">
+                        <label>{{ field.label }}</label>
+                        <select name="{{ field.html_name }}" class="status-select">
+                            <option value="">Select</option>
+                            <option value="OK" {% if field.value == 'OK' %}selected{% endif %}>OK</option>
+                            <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
+                            <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
+                        </select>
+                        
+                        <div class="remark-container">
+                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
+                                    class="remark-toggle">
+                                <i class="fas fa-comment-alt"></i>
+                                Add Remark
+                            </button>
+                            
+                            <div class="remark-field" id="remark_{{ field.html_name }}">
+                                <textarea name="remark_{{ field.html_name }}" rows="3"
+                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Step 7: TRC/FAI/DEFECT MONITOR -->
+        <div class="form-section" id="step7-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-red-100">
+                        <i class="fas fa-search text-red-600"></i>
+                    </div>
+                    TRC/FAI/DEFECT MONITOR
+                </h2>
+                <div class="step-circle">7</div>
+            </div>
+            
+            <div class="form-grid">
+                {% for field, remark_field in trc_fields %}
+                    <div class="form-group">
+                        <label>{{ field.label }}</label>
+                        <select name="{{ field.html_name }}" class="status-select">
+                            <option value="">Select</option>
+                            <option value="OK" {% if field.value == 'OK' %}selected{% endif %}>OK</option>
+                            <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
+                            <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
+                        </select>
+                        
+                        <div class="remark-container">
+                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
+                                    class="remark-toggle">
+                                <i class="fas fa-comment-alt"></i>
+                                Add Remark
+                            </button>
+                            
+                            <div class="remark-field" id="remark_{{ field.html_name }}">
+                                <textarea name="remark_{{ field.html_name }}" rows="3"
+                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- General Remarks -->
+        <div class="form-section" id="general-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-purple-100">
+                        <i class="fas fa-sticky-note text-purple-600"></i>
+                    </div>
+                    General Remarks
+                </h2>
+                <div class="step-circle active">✓</div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="top3_defects">Top 3 Defects</label>
+                    <textarea name="top3_defects" rows="4" id="top3_defects"
+                              placeholder="List top 3 defects found...">{{ form.top3_defects.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="ipqc_sign">IPQC Signature</label>
+                    <input type="text" name="ipqc_sign" id="ipqc_sign" 
+                           placeholder="Enter your name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="pqe_tl_sign">PQE/TL Signature</label>
+                    <input type="text" name="pqe_tl_sign" id="pqe_tl_sign" 
+                           placeholder="Enter PQE/TL name">
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-content">
+            <div class="nav-info">
+                <div class="progress-text">Section <span id="currentSection">1</span> of 7</div>
+            </div>
+            <div class="nav-buttons">
+                <button type="button" onclick="previousStep()" id="prev-btn" class="nav-btn nav-btn-secondary" disabled>
+                    <i class="fas fa-arrow-left"></i>
+                    Previous
+                </button>
+                <button type="button" onclick="nextStep()" id="next-btn" class="nav-btn nav-btn-primary">
+                    Next
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="button" onclick="submitForm()" id="complete-btn" class="nav-btn nav-btn-success" disabled>
+                    <i class="fas fa-check"></i>
+                    Complete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStep = 1;
+let totalSteps = 7;
+let formSubmitted = false;
+
+// Set current date and shift on page load
+function setInitialValues() {
+    // Set today's date
+    const today = new Date();
+    const dateStr = today.getFullYear() + '-' + 
+                   String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(today.getDate()).padStart(2, '0');
+    document.getElementById('date').value = dateStr;
+    
+    // Determine shift based on time
+    const hour = today.getHours();
+    let shift = 'General';
+    if (hour >= 6 && hour < 14) {
+        shift = 'Morning';
+    } else if (hour >= 14 && hour < 22) {
+        shift = 'Evening';
+    } else {
+        shift = 'Night';
+    }
+    document.getElementById('shift').value = shift;
+    
+    // Try to get user info from Django context (if available)
+    // Fallback to browser localStorage or session storage
+    let userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
+    let empId = localStorage.getItem('empId') || sessionStorage.getItem('empId');
+    
+    // If no user info stored, try to get it from Django user data
+    if (!userName) {
+        // Try to get from meta tags or hidden fields if Django sets them
+        const userNameMeta = document.querySelector('meta[name="user-name"]');
+        const empIdMeta = document.querySelector('meta[name="emp-id"]');
+        
+        if (userNameMeta) {
+            userName = userNameMeta.getAttribute('content');
+        }
+        if (empIdMeta) {
+            empId = empIdMeta.getAttribute('content');
+        }
+    }
+    
+    // Set employee ID and signature fields
+    if (empId) {
+        document.getElementById('emp_id').value = empId;
+    }
+    if (userName) {
+        document.getElementById('ipqc_sign').value = userName;
+        document.getElementById('pqe_tl_sign').value = userName;
+    }
+    
+    // If still no user info, set placeholder to indicate manual entry needed
+    if (!userName) {
+        document.getElementById('ipqc_sign').placeholder = 'Please enter your name';
+        document.getElementById('pqe_tl_sign').placeholder = 'Please enter PQE/TL name';
+    }
+}
+
+// Update step indicator and progress
+function updateStepIndicator() {
+    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById('progressLine').style.width = progressPercentage + '%';
+    document.getElementById('currentStep').textContent = currentStep;
+    document.getElementById('currentSection').textContent = currentStep;
+    
+    // Update all step circles
+    for (let i = 1; i <= totalSteps; i++) {
+        const stepCircle = document.getElementById(`step${i}`);
+        const stepContent = document.getElementById(`step${i}-content`);
+        
+        if (stepCircle) {
+            stepCircle.classList.remove('active', 'completed');
+            if (i < currentStep) {
+                stepCircle.classList.add('completed');
+                stepCircle.innerHTML = '✓';
+            } else if (i === currentStep) {
+                stepCircle.classList.add('active');
+                stepCircle.innerHTML = i;
+            } else {
+                stepCircle.innerHTML = i;
+            }
+        }
+        
+        if (stepContent) {
+            stepContent.style.display = i === currentStep ? 'block' : 'none';
+        }
+    }
+    
+    // Show general remarks on last step
+    const generalContent = document.getElementById('general-content');
+    if (currentStep === totalSteps) {
+        generalContent.style.display = 'block';
+    } else {
+        generalContent.style.display = 'none';
+    }
+    
+    // Update navigation buttons
+    document.getElementById('prev-btn').disabled = currentStep === 1;
+    document.getElementById('next-btn').disabled = currentStep === totalSteps;
+    document.getElementById('complete-btn').disabled = currentStep !== totalSteps;
+    
+    // Scroll to top smoothly
+    if (window.innerWidth <= 768) {
+        // Better scroll behavior for mobile
+        const formSection = document.querySelector('.form-section:not([style*="display: none"])');
+        if (formSection) {
+            formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+// Navigate to specific step
+function goToStep(step) {
+    if (step >= 1 && step <= totalSteps && !formSubmitted) {
+        currentStep = step;
+        updateStepIndicator();
+    }
+}
+
+// Navigation functions
+function nextStep() {
+    if (currentStep < totalSteps && !formSubmitted) {
+        currentStep++;
+        updateStepIndicator();
+    }
+}
+
+function previousStep() {
+    if (currentStep > 1 && !formSubmitted) {
+        currentStep--;
+        updateStepIndicator();
+    }
+}
+
+// Toggle remark field
+function toggleRemark(fieldName) {
+    const remarkField = document.getElementById(`remark_${fieldName}`);
+    const toggleBtn = remarkField.previousElementSibling;
+    
+    if (remarkField.classList.contains('show')) {
+        remarkField.classList.remove('show');
+        toggleBtn.innerHTML = '<i class="fas fa-comment-alt"></i> Add Remark';
+    } else {
+        remarkField.classList.add('show');
+        toggleBtn.innerHTML = '<i class="fas fa-comment-times"></i> Hide Remark';
+        remarkField.querySelector('textarea').focus();
+    }
+}
+
+// Form validation
+function validateStep(step) {
+    const stepContent = document.getElementById(`step${step}-content`);
+    if (!stepContent) return true;
+    
+    const selects = stepContent.querySelectorAll('.status-select');
+    let isValid = true;
+    
+    selects.forEach(select => {
+        if (!select.value) {
+            select.style.borderColor = 'var(--danger)';
+            isValid = false;
+        } else {
+            select.style.borderColor = '';
+        }
+    });
+    
+    return isValid;
+}
+
+// Submit form
+function submitForm() {
+    if (formSubmitted) return;
+    
+    // Validate all steps before submission
+    for (let i = 1; i <= totalSteps; i++) {
+        if (!validateStep(i)) {
+            currentStep = i;
+            updateStepIndicator();
+            showAlert('Please complete all required fields before submitting.', 'error');
+            return;
+        }
+    }
+    
+    formSubmitted = true;
+    const completeBtn = document.getElementById('complete-btn');
+    
+    // Show loading state
+    completeBtn.innerHTML = '<div class="loading"><div class="spinner"></div> Submitting...</div>';
+    completeBtn.disabled = true;
+    
+    // Get form data
+    const form = document.getElementById('auditForm');
+    const formData = new FormData(form);
+    
+    // Submit via fetch
+    fetch(form.action || window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            completeBtn.innerHTML = '<i class="fas fa-check"></i> Submitted!';
+            showAlert('Audit submitted successfully!', 'success');
+            
+            setTimeout(() => {
+                window.location.href = data.redirect || '/ipqc/audit/list/';
+            }, 1500);
+        } else {
+            formSubmitted = false;
+            completeBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Try Again';
+            completeBtn.disabled = false;
+            showAlert(data.message || 'Submission failed. Please try again.', 'error');
+        }
+    })
+    .catch(error => {
+        formSubmitted = false;
+        completeBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Try Again';
+        completeBtn.disabled = false;
+        console.error('Submit error:', error);
+        showAlert('Network error. Please try again.', 'error');
+    });
+}
+
+// Show alert message
+function showAlert(message, type) {
+    // Remove existing alerts
+    const existingAlert = document.querySelector('.alert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+    
+    // Create new alert
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+        ${message}
+    `;
+    
+    // Insert at top of form
+    const form = document.querySelector('.audit-form');
+    form.insertBefore(alert, form.firstChild);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentElement) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Get CSRF token
+function getCookie(name) {
+    const cookieValue = document.cookie
+        .split(';')
+        .find(row => row.trim().startsWith(name + '='));
+    if (cookieValue) {
+        return decodeURIComponent(cookieValue.split('=')[1]);
+    }
+    return '';
+}
+
+// Auto-save draft
+let autoSaveTimer;
+function autoSave() {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+        const form = document.getElementById('auditForm');
+        if (form) {
+            const formData = new FormData(form);
+            const data = {};
+            
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            localStorage.setItem('auditFormDraft', JSON.stringify({
+                step: currentStep,
+                data: data,
+                timestamp: new Date().toISOString()
+            }));
+        }
+    }, 2000);
+}
+
+// Restore draft
+function restoreDraft() {
+    const draft = localStorage.getItem('auditFormDraft');
+    if (draft) {
+        const parsed = JSON.parse(draft);
+        const hoursSinceSave = (new Date() - new Date(parsed.timestamp)) / (1000 * 60 * 60);
+        
+        if (hoursSinceSave < 24) {
+            // Restore form data
+            Object.entries(parsed.data).forEach(([key, value]) => {
+                const field = document.querySelector(`[name="${key}"]`);
+                if (field) {
+                    field.value = value;
+                }
+            });
+            
+            // Restore step
+            if (parsed.step && parsed.step >= 1 && parsed.step <= totalSteps) {
+                currentStep = parsed.step;
+            }
+        }
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing form...');
+    setInitialValues();
+    restoreDraft();
+    updateStepIndicator();
+    
+    // Add change listeners for auto-save
+    document.addEventListener('change', autoSave);
+    
+    // Add change listeners for status selects
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('status-select')) {
+            // Update select appearance based on value
+            e.target.classList.remove('status-ok', 'status-not-ok', 'status-na');
+            if (e.target.value === 'OK') {
+                e.target.classList.add('status-ok');
+            } else if (e.target.value === 'NOT_OK') {
+                e.target.classList.add('status-not-ok');
+            }
+        }
+    });
+    
+    console.log('Form initialized successfully');
+});
+
+// Prevent accidental navigation
+window.addEventListener('beforeunload', function(e) {
+    if (!formSubmitted && document.querySelector('.status-select[value]')) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+    }
+});
+</script>
+{% endblock %}

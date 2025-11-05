@@ -1,0 +1,419 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}  <!-- 加载自定义过滤器 -->
+{% block title %}Add IPQC Disassemble Checklist{% endblock %}
+{% block content %}
+<style>
+/* Style Variables - Define these or link to a stylesheet that has them */
+:root {
+    --primary: #0284c7;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --border: #e5e7eb;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-light: #9ca3af;
+    --bg-secondary: #f9fafb;
+}
+
+.audit-form { max-width: 1200px; margin: 0 auto; padding: 16px; width: 100%; }
+.step-indicator { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto; }
+.step-progress { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; position: relative; min-width: 800px; }
+.step-progress::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: var(--border); z-index: 0; }
+.step-progress-line { position: absolute; top: 50%; left: 0; height: 2px; background: var(--primary); z-index: 1; transition: width 0.3s ease; transform: translateY(-50%); }
+.step-item { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; cursor: pointer; flex-shrink: 0; }
+.step-circle { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--border); background: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--text-light); transition: all 0.3s ease; }
+.step-circle.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); }
+.step-circle.completed { background: var(--success); color: white; border-color: var(--success); }
+.step-label { font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 6px; font-weight: 500; white-space: nowrap; }
+.form-section { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 20px 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.section-title { font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+.section-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.form-grid { display: grid; gap: 16px; width: 100%; }
+.form-group { display: flex; flex-direction: column; width: 100%; }
+.form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background: white; border: 2px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; transition: all 0.2s ease; font-family: inherit; box-sizing: border-box; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
+.form-group input[readonly] { background: var(--bg-secondary); cursor: not-allowed; color: var(--text-secondary); }
+.status-select { border-radius: 8px; font-weight: 500; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px; padding-right: 44px; appearance: none; }
+.status-select[value="OK"] { border-color: var(--success); background-color: rgba(34, 197, 94, 0.05); }
+.status-select[value="Not OK"] { border-color: var(--danger); background-color: rgba(239, 68, 68, 0.05); }
+.status-select[value="NA"] { border-color: var(--text-light); background-color: rgba(100, 116, 139, 0.05); }
+.form-group textarea { resize: vertical; min-height: 80px; }
+.bottom-nav { position: sticky; bottom: 0; background: white; border-top: 1px solid var(--border); padding: 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.05); }
+.nav-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.progress-text { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
+.nav-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.nav-btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 80px; }
+.nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.nav-btn-secondary { background: white; color: var(--text-secondary); border: 2px solid var(--border); }
+.nav-btn-primary { background: var(--primary); color: white; }
+.nav-btn-success { background: var(--success); color: white; }
+.error-message { color: var(--danger); font-size: 12px; margin-top: 4px; }
+.alert { padding: 12px 16px; margin-bottom: 20px; border-radius: 8px; border: 1px solid transparent; }
+.alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+.alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+.alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeaa7; }
+@media (min-width: 768px) {
+    .form-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .form-section { padding: 24px; margin-bottom: 24px; }
+    .section-title { font-size: 20px; }
+}
+</style>
+
+<!-- Form Validation Messages -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Form Errors Display -->
+{% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        <strong>Error:</strong>
+        <ul>
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<div class="audit-form">
+    <!-- Step Progress Indicator -->
+    <div class="step-indicator">
+        <div class="step-progress">
+            <div class="step-progress-line" id="progressLine" style="width: 0%;"></div>
+            <div class="step-item" onclick="goToStep(1)"><div class="step-circle active" id="step1">1</div><div class="step-label">Basic Info</div></div>
+            <div class="step-item" onclick="goToStep(2)"><div class="step-circle" id="step2">2</div><div class="step-label">Appearance</div></div>
+            <div class="step-item" onclick="goToStep(3)"><div class="step-circle" id="step3">3</div><span class="step-label">Assembly</span></div>
+            <div class="step-item" onclick="goToStep(4)"><div class="step-circle" id="step4">4</div><div class="step-label">Photos</div></div>
+            <div class="step-item" onclick="goToStep(5)"><div class="step-circle" id="step5">5</div><div class="step-label">Glue</div></div>
+            <div class="step-item" onclick="goToStep(6)"><div class="step-circle" id="step6">6</div><div class="step-label">Final</div></div>
+        </div>
+        <div class="progress-text">Step <span id="currentStep">1</span> of 6</div>
+    </div>
+
+    <!-- Define field groups - 重新定义字段分组，确保照片字段只在Photo Evidence步骤 -->
+    {% with basic_fields="date shift emp_id name section line group model color"|split %}
+    {% with appearance_fields="color_match cam_lens_assembly cam_lens_cleanliness key_feel key_alignment screw_missing screw_loose screw_spec front_housing_damage back_housing_damage housing_snap_fit proof_label_position"|split %}
+    {% with assembly_fields="tp_sop mic_solder led_solder lcd_stick speaker_solder motor_solder key_solder sim_subboard_solder subboard_solder camera_solder receiver_solder"|split %}
+    {% with component_fields="coaxial_line antenna_shrapnel antenna_fpc conductive_fabric insulation_paste ins_paste_cover lcd_fpc_defect tp_fpc_defect key_fpc_solder keypad_defect mainboard_component_ok solder_splash foam_stick cam_glue led_position"|split %}
+    {% with glue_fields="jig_fixture_test glue_location glue_weight_1 glue_weight_2 glue_weight_3"|split %}
+    {% with photo_fields="color_match_photo cam_lens_photo key_photo screw_photo housing_photo proof_label_photo assembly_overview_photo defect_photo"|split %}
+
+    <!-- Form Container -->
+    <form method="post" id="ipqcForm" enctype="multipart/form-data" onsubmit="return validateForm()">
+        {% csrf_token %}
+
+        <!-- Step 1: Basic Information -->
+        <div class="form-section" id="step1-content">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-sky-100"><i class="fas fa-info-circle text-sky-600"></i></div>Basic Information</h2>
+                <div class="step-circle active">1</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in basic_fields %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="error-message">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 2: Appearance / Assembly Quality (只包含选择字段，不包含照片字段) -->
+        <div class="form-section" id="step2-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-green-100"><i class="fas fa-eye text-green-600"></i></div>Appearance / Assembly Quality</h2>
+                <div class="step-circle">2</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in appearance_fields %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="error-message">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 3: Assembly as per SOP -->
+        <div class="form-section" id="step3-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-purple-100"><i class="fas fa-tools text-purple-600"></i></div>Assembly as per SOP</h2>
+                <div class="step-circle">3</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in assembly_fields %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="error-message">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 4: Photo Evidence (只包含照片字段) -->
+        <div class="form-section" id="step4-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-blue-100"><i class="fas fa-camera text-blue-600"></i></div>Photo Evidence</h2>
+                <div class="step-circle">4</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in photo_fields %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            <input type="file" name="{{ field.name }}" id="{{ field.id_for_label }}"
+                                   accept="image/*" capture="environment"
+                                   class="form-control">
+                            {% if field.errors %}<div class="error-message">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 5: Glue / Fixture Validation -->
+        <div class="form-section" id="step5-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-yellow-100"><i class="fas fa-vial text-yellow-600"></i></div>Glue / Fixture Validation</h2>
+                <div class="step-circle">5</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in glue_fields %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="error-message">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 6: Component Check & Final -->
+        <div class="form-section" id="step6-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-red-100"><i class="fas fa-check-circle text-red-600"></i></div>Component Check & Final</h2>
+                <div class="step-circle">6</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in component_fields or field.name in "imei1 imei2"|split %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="error-message">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.defect_cause.id_for_label }}">{{ form.defect_cause.label }}</label>
+                    {{ form.defect_cause }}
+                    {% if form.defect_cause.errors %}<div class="error-message">{{ form.defect_cause.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.pqe.id_for_label }}">{{ form.pqe.label }}</label>
+                    {{ form.pqe }}
+                    {% if form.pqe.errors %}<div class="error-message">{{ form.pqe.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.pe.id_for_label }}">{{ form.pe.label }}</label>
+                    {{ form.pe }}
+                    {% if form.pe.errors %}<div class="error-message">{{ form.pe.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.apd_ll.id_for_label }}">{{ form.apd_ll.label }}</label>
+                    {{ form.apd_ll }}
+                    {% if form.apd_ll.errors %}<div class="error-message">{{ form.apd_ll.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- End with blocks -->
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-content">
+            <div class="nav-info">
+                <div class="progress-text">Section <span id="currentSection">1</span> of 6</div>
+            </div>
+            <div class="nav-buttons">
+                <button type="button" onclick="previousStep()" id="prev-btn" class="nav-btn nav-btn-secondary" disabled>
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button type="button" onclick="nextStep()" id="next-btn" class="nav-btn nav-btn-primary">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" form="ipqcForm" id="submit-btn" class="nav-btn nav-btn-success" disabled>
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStep = 1;
+const totalSteps = 6;
+
+function updateStepIndicator() {
+    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById('progressLine').style.width = progressPercentage + '%';
+    document.getElementById('currentStep').textContent = currentStep;
+    document.getElementById('currentSection').textContent = currentStep;
+    
+    for (let i = 1; i <= totalSteps; i++) {
+        const stepCircle = document.getElementById(`step${i}`);
+        const stepContent = document.getElementById(`step${i}-content`);
+        if (stepCircle) {
+            stepCircle.classList.remove('active', 'completed');
+            if (i < currentStep) { 
+                stepCircle.classList.add('completed'); 
+                stepCircle.innerHTML = '✓'; 
+            }
+            else if (i === currentStep) { 
+                stepCircle.classList.add('active'); 
+                stepCircle.innerHTML = i; 
+            }
+            else { 
+                stepCircle.innerHTML = i; 
+            }
+        }
+        if (stepContent) {
+            stepContent.style.display = i === currentStep ? 'block' : 'none';
+        }
+    }
+    
+    document.getElementById('prev-btn').disabled = currentStep === 1;
+    document.getElementById('next-btn').disabled = currentStep === totalSteps;
+    document.getElementById('submit-btn').disabled = currentStep !== totalSteps;
+    document.querySelector('.audit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function goToStep(step) { 
+    if (step >= 1 && step <= totalSteps) { 
+        currentStep = step; 
+        updateStepIndicator(); 
+    } 
+}
+
+function nextStep() { 
+    if (currentStep < totalSteps) { 
+        currentStep++; 
+        updateStepIndicator(); 
+    } 
+}
+
+function previousStep() { 
+    if (currentStep > 1) { 
+        currentStep--; 
+        updateStepIndicator(); 
+    } 
+}
+
+// Form validation before submission
+function validateForm() {
+    let isValid = true;
+    let errorMessage = '';
+    
+    // Check if any select field has 'Not OK' selected
+    const selectFields = document.querySelectorAll('select[name]');
+    let hasNotOk = false;
+    
+    selectFields.forEach(select => {
+        if (select.value === 'Not OK') {
+            hasNotOk = true;
+        }
+    });
+    
+    // If any field is 'Not OK', check for photos or remarks
+    if (hasNotOk) {
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        const defectCause = document.querySelector('textarea[name="defect_cause"]');
+        
+        let hasPhoto = false;
+        fileInputs.forEach(input => {
+            if (input.files && input.files.length > 0) {
+                hasPhoto = true;
+            }
+        });
+        
+        let hasRemarks = defectCause && defectCause.value.trim() !== '';
+        
+        if (!hasPhoto && !hasRemarks) {
+            errorMessage = 'Please provide a defect photo or description for all "Not OK" items.';
+            isValid = false;
+        }
+    }
+    
+    if (!isValid) {
+        // Create or update error message display
+        let errorDiv = document.getElementById('form-validation-error');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.id = 'form-validation-error';
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.style.marginBottom = '20px';
+            document.querySelector('.audit-form').insertBefore(errorDiv, document.querySelector('.step-indicator'));
+        }
+        errorDiv.innerHTML = `<strong>Error:</strong> ${errorMessage}`;
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        // Remove error message if exists
+        let errorDiv = document.getElementById('form-validation-error');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+    
+    return isValid;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateStepIndicator();
+    
+    // Apply the 'status-select' class to all select elements for styling
+    document.querySelectorAll('select').forEach(el => {
+        el.classList.add('status-select');
+        // Add change event listener for real-time validation
+        el.addEventListener('change', function() {
+            // Optional: Add real-time validation feedback
+        });
+    });
+    
+    // Add input event listeners to file inputs for preview (optional enhancement)
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function(e) {
+            // Optional: Add image preview functionality
+            console.log('File selected:', input.name);
+        });
+    });
+});
+</script>
+{% endblock content %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}{{ form_obj.title }} Dashboard{% endblock %}
+
+{% block content %}
+<div class="pc-container">
+  <div class="pc-content">
+    <div class="container mt-4">
+      <h3>{{ form_obj.title }} Dashboard</h3>
+      <p class="text-muted">{{ form_obj.description }}</p>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card p-3 mb-3 shadow-sm">
+            <h5>Total Submissions</h5>
+            <h2>{{ total_submissions }}</h2>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-3 mb-3 shadow-sm">
+            <h5>Latest Submission</h5>
+            <p>{{ latest_submission|date:"d M Y H:i" }}</p>
+          </div>
+        </div>
+      </div>
+
+      <h5 class="mt-4">Field Statistics</h5>
+      {% for field, stats in numeric_summary.items %}
+        <div class="card p-3 mb-2">
+          <strong>{{ field }}</strong> — Mean: {{ stats.mean }}, Max: {{ stats.max }}, Min: {{ stats.min }}
+        </div>
+      {% empty %}
+        <p class="text-muted">No numeric fields found.</p>
+      {% endfor %}
+
+      <h5 class="mt-4">Live Data</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            {% for col in numeric_summary.keys %}
+              <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody id="data-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const data = JSON.parse('{{ data_json|escapejs }}');
+const tbody = document.getElementById("data-table-body");
+if (tbody && data.length) {
+  data.forEach(row => {
+    const tr = document.createElement("tr");
+    Object.values(row).forEach(val => {
+      const td = document.createElement("td");
+      td.textContent = val ?? "";
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+</script>
+{% endblock %}

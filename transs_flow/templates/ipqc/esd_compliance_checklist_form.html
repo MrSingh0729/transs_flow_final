@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}ESD Compliance Checklist - IPQC{% endblock %}
+{% block content %}
+<style>
+/* --- MODIFIED STYLE BLOCK FOR RESPONSIVE PROGRESS BAR --- */
+.audit-form { max-width: 1200px; margin: 0 auto; padding: 16px; width: 100%; }
+.step-indicator { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.step-progress { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; position: relative; }
+/* MODIFIED: Removed 'min-width' and 'overflow-x: auto' to allow responsiveness */
+.step-progress::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: var(--border); z-index: 0; }
+.step-progress-line { position: absolute; top: 50%; left: 0; height: 2px; background: var(--primary); z-index: 1; transition: width 0.3s ease; transform: translateY(-50%); }
+.step-item { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; cursor: pointer; flex-shrink: 0; }
+.step-circle { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--border); background: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--text-light); transition: all 0.3s ease; }
+.step-circle.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); }
+.step-circle.completed { background: var(--success); color: white; border-color: var(--success); }
+.step-label { font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 6px; font-weight: 500; white-space: nowrap; }
+
+/* --- NEW: Media Query for Responsiveness --- */
+@media (max-width: 640px) {
+    .step-label {
+        display: none; /* Hide text labels on small screens */
+    }
+    .step-circle {
+        width: 36px;
+        height: 36px;
+        font-size: 13px;
+    }
+    .step-item {
+        flex-shrink: 1; /* Allow items to shrink slightly if needed */
+    }
+}
+
+.form-section { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 20px 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.section-title { font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+.section-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.form-grid { display: grid; gap: 16px; width: 100%; }
+.form-group { display: flex; flex-direction: column; width: 100%; }
+.form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background: white; border: 2px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; transition: all 0.2s ease; font-family: inherit; box-sizing: border-box; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
+.form-group input[readonly] { background: var(--bg-secondary); cursor: not-allowed; color: var(--text-secondary); }
+.status-select { border-radius: 8px; font-weight: 500; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px; padding-right: 44px; appearance: none; }
+.status-select[value="OK"] { border-color: var(--success); background-color: rgba(34, 197, 94, 0.05); }
+.status-select[value="NOT_OK"] { border-color: var(--danger); background-color: rgba(239, 68, 68, 0.05); }
+.status-select[value="NA"] { border-color: var(--text-light); background-color: rgba(100, 116, 139, 0.05); }
+.form-group textarea { resize: vertical; min-height: 80px; }
+.bottom-nav { position: sticky; bottom: 0; background: white; border-top: 1px solid var(--border); padding: 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.05); }
+.nav-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.progress-text { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
+.nav-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.nav-btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 80px; }
+.nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.nav-btn-secondary { background: white; color: var(--text-secondary); border: 2px solid var(--border); }
+.nav-btn-primary { background: var(--primary); color: white; }
+.nav-btn-success { background: var(--success); color: white; }
+@media (min-width: 768px) {
+    .form-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .form-section { padding: 24px; margin-bottom: 24px; }
+    .section-title { font-size: 20px; }
+}
+</style>
+<div class="audit-form">
+    <!-- Step Progress Indicator -->
+    <div class="step-indicator">
+        <div class="step-progress">
+            <div class="step-progress-line" id="progressLine" style="width: 0%;"></div>
+            <div class="step-item" onclick="goToStep(1)"><div class="step-circle active" id="step1">1</div><div class="step-label">Basic Info</div></div>
+            <div class="step-item" onclick="goToStep(2)"><div class="step-circle" id="step2">2</div><div class="step-label">Personal Equipment</div></div>
+            <div class="step-item" onclick="goToStep(3)"><div class="step-circle" id="step3">3</div><div class="step-label">Workbench</div></div>
+            <div class="step-item" onclick="goToStep(4)"><div class="step-circle" id="step4">4</div><div class="step-label">Handling & Tools</div></div>
+            <div class="step-item" onclick="goToStep(5)"><div class="step-circle" id="step5">5</div><div class="step-label">Photos</div></div>
+            <div class="step-item" onclick="goToStep(6)"><div class="step-circle" id="step6">6</div><div class="step-label">Final</div></div>
+        </div>
+        <div class="progress-text">Step <span id="currentStep">1</span> of 6</div>
+    </div>
+    <!-- Form Container -->
+    <form method="post" id="esdForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <!-- Step 1: Basic Information -->
+        <div class="form-section" id="step1-content">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-sky-100"><i class="fas fa-info-circle text-sky-600"></i></div>Basic Information</h2>
+                <div class="step-circle active">1</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}{% if field.name in 'date shift emp_id name line group model color' %}
+                    <div class="form-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<p class="mt-2 text-sm text-red-600">{{ field.errors.0 }}</p>{% endif %}</div>
+                {% endif %}{% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 2: Personal Equipment (Clothing & Wristband) -->
+        <div class="form-section" id="step2-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-blue-100"><i class="fas fa-user text-blue-600"></i></div>Personal Equipment (Clothing & Wristband)</h2>
+                <div class="step-circle">2</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in 'epa_clothes forbid_wear_out no_accessories clothes_clean collar_cover all_buttons_closed clothes_length watch_expose hair_cap slipper_check wristband_check pre_line_check wrist_touch_skin'  and field.name != "line" %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="mt-2 text-sm text-red-600">{{ field.errors.0 }}</p>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 3: Workbench Environment (Grounding, Material & Consumables) -->
+        <div class="form-section" id="step3-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-indigo-100"><i class="fas fa-desktop text-indigo-600"></i></div>Workbench Environment (Grounding & Consumables)</h2>
+                <div class="step-circle">3</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in 'trolley_grounding device_grounded grounding_points_tight ion_fan_distance ion_fan_direction esds_box table_no_source gloves_condition mat_grounded audit_label_valid' %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="mt-2 text-sm text-red-600">{{ field.errors.0 }}</p>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 4: Handling Rules & Tools -->
+        <div class="form-section" id="step4-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-orange-100"><i class="fas fa-wrench text-orange-600"></i></div>Handling Rules & Tools</h2>
+                <div class="step-circle">4</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in 'no_touch_pcba alert_plug_out tools_audit temp_humidity tray_voltage' %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="mt-2 text-sm text-red-600">{{ field.errors.0 }}</p>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Step 5: ESD Photo Evidence -->
+        <div class="form-section" id="step5-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-purple-100"><i class="fas fa-camera text-purple-600"></i></div>ESD Photo Evidence</h2>
+                <div class="step-circle">5</div>
+            </div>
+            <div class="form-grid">
+                 <!-- Manually render the photo input to force camera capture -->
+                 <div class="form-group">
+                    <label for="{{ form.epa_clothes_photo.id_for_label }}">{{ form.epa_clothes_photo.label }}</label>
+                    <input type="file" name="{{ form.epa_clothes_photo.name }}" id="{{ form.epa_clothes_photo.id_for_label }}"
+                           accept="image/*" capture="environment"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
+                    {% if form.epa_clothes_photo.errors %}<p class="mt-2 text-sm text-red-600">{{ form.epa_clothes_photo.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.hair_cap_photo.id_for_label }}">{{ form.hair_cap_photo.label }}</label>
+                    <input type="file" name="{{ form.hair_cap_photo.name }}" id="{{ form.hair_cap_photo.id_for_label }}"
+                           accept="image/*" capture="environment"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
+                    {% if form.hair_cap_photo.errors %}<p class="mt-2 text-sm text-red-600">{{ form.hair_cap_photo.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.wristband_photo.id_for_label }}">{{ form.wristband_photo.label }}</label>
+                    <input type="file" name="{{ form.wristband_photo.name }}" id="{{ form.wristband_photo.id_for_label }}"
+                           accept="image/*" capture="environment"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
+                    {% if form.wristband_photo.errors %}<p class="mt-2 text-sm text-red-600">{{ form.wristband_photo.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.trolley_photo.id_for_label }}">{{ form.trolley_photo.label }}</label>
+                    <input type="file" name="{{ form.trolley_photo.name }}" id="{{ form.trolley_photo.id_for_label }}"
+                           accept="image/*" capture="environment"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
+                    {% if form.trolley_photo.errors %}<p class="mt-2 text-sm text-red-600">{{ form.trolley_photo.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.ion_fan_photo.id_for_label }}">{{ form.ion_fan_photo.label }}</label>
+                    <input type="file" name="{{ form.ion_fan_photo.name }}" id="{{ form.ion_fan_photo.id_for_label }}"
+                           accept="image/*" capture="environment"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
+                    {% if form.ion_fan_photo.errors %}<p class="mt-2 text-sm text-red-600">{{ form.ion_fan_photo.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.mat_photo.id_for_label }}">{{ form.mat_photo.label }}</label>
+                    <input type="file" name="{{ form.mat_photo.name }}" id="{{ form.mat_photo.id_for_label }}"
+                           accept="image/*" capture="environment"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
+                    {% if form.mat_photo.errors %}<p class="mt-2 text-sm text-red-600">{{ form.mat_photo.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.table_photo.id_for_label }}">{{ form.table_photo.label }}</label>
+                    <input type="file" name="{{ form.table_photo.name }}" id="{{ form.table_photo.id_for_label }}"
+                           accept="image/*" capture="environment"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
+                    {% if form.table_photo.errors %}<p class="mt-2 text-sm text-red-600">{{ form.table_photo.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Step 6: Readings, Remarks & Overview -->
+        <div class="form-section" id="step6-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title"><div class="section-icon bg-yellow-100"><i class="fas fa-clipboard-check text-yellow-600"></i></div>Environmental Readings & Final Validation</h2>
+                <div class="step-circle">6</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}{% if field.name in 'temperature_value humidity_value tray_voltage_value remark' %}
+                    <div class="form-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<p class="mt-2 text-sm text-red-600">{{ field.errors.0 }}</p>{% endif %}</div>
+                {% endif %}{% endfor %}
+                <!-- Manually render the final overview photo -->
+                <div class="form-group">
+                    <label for="{{ form.photo_overview.id_for_label }}">{{ form.photo_overview.label }}</label>
+                    <input type="file" name="{{ form.photo_overview.name }}" id="{{ form.photo_overview.id_for_label }}"
+                           accept="image/*" capture="environment"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
+                    {% if form.photo_overview.errors %}<p class="mt-2 text-sm text-red-600">{{ form.photo_overview.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-content">
+            <div class="nav-info"><div class="progress-text">Section <span id="currentSection">1</span> of 6</div></div>
+            <div class="nav-buttons">
+                <button type="button" onclick="previousStep()" id="prev-btn" class="nav-btn nav-btn-secondary" disabled><i class="fas fa-arrow-left"></i> Previous</button>
+                <button type="button" onclick="nextStep()" id="next-btn" class="nav-btn nav-btn-primary">Next <i class="fas fa-arrow-right"></i></button>
+                <button type="submit" form="esdForm" id="submit-btn" class="nav-btn nav-btn-success" disabled><i class="fas fa-check"></i> Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+let currentStep = 1;
+const totalSteps = 6; // Updated to 6 steps
+function updateStepIndicator() {
+    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById('progressLine').style.width = progressPercentage + '%';
+    document.getElementById('currentStep').textContent = currentStep;
+    document.getElementById('currentSection').textContent = currentStep;
+    for (let i = 1; i <= totalSteps; i++) {
+        const stepCircle = document.getElementById(`step${i}`);
+        const stepContent = document.getElementById(`step${i}-content`);
+        if (stepCircle) {
+            stepCircle.classList.remove('active', 'completed');
+            if (i < currentStep) { stepCircle.classList.add('completed'); stepCircle.innerHTML = '✓'; }
+            else if (i === currentStep) { stepCircle.classList.add('active'); stepCircle.innerHTML = i; }
+            else { stepCircle.innerHTML = i; }
+        }
+        if (stepContent) {
+            stepContent.style.display = i === currentStep ? 'block' : 'none';
+        }
+    }
+    document.getElementById('prev-btn').disabled = currentStep === 1;
+    document.getElementById('next-btn').disabled = currentStep === totalSteps;
+    document.getElementById('submit-btn').disabled = currentStep !== totalSteps;
+    document.querySelector('.audit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function goToStep(step) { if (step >= 1 && step <= totalSteps) { currentStep = step; updateStepIndicator(); } }
+function nextStep() { if (currentStep < totalSteps) { currentStep++; updateStepIndicator(); } }
+function previousStep() { if (currentStep > 1) { currentStep--; updateStepIndicator(); } }
+document.addEventListener('DOMContentLoaded', function() { updateStepIndicator(); });
+</script>
+{% endblock content %}

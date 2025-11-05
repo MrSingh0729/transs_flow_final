@@ -1,0 +1,600 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}First Article Inspection (FAI) Records{% endblock title %}
+
+{% block content %}
+<!-- Page Title -->
+<h1 class="text-2xl font-bold text-gray-900 mb-6">First Article Inspection (FAI) Records</h1>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ fai_stats.today|default:"0" }}</div>
+        <div class="metric-label">Today's Inspections</div>
+      </div>
+      <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-calendar-day text-purple-600"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ fai_stats.week|default:"0" }}</div>
+        <div class="metric-label">This Week</div>
+      </div>
+      <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-calendar-week text-indigo-600"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ fai_stats.total|default:"0" }}</div>
+        <div class="metric-label">Total Records</div>
+      </div>
+      <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-database text-gray-600"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Bar -->
+<div class="bg-white shadow-md rounded-xl p-4 mb-6">
+  <form method="get" class="flex flex-col sm:flex-row gap-3">
+    <div class="flex-1">
+      <input type="text" name="q" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" 
+             placeholder="Search by Inspector, Model, Color, IMEI..." value="{{ request.GET.q }}">
+    </div>
+    <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+      <i class="fas fa-search"></i> Search
+    </button>
+    {% if request.GET.q %}
+    <a href="{% url 'testing_fai_list' %}" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+      <i class="fas fa-times"></i> Clear
+    </a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Records Table -->
+<div class="bg-white shadow-md rounded-xl overflow-hidden">
+  <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between gap-3 sm:items-center">
+    <h5 class="text-lg font-bold text-gray-900">Recent FAI Records</h5>
+    <a href="{% url 'testing_fai_create' %}" 
+       class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-center transition">
+      <i class="fas fa-plus"></i> New FAI
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shift</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inspector</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Line</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Model</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Color</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visual Result</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reliability</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">QE Status</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for record in fai_records %}
+        <tr class="hover:bg-gray-50 transition">
+          <td class="px-3 sm:px-6 py-3 text-gray-900 font-medium">{{ record.date|date:"Y-m-d" }}</td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700">
+            <span class="px-2 py-1 text-xs rounded-full bg-gray-100">{{ record.shift }}</span>
+          </td>
+          <td class="px-3 sm:px-6 py-3">
+            <div>
+              <div class="text-gray-900 font-medium">{{ record.inspector_name }}</div>
+              <div class="text-xs text-gray-500">{{ record.emp_id }}</div>
+            </div>
+          </td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700 hidden md:table-cell">{{ record.line }}</td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700 hidden md:table-cell">{{ record.model }}</td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700 hidden lg:table-cell">{{ record.color }}</td>
+          <td class="px-3 sm:px-6 py-3">
+            {% if record.visual_functional_result == 'QUALIFIED' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Qualified</span>
+            {% elif record.visual_functional_result == 'UNQUALIFIED' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Unqualified</span>
+            {% else %}
+              <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Conditional</span>
+            {% endif %}
+          </td>
+          <td class="px-3 sm:px-6 py-3">
+            {% if record.reliability_result == 'QUALIFIED' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Qualified</span>
+            {% elif record.reliability_result == 'UNQUALIFIED' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Unqualified</span>
+            {% else %}
+              <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Conditional</span>
+            {% endif %}
+          </td>
+          <td class="px-3 sm:px-6 py-3">
+            {% if record.qe_confirm_status == 'Approved' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Approved</span>
+            {% elif record.qe_confirm_status == 'Not Approved' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Not Approved</span>
+            {% else %}
+              <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">Pending</span>
+            {% endif %}
+          </td>
+          <td class="px-3 sm:px-6 py-3">
+            <div class="flex gap-2">
+              <a href="#" onclick="event.preventDefault(); showFAIDetails({{ record.pk }})" 
+                 class="text-purple-600 font-semibold text-xs sm:text-sm hover:underline">
+                <i class="fas fa-eye"></i> View
+              </a>
+              <a href="{% url 'testing_download_fai_evidence' record.pk 'imei_photo' %}" 
+                 class="text-blue-600 font-semibold text-xs sm:text-sm hover:underline" 
+                 title="Download IMEI Photo" target="_blank">
+                <i class="fas fa-download"></i>
+              </a>
+              {% if record.public_url %}
+              <a href="{{ record.public_url }}" 
+                 class="text-green-600 font-semibold text-xs sm:text-sm hover:underline" 
+                 title="Public QE Link" target="_blank">
+                <i class="fas fa-link"></i>
+              </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" class="text-center py-6 text-gray-500">No records found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="mt-6 flex justify-center">
+  <nav class="flex items-center space-x-1">
+    {% if page_obj.has_previous %}
+      <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-double-left"></i>
+      </a>
+      <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-left"></i>
+      </a>
+    {% endif %}
+
+    <span class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-right"></i>
+      </a>
+      <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-double-right"></i>
+      </a>
+    {% endif %}
+  </nav>
+</div>
+{% endif %}
+
+<!-- Details Modal -->
+<div id="faiDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl w-[95%] sm:w-[90%] md:w-[80%] lg:w-[70%] max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center px-4 sm:px-6 py-4 border-b">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-800">FAI Record Details</h2>
+      <button onclick="closeFAIDetails()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+    </div>
+    <div id="faiModalBody" class="p-4 sm:p-6">
+      <p class="text-gray-500 text-center">Loading...</p>
+    </div>
+  </div>
+</div>
+
+<!-- CSS Styles -->
+<style>
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+</style>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+  function showFAIDetails(pk) {
+    const modal = document.getElementById('faiDetailsModal');
+    const modalBody = document.getElementById('faiModalBody');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modalBody.innerHTML = `<p class='text-gray-500 text-center'>Loading...</p>`;
+
+    fetch(`/ipqc/testing/fai/details/${pk}/`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        modalBody.innerHTML = buildDetailsUI(data);
+      })
+      .catch(error => {
+        console.error('Error details:', error);
+        modalBody.innerHTML = `<p class='text-red-500 text-center'>Error loading details: ${error.message}</p>`;
+      });
+  }
+
+  function closeFAIDetails() {
+    const modal = document.getElementById('faiDetailsModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function buildDetailsUI(data) {
+    let html = '<div class="space-y-6">';
+    
+    // Basic Information Section
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-info-circle text-purple-500"></i> Basic Information
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+    `;
+    
+    const basicFields = [
+      ['date', 'Date'], ['shift', 'Shift'], ['emp_id', 'Employee ID'],
+      ['name', 'Name'], ['section', 'Section'], ['line', 'Line'],
+      ['group', 'Group'], ['model', 'Model'], ['color', 'Color'],
+      ['production_work_order_no', 'Work Order'], ['first_article_type', 'FAI Type'],
+    ];
+    
+    basicFields.forEach(([key, label]) => {
+      if (data[key]) {
+        html += `
+          <div class="bg-gray-50 p-3 rounded">
+            <div class="text-xs text-gray-500">${label}</div>
+            <div class="font-semibold text-sm">${data[key]}</div>
+          </div>`;
+      }
+    });
+    
+    html += '</div></div>';
+
+    // Order & Software Checks
+    const softwareFields = [
+      'software_ver_check', 'android_ver_check', 'memory_inbuilt_check', 'order_confirm_check'
+    ];
+    
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-cogs text-green-500"></i> Order & Software Checks
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+    `;
+    
+    softwareFields.forEach(field => {
+      if (data[field]) {
+        const value = data[field];
+        const statusHtml = getStatusBadgeHtml(value);
+        const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        html += `<div class="text-center p-2 border rounded">${statusHtml}<div class="text-xs text-gray-600 mt-1">${label}</div></div>`;
+      }
+    });
+    
+    html += '</div></div>';
+
+    // Visual & Label Checks
+    const visualFields = [
+      'label_check', 'label_position_check', 'visual_inspection_handset', 
+      'logo_check', 'assembly_battery_check', 'net_color_check', 
+      'tp_with_key_check', 'screw_check'
+    ];
+    
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-eye text-blue-500"></i> Visual & Label Checks
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+    `;
+    
+    visualFields.forEach(field => {
+      if (data[field]) {
+        const value = data[field];
+        const statusHtml = getStatusBadgeHtml(value);
+        const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        html += `<div class="text-center p-2 border rounded">${statusHtml}<div class="text-xs text-gray-600 mt-1">${label}</div></div>`;
+      }
+    });
+    
+    html += '</div></div>';
+
+    // Functional Tests
+    const functionalFields = [
+      'tp_with_charge_test', 'charge_15min_test', 'boot_time_test', 'init_settings_test',
+      'buttons_keys_test', 'touch_screen_pen_test', 'calling_test', 'bluetooth_test',
+      'flashlight_test', 'camera_flash_test', 'camera_photo_test', 'camera_dark_test',
+      'multimedia_play_test', 'fm_play_test', 'wifi_test', 'gravity_sensor_test'
+    ];
+    
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-mobile-alt text-indigo-500"></i> Functional Tests
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+    `;
+    
+    functionalFields.forEach(field => {
+      if (data[field]) {
+        const value = data[field];
+        const statusHtml = getStatusBadgeHtml(value);
+        const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        html += `<div class="text-center p-2 border rounded">${statusHtml}<div class="text-xs text-gray-600 mt-1">${label}</div></div>`;
+      }
+    });
+    
+    html += '</div></div>';
+    
+    // Reliability Tests
+    const reliabilityFields = [
+      'tcard_sim_plug_test', 'focus_test', 'front_back_cam_test', 'slight_drop_test',
+      'slight_touch_test', 'coumpling_rf_test', 'factory_reset_fn_test', 'sar_value_test'
+    ];
+    
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-shield-alt text-yellow-500"></i> Reliability Tests
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+    `;
+    
+    reliabilityFields.forEach(field => {
+      if (data[field]) {
+        const value = data[field];
+        const statusHtml = getStatusBadgeHtml(value);
+        const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        html += `<div class="text-center p-2 border rounded">${statusHtml}<div class="text-xs text-gray-600 mt-1">${label}</div></div>`;
+      }
+    });
+    
+    html += '</div></div>';
+
+    // Final Results & Confirmation
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <i class="fas fa-clipboard-check text-red-500"></i> Final Results & Confirmation
+        </h3>
+        <div class="grid grid-cols-2 gap-3">
+    `;
+    
+    const finalFields = [
+        ['visual_functional_result', 'Visual & Functional Result'],
+        ['reliability_result', 'Reliability Result'],
+        ['inspector_name', 'Inspector'],
+        ['qe_confirm_name', 'QE Name'],
+        ['qe_confirm_status', 'QE Status'],
+        ['sample_serial_number', 'Sample S/N'],
+        ['imei_number', 'IMEI']
+    ];
+    
+    finalFields.forEach(([key, label]) => {
+        let value = data[key];
+        if(value) {
+            let displayValue = value;
+            if (key.includes('result') || key.includes('status')) {
+                let colorClass = 'text-gray-600';
+                if (value === 'QUALIFIED' || value === 'Approved') colorClass = 'text-green-600';
+                else if (value === 'UNQUALIFIED' || value === 'Not Approved') colorClass = 'text-red-600';
+                else if (value === 'CONDITIONAL_ACC') colorClass = 'text-yellow-600';
+                displayValue = `<span class="font-semibold ${colorClass}">${value.replace(/_/g, ' ').toUpperCase()}</span>`;
+            }
+            html += `
+              <div class="bg-gray-50 p-3 rounded">
+                <div class="text-xs text-gray-500">${label}</div>
+                <div class="font-semibold text-sm">${displayValue}</div>
+              </div>`;
+        }
+    });
+
+    html += '</div></div>';
+
+    // Evidence Photos Section
+    if (data.photos && data.photos.length > 0) {
+      html += `
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-camera text-blue-500"></i> Evidence Photos
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      `;
+      
+      data.photos.forEach(photo => {
+        html += `
+          <div class="border rounded-lg overflow-hidden hover:shadow-lg transition cursor-pointer"
+               onclick="openPhotoPreview('${photo.url}', '${photo.label}')">
+            <img src="${photo.url}" alt="${photo.label}" class="w-full h-40 object-cover">
+            <div class="text-center py-2 text-xs text-gray-600 bg-gray-50">${photo.label}</div>
+          </div>`;
+      });
+      
+      html += '</div></div>';
+    }
+    
+    // Public URL Section
+    if (data.public_url) {
+        html += `
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-link text-blue-500"></i> Public QE Confirmation Link
+                </h3>
+                <div class="flex items-center justify-between">
+                    <a href="${data.public_url}" target="_blank" class="text-blue-600 underline text-sm break-all pr-2">${data.public_url}</a>
+                    <button onclick="copyToClipboard('${data.public_url}')" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition flex-shrink-0">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    return html;
+  }
+  
+  function getStatusBadgeHtml(value) {
+    let bgColor = 'bg-gray-100', textColor = 'text-gray-700', icon = '';
+    if (value === 'OK') {
+      bgColor = 'bg-green-100'; textColor = 'text-green-700'; icon = '✅ ';
+    } else if (value === 'Not OK') {
+      bgColor = 'bg-red-100'; textColor = 'text-red-700'; icon = '❌ ';
+    } else if (value === 'NA') {
+      bgColor = 'bg-yellow-100'; textColor = 'text-yellow-700'; icon = '➖ ';
+    }
+    return `<span class="${bgColor} ${textColor} font-semibold text-xs">${icon}${value}</span>`;
+  }
+
+  // Photo preview functions
+  function openPhotoPreview(url, label) {
+    if (document.getElementById('photoPreviewOverlay')) return;
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'photoPreviewOverlay';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4';
+    overlay.style.backdropFilter = 'blur(4px)';
+
+    const container = document.createElement('div');
+    container.className = 'relative w-full max-w-4xl mx-auto';
+
+    container.innerHTML = `
+        <div class="bg-white rounded-lg overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between px-4 py-3 bg-gray-100 border-b">
+                <h2 id="photoPreviewLabel" class="text-sm sm:text-base font-semibold text-gray-800 truncate" style="max-width: 80%;">${escapeHtml(label)}</h2>
+                <div class="flex items-center gap-2">
+                    <a id="photoDownloadBtn" href="${url}" download class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <button id="photoCloseBtn" aria-label="Close preview" class="text-gray-700 hover:text-gray-900 text-2xl leading-none bg-transparent border-0">&times;</button>
+                </div>
+            </div>
+            <div class="flex-1 flex items-center justify-center bg-black p-2">
+                <img id="photoPreviewImg" src="${url}" alt="${escapeHtml(label)}" class="max-h-[80vh] w-auto object-contain rounded-md" />
+            </div>
+        </div>
+    `;
+
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closePhotoPreview();
+    });
+
+    const btn = document.getElementById('photoCloseBtn');
+    btn.addEventListener('click', closePhotoPreview);
+
+    function escHandler(e) {
+        if (e.key === 'Escape') closePhotoPreview();
+    }
+    document.addEventListener('keydown', escHandler);
+    overlay._escHandler = escHandler;
+  }
+
+  function closePhotoPreview() {
+    const overlay = document.getElementById('photoPreviewOverlay');
+    if (!overlay) return;
+
+    if (overlay._escHandler) {
+        document.removeEventListener('keydown', overlay._escHandler);
+    }
+    overlay.remove();
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+
+  function escapeHtml(str) {
+    if (!str && str !== 0) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+  }
+
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        showToast('URL copied to clipboard!');
+    }, function() {
+        showToast('Failed to copy URL', 'error');
+    });
+  }
+
+  function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+      toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-y-full`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>${message}`;
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+          toast.classList.remove('translate-y-full');
+      }, 100);
+      
+      setTimeout(() => {
+          toast.classList.add('translate-y-full');
+          setTimeout(() => toast.remove(), 300);
+      }, 3000);
+  }
+</script>
+{% endblock %}

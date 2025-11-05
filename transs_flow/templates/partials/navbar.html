@@ -1,0 +1,35 @@
+<h1 class="text-lg font-semibold glow-text flex items-center">
+    <i class="fas fa-microchip text-white text-xl mr-2"></i>
+    {% block page_title %}Transs Flow{% endblock %}
+</h1>
+
+<div class="flex items-center space-x-4">
+    <!-- Notifications -->
+    <button class="cyber-button">
+        <i class="fas fa-bell mr-2"></i>
+        Alerts
+    </button>
+
+    <!-- Mobile toggle -->
+    <button onclick="toggleSidebar()"
+        class="text-gray-400 hover:text-white lg:hidden">
+        <i class="fas fa-bars text-xl"></i>
+    </button>
+
+    <!-- For desktop toggle (optional separate button) -->
+    <!-- <button onclick="toggleSidebarDesktop()"
+        class="hidden lg:inline-flex text-gray-400 hover:text-white">
+        <i class="fas fa-bars text-xl"></i>
+    </button> -->
+
+    <!-- User Profile -->
+    <div class="flex items-center space-x-2">
+        <img src="https://picsum.photos/seed/{{ user.username|default:'admin' }}/40/40" 
+             alt="{{ user.get_full_name|default:'Admin' }}" 
+             class="w-10 h-10 rounded-full border-2 border-cyan-500">
+        <div class="hidden md:block">
+            <p class="text-sm font-semibold">{{ user.get_full_name|default:'Admin User' }}</p>
+            <p class="text-xs text-gray-400">{{ user.role|default:'Operator' }}</p>
+        </div>
+    </div>
+</div>

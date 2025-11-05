@@ -1,0 +1,124 @@
+	{% extends 'base.html' %}
+	{% block title %}Dashboard - Manufacturing Control{% endblock %}
+	{% block content %}
+	<div class="space-y-6">
+	    <!-- Header Stats -->
+	    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+	        <!-- Total Employees -->
+	        <div class="metric-card">
+	            <div class="flex items-start justify-between">
+	                <div>
+	                    <div class="metric-value">{{ total_employees }}</div>
+	                    <div class="metric-label">Total Employees</div>
+	                </div>
+	                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+	                    <i class="fas fa-users text-blue-600 text-xl"></i>
+	                </div>
+	            </div>
+	        </div>
+	        <!-- Active Users -->
+	        <div class="metric-card">
+	            <div class="flex items-start justify-between">
+	                <div>
+	                    <div class="metric-value">{{ total_employees }}</div>
+	                    <div class="metric-label">Active Now</div>
+	                    <div class="metric-change positive">
+	                        <i class="fas fa-circle text-xs mr-1"></i>All online
+	                    </div>
+	                </div>
+	                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+	                    <i class="fas fa-user-check text-green-600 text-xl"></i>
+	                </div>
+	            </div>
+	        </div>
+	        <!-- Today's Activity -->
+	        <div class="metric-card">
+	            <div class="flex items-start justify-between">
+	                <div>
+	                    <div class="metric-value">{{ today_records }}</div>
+	                    <div class="metric-label">Today's Activity</div>
+	                    <div class="metric-change positive">
+	                        <i class="fas fa-arrow-up mr-1"></i>Records
+	                    </div>
+	                </div>
+	                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+	                    <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+	                </div>
+	            </div>
+	        </div>
+	        <!-- System Status -->
+	        <div class="metric-card">
+	            <div class="flex items-start justify-between">
+	                <div>
+	                    <div class="metric-value">Online</div>
+	                    <div class="metric-label">System Status</div>
+	                    <div class="metric-change positive">
+	                        <i class="fas fa-check-circle mr-1"></i>Operational
+	                    </div>
+	                </div>
+	                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+	                    <i class="fas fa-server text-green-600 text-xl"></i>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
+	    <!-- Quick Actions -->
+	    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+	        <h2 class="text-lg font-bold mb-6 text-gray-900">
+	            <i class="fas fa-rocket mr-2 text-blue-500"></i>
+	            Quick Actions
+	        </h2>
+	        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+	            <a href="{% url 'employee_create' %}" class="quick-action">
+	                <i class="fas fa-user-plus text-blue-500"></i>
+	                <div class="label">Add Employee</div>
+	                <div class="desc">Create new employee</div>
+	            </a>
+	            <a href="{% url 'create_dynamic_form' %}" class="quick-action">
+	                <i class="fas fa-wpforms text-purple-500"></i>
+	                <div class="label">Create Form</div>
+	                <div class="desc">Design new form</div>
+	            </a>
+	            <a href="#" class="quick-action">
+	                <i class="fas fa-download text-green-500"></i>
+	                <div class="label">Export Data</div>
+	                <div class="desc">Download reports</div>
+	            </a>
+	            <a href="#" class="quick-action">
+	                <i class="fas fa-cog text-gray-500"></i>
+	                <div class="label">Settings</div>
+	                <div class="desc">System configuration</div>
+	            </a>
+	        </div>
+	    </div>
+	    <!-- Recent Activity -->
+	    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+	        <h2 class="text-lg font-bold mb-6 text-gray-900">
+	            <i class="fas fa-history mr-2 text-purple-500"></i>
+	            Recent Activity
+	        </h2>
+	        <div class="space-y-4">
+	            {% for activity in recent_activities %}
+	                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+	                    <div class="flex items-center">
+	                        <div class="w-3 h-3 bg-{{ activity.color|default:'blue' }}-500 rounded-full"></div>
+	                        <div class="ml-4">
+	                            <p class="text-sm font-medium text-gray-900">{{ activity.title }}</p>
+	                            <p class="text-xs text-gray-500">{{ activity.timestamp }}</p>
+	                        </div>
+	                    </div>
+	                    <span class="text-xs font-medium px-2 py-1 bg-gray-200 text-gray-700 rounded-full">
+	                        {{ activity.status }}
+	                    </span>
+	                </div>
+	            {% empty %}
+	                <div class="text-center py-8 text-gray-500">
+	                    <i class="fas fa-inbox text-4xl mb-3 block text-gray-300"></i>
+	                    <div class="text-lg font-medium">No recent activity</div>
+	                    <div class="text-sm mt-1">Check back later for updates</div>
+	                </div>
+	            {% endfor %}
+	        </div>
+	    </div>
+	</div>
+	{% endblock %}

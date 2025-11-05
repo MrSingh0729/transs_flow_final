@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dust Count Checklist{% endblock %}
+
+{% block content %}
+<div class="pc-container">
+  <div class="pc-content">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Dust Count Checklist</h4>
+        <a href="{% url 'dust_count_checklist_add' %}" class="btn btn-primary">Add New Record</a>
+      </div>
+      <div class="card-body">
+        <form method="get" class="mb-3 d-flex gap-2">
+          <input type="text" name="q" class="form-control" placeholder="Search by Name, Emp ID, Line..." value="{{ request.GET.q }}">
+          <button type="submit" class="btn btn-secondary">Search</button>
+        </form>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Date</th>
+                <th>Shift</th>
+                <th>Emp ID</th>
+                <th>Name</th>
+                <th>Line</th>
+                <th>Group</th>
+                <th>Model</th>
+                <th>Color</th>
+                <th>≥0.3μm</th>
+                <th>≥0.5μm</th>
+                <th>≥1.0μm</th>
+                <th>Checked By</th>
+                <th>Verified By</th>
+                <th>Created At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in records %}
+                <tr>
+                  <td>{{ record.date }}</td>
+                  <td>{{ record.shift }}</td>
+                  <td>{{ record.emp_id }}</td>
+                  <td>{{ record.name }}</td>
+                  <td>{{ record.line }}</td>
+                  <td>{{ record.group }}</td>
+                  <td>{{ record.model }}</td>
+                  <td>{{ record.color }}</td>
+                  <td>{{ record.micrometer_0_3 }}</td>
+                  <td>{{ record.micrometer_0_5 }}</td>
+                  <td>{{ record.micrometer_1_0 }}</td>
+                  <td>{{ record.checked_by }}</td>
+                  <td>{{ record.verified_by }}</td>
+                  <td>{{ record.created_at|date:"d-m-Y H:i" }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="14" class="text-center">No records found.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if is_paginated %}
+          <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+              {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; Prev</a></li>
+              {% endif %}
+              <li class="page-item disabled"><a class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a></li>
+              {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next &raquo;</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

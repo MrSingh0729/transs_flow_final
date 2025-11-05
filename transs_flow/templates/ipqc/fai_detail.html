@@ -1,0 +1,449 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}FAI详情 - {{ fai_record.model }}{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- 面包屑导航 -->
+    <nav class="flex mb-8" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{{ breadcrumbs.0.url }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                    <i class="fas fa-home mr-2"></i>{{ breadcrumbs.0.name }}
+                </a>
+            </li>
+            {% for crumb in breadcrumbs|slice:"1:" %}
+            <li>
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    {% if forloop.last %}
+                    <span class="ml-1 text-sm font-medium text-gray-500">{{ crumb.name }}</span>
+                    {% else %}
+                    <a href="{{ crumb.url }}" class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600">{{ crumb.name }}</a>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ol>
+    </nav>
+
+    <!-- 页面标题 -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">{{ page_title }}</h1>
+        <p class="text-gray-600 mt-2">检查日期: {{ fai_record.date|date:"Y年m月d日" }}</p>
+    </div>
+
+    <!-- 基本信息 -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">基本信息</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">型号:</span>
+                <span class="text-gray-900">{{ fai_record.model }}</span>
+            </div>
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">颜色:</span>
+                <span class="text-gray-900">{{ fai_record.color }}</span>
+            </div>
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">班次:</span>
+                <span class="text-gray-900">{{ fai_record.shift }}</span>
+            </div>
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">产线:</span>
+                <span class="text-gray-900">{{ fai_record.line }}</span>
+            </div>
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">组别:</span>
+                <span class="text-gray-900">{{ fai_record.group }}</span>
+            </div>
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">检验员:</span>
+                <span class="text-gray-900">{{ fai_record.inspector_name }}</span>
+            </div>
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">工单号:</span>
+                <span class="text-gray-900">{{ fai_record.production_work_order_no }}</span>
+            </div>
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">类型:</span>
+                <span class="text-gray-900">{{ fai_record.get_first_article_type_display }}</span>
+            </div>
+            <div class="flex">
+                <span class="font-medium text-gray-500 w-24">序列号:</span>
+                <span class="text-gray-900">{{ fai_record.sample_serial_number }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结果摘要 -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">检验结果</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">视觉与功能测试</h3>
+                <div class="flex items-center">
+                    {% if fai_record.visual_functional_result == 'QUALIFIED' %}
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900">合格</p>
+                            <p class="text-sm text-gray-500">所有视觉和功能测试均通过</p>
+                        </div>
+                    {% elif fai_record.visual_functional_result == 'UNQUALIFIED' %}
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-times-circle text-red-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900">不合格</p>
+                            <p class="text-sm text-gray-500">存在不符合项</p>
+                        </div>
+                    {% else %}
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-yellow-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900">有条件接受</p>
+                            <p class="text-sm text-gray-500">需整改后接受</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">可靠性测试</h3>
+                <div class="flex items-center">
+                    {% if fai_record.reliability_result == 'QUALIFIED' %}
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900">合格</p>
+                            <p class="text-sm text-gray-500">所有可靠性测试均通过</p>
+                        </div>
+                    {% elif fai_record.reliability_result == 'UNQUALIFIED' %}
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-times-circle text-red-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900">不合格</p>
+                            <p class="text-sm text-gray-500">存在不符合项</p>
+                        </div>
+                    {% else %}
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-yellow-500 text-2xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900">有条件接受</p>
+                            <p class="text-sm text-gray-500">需整改后接受</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 测试详情 -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">测试详情</h2>
+        
+        <!-- 标签页导航 -->
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button onclick="showTab('basic')" class="tab-btn active" data-tab="basic">
+                    基础检查
+                </button>
+                <button onclick="showTab('functional')" class="tab-btn" data-tab="functional">
+                    功能测试
+                </button>
+                <button onclick="showTab('reliability')" class="tab-btn" data-tab="reliability">
+                    可靠性测试
+                </button>
+                <button onclick="showTab('evidence')" class="tab-btn" data-tab="evidence">
+                    证据文件
+                </button>
+            </nav>
+        </div>
+
+        <!-- 标签页内容 -->
+        <div class="mt-6">
+            <!-- 基础检查标签页 -->
+            <div id="basic-tab" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">软件检查</h3>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between">
+                                <span>软件版本:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.software_ver_check %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>Android版本:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.android_ver_check %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>内存检查:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.memory_inbuilt_check %}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">外观检查</h3>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between">
+                                <span>外观检验:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.visual_inspection_handset %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>Logo检查:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.logo_check %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>装配检查:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.assembly_battery_check %}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能测试标签页 -->
+            <div id="functional-tab" class="tab-content" style="display:none;">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">基础功能</h3>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between">
+                                <span>触摸屏:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.touch_screen_pen_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>通话测试:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.calling_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>按键测试:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.buttons_keys_test %}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">连接功能</h3>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between">
+                                <span>蓝牙:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.bluetooth_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>WiFi:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.wifi_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>OTG:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.otg_fn_test %}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">相机功能</h3>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between">
+                                <span>相机拍摄:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.camera_photo_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>闪光灯:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.camera_flash_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>暗光拍摄:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.camera_dark_test %}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 可靠性测试标签页 -->
+            <div id="reliability-tab" class="tab-content" style="display:none;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">物理测试</h3>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between">
+                                <span>SIM卡插拔:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.tcard_sim_plug_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>轻微跌落:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.slight_drop_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>充电稳定性:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.slight_touch_test %}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">环境测试</h3>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between">
+                                <span>高温模拟:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.high_temp_simul_test %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>高温启动:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.high_temp_boot_check %}
+                            </li>
+                            <li class="flex justify-between">
+                                <span>高温通话:</span>
+                                {% include 'ipqc/components/status_badge.html' with status=fai_record.high_temp_call_test %}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 证据文件标签页 -->
+            <div id="evidence-tab" class="tab-content" style="display:none;">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% if fai_record.label_check_evidence %}
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium text-gray-800 mb-2">标签检查</h4>
+                        <img src="{{ fai_record.label_check_evidence.url }}" alt="标签证据" 
+                            class="w-full h-48 object-cover rounded">
+                        <a href="{{ fai_record.label_check_evidence.url }}" download 
+                            class="mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-download mr-1"></i>下载
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if fai_record.camera_front_test_evidence %}
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium text-gray-800 mb-2">前置相机</h4>
+                        <img src="{{ fai_record.camera_front_test_evidence.url }}" alt="前置相机" 
+                            class="w-full h-48 object-cover rounded">
+                        <a href="{% url 'download_fai_evidence' fai_record.pk 'cam_front_photo' %}" download 
+                            class="mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-download mr-1"></i>下载
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if fai_record.camera_back_test_evidence %}
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium text-gray-800 mb-2">后置相机</h4>
+                        <img src="{{ fai_record.camera_back_test_evidence.url }}" alt="后置相机" 
+                            class="w-full h-48 object-cover rounded">
+                        <a href="{% url 'download_fai_evidence' fai_record.pk 'cam_back_photo' %}" download 
+                            class="mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-download mr-1"></i>下载
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if fai_record.imei_photo %}
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium text-gray-800 mb-2">IMEI验证</h4>
+                        <img src="{{ fai_record.imei_photo.url }}" alt="IMEI" 
+                            class="w-full h-48 object-cover rounded">
+                        <a href="{% url 'download_fai_evidence' fai_record.pk 'imei_photo' %}" download 
+                            class="mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-download mr-1"></i>下载
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 签名信息 -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">签名信息</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm font-medium text-gray-500">检验员签名</p>
+                <p class="text-lg text-gray-900">{{ fai_record.inspector_name }}</p>
+                <p class="text-sm text-gray-500">{{ fai_record.created_at|date:"Y年m月d日 H:i" }}</p>
+            </div>
+            {% if fai_record.qe_confirm_name %}
+            <div>
+                <p class="text-sm font-medium text-gray-500">质量工程师确认</p>
+                <p class="text-lg text-gray-900">{{ fai_record.qe_confirm_name }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="mt-6 flex justify-end space-x-4">
+        <a href="{% url 'testing_fai_list' %}" class="cyber-button-secondary">
+            <i class="fas fa-arrow-left mr-2"></i>返回列表
+        </a>
+        <button onclick="window.print()" class="cyber-button">
+            <i class="fas fa-print mr-2"></i>打印报告
+        </button>
+        <a href="{% url 'download_fai_evidence' fai_record.pk 'imei_photo' %}" 
+            class="cyber-button">
+            <i class="fas fa-download mr-2"></i>下载所有证据
+        </a>
+    </div>
+</div>
+
+<!-- 状态标记组件模板 -->
+{% comment %}这部分应该单独放在一个组件文件中，这里为了简化直接包含{% endcomment %}
+<script>
+function showTab(tabName) {
+    // 隐藏所有标签页内容
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.style.display = 'none';
+    });
+    
+    // 移除所有按钮的active类
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
+        btn.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // 显示选中的标签页
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    
+    // 激活选中的按钮
+    const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+    activeBtn.classList.add('active', 'border-blue-500', 'text-blue-600');
+    activeBtn.classList.remove('border-transparent', 'text-gray-500');
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化标签页
+    showTab('basic');
+});
+</script>
+
+<style>
+.tab-btn {
+    @apply py-2 px-1 border-b-2 font-medium text-sm leading-5 transition-colors duration-200;
+}
+
+.tab-btn.active {
+    @apply border-blue-500 text-blue-600;
+}
+
+.tab-btn:not(.active) {
+    @apply border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300;
+}
+
+.tab-content {
+    @apply mt-4;
+}
+</style>
+{% endblock content %}

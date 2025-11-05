@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}IPQC Work Info{% endblock title %}
+
+{% block content %}
+
+<!-- Page Title -->
+<h1 class="text-2xl font-bold text-gray-900 mb-6">IPQC Work Information</h1>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="metric-card">
+        <div class="flex items-start justify-between">
+            <div>
+                <div class="metric-value">{{ today_records }}</div>
+                <div class="metric-label">Today's Records</div>
+            </div>
+            <div class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-calendar-day text-sky-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="flex items-start justify-between">
+            <div>
+                <div class="metric-value">{{ week_records }}</div>
+                <div class="metric-label">This Week</div>
+            </div>
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-calendar-week text-green-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="flex items-start justify-between">
+            <div>
+                <div class="metric-value">{{ total_records }}</div>
+                <div class="metric-label">Total Records</div>
+            </div>
+            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-database text-gray-600"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Records Table -->
+{% if recent_records %}
+<div class="bg-white shadow-md rounded-xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h5 class="text-lg font-bold text-gray-900">Recent Records</h5>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Shift
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Employee ID
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Section
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Model
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Line
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Group
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Color
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white">
+                {% for record in recent_records %}
+                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ record.date|date:"Y-m-d" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {{ record.shift }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        {{ record.emp_id }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ record.name }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ record.section }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ record.model }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ record.line }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ record.group }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ record.color }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock content %}

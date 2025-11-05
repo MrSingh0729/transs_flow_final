@@ -1,0 +1,14 @@
+{% load esd_tags %}
+
+{% with compliance_status=record|esd_compliance_status %}
+    <span class="status-badge {{ compliance_status.status_class }}">
+        <i class="{{ compliance_status.icon }} mr-1"></i>
+        {% if compliance_status.fail_count > 0 %}
+            {{ compliance_status.fail_count }} Failed
+        {% elif compliance_status.na_count > 0 %}
+            {{ compliance_status.na_count }} N/A
+        {% else %}
+            {{ compliance_status.status }}
+        {% endif %}
+    </span>
+{% endwith %}

@@ -1,0 +1,461 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}IPQC Control Panel{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <!-- Welcome Header -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8 border border-cyan-500/20">
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">
+                Welcome, <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-indigo-600">
+                    {{ Full_Name|default:"Operator" }}
+                </span>
+            </h1>
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <div class="flex items-center gap-2 text-lg text-gray-600">
+                    <i class="fas fa-microchip text-cyan-500"></i>
+                    <span>IPQC Control System</span>
+                </div>
+                <div class="h-8 w-px bg-gray-300"></div>
+                <div class="flex items-center gap-3">
+                    <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-circle text-green-500 mr-2 text-xs"></i>
+                        Online
+                    </span>
+                    <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-cyan-100 text-cyan-700">
+                        <i class="fas fa-user-tag mr-1"></i>{{ designation|default:"Inspector" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Access Grid -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8 border border-gray-100">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Quick Access</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <a href="{% url 'testing_fai_create' %}"
+                class="group p-4 bg-gradient-to-br from-cyan-50 to-blue-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105 border border-cyan-200">
+                <div
+                    class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-300">
+                    <i class="fas fa-clipboard-check text-white text-xl"></i>
+                </div>
+                <div class="text-center">
+                    <div class="font-semibold text-gray-800">FAI Test</div>
+                    <div class="text-xs text-gray-600">First Article</div>
+                </div>
+                <!-- Badge for today's count -->
+                {% if fai_today > 0 %}
+                <span class="absolute -top-1 -right-1 bg-cyan-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                    {{ fai_today }}
+                </span>
+                {% endif %}
+            </a>
+
+            <a href="{% url 'btb_checksheet_create' %}"
+                class="group p-4 bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <div
+                    class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-300">
+                    <i class="fas fa-clipboard-check text-white text-xl"></i>
+                </div>
+                <div class="text-center">
+                    <div class="font-semibold text-gray-800">BTB Check</div>
+                    <div class="text-xs text-gray-600">Fitment Records</div>
+                </div>
+            </a>
+
+            <a href="{% url 'ass_dummy_test_create' %}"
+                class="group p-4 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <div
+                    class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-300">
+                    <i class="fas fa-flask text-white text-xl"></i>
+                </div>
+                <div class="text-center">
+                    <div class="font-semibold text-gray-800">Dummy Test</div>
+                    <div class="text-xs text-gray-600">QA Tests</div>
+                </div>
+            </a>
+
+            <a href="{% url 'ipqc_disassemble_add' %}"
+                class="group p-4 bg-gradient-to-br from-orange-50 to-red-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <div
+                    class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-300">
+                    <i class="fas fa-tools text-white text-xl"></i>
+                </div>
+                <div class="text-center">
+                    <div class="font-semibold text-gray-800">Disassemble</div>
+                    <div class="text-xs text-gray-600">Checklist</div>
+                </div>
+            </a>
+
+            <a href="{% url 'nc_issue_tracking_create' %}"
+                class="group p-4 bg-gradient-to-br from-red-50 to-pink-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <div
+                    class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-red-400 to-pink-500 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-300">
+                    <i class="fas fa-exclamation-triangle text-white text-xl"></i>
+                </div>
+                <div class="text-center">
+                    <div class="font-semibold text-gray-800">NC Issues</div>
+                    <div class="text-xs text-gray-600">Tracking</div>
+                </div>
+            </a>
+
+            <a href="{% url 'esd_compliance_checklist_add' %}"
+                class="group p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <div
+                    class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-300">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <div class="text-center">
+                    <div class="font-semibold text-gray-800">ESD</div>
+                    <div class="text-xs text-gray-600">Safety</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Monthly Summary Card -->
+        <div
+            class="lg:col-span-2 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden group">
+            <!-- Background decoration -->
+            <div class="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent"></div>
+            <div class="absolute -top-20 -right-20 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+
+            <!-- Content -->
+            <div class="relative z-10">
+                <!-- Header with enhanced styling -->
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2">Monthly Summary</h3>
+                        <p class="text-white/70 text-sm">Performance Overview - {{ now|date:"F Y" }}</p>
+                    </div>
+                    <div
+                        class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center ring-4 ring-white/10 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-chart-line text-white text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Stats with enhanced visual design -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- Work Info -->
+                    <div
+                        class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 group/item">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <p class="text-white/80 text-sm font-medium mb-1">Work Info</p>
+                                <p class="text-3xl font-bold">{{ work_info_month|default:"0" }}</p>
+                            </div>
+                            <div class="w-10 h-10 bg-purple-500/30 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clipboard-list text-purple-200"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-white/60">vs last month</span>
+                            <span class="text-green-300 font-semibold">
+                                <i class="fas fa-arrow-up mr-1"></i>+12%
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Assembly Audit -->
+                    <div
+                        class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 group/item">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <p class="text-white/80 text-sm font-medium mb-1">Assembly Audit</p>
+                                <p class="text-3xl font-bold">{{ audit_month|default:"0" }}</p>
+                            </div>
+                            <div class="w-10 h-10 bg-purple-500/30 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clipboard-check text-purple-200"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-white/60">vs last month</span>
+                            <span class="text-green-300 font-semibold">
+                                <i class="fas fa-arrow-up mr-1"></i>+8%
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- ESD Checks -->
+                    <div
+                        class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 group/item">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <p class="text-white/80 text-sm font-medium mb-1">ESD Checks</p>
+                                <p class="text-3xl font-bold">{{ esd_month|default:"0" }}</p>
+                            </div>
+                            <div class="w-10 h-10 bg-cyan-500/30 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-shield-alt text-cyan-200"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-white/60">vs last month</span>
+                            <span class="text-green-300 font-semibold">
+                                <i class="fas fa-arrow-up mr-1"></i>+8%
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- FAI Tests -->
+                    <div
+                        class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 group/item relative">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <p class="text-white/80 text-sm font-medium mb-1">FAI Tests</p>
+                                <p class="text-3xl font-bold">{{ fai_month|default:"0" }}</p>
+                            </div>
+                            <div class="w-10 h-10 bg-orange-500/30 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clipboard-check text-orange-200"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-white/60">vs last month</span>
+                            <span class="text-green-300 font-semibold">
+                                <i class="fas fa-arrow-up mr-1"></i>+5%
+                            </span>
+                        </div>
+                        <!-- Highlight for today's activity -->
+                        {% if fai_today > 0 %}
+                        <span class="absolute -top-2 -right-2 bg-orange-400 text-white text-xs rounded-full px-2 py-1 font-bold animate-pulse">
+                            +{{ fai_today }} today
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Work Info Card -->
+        <div
+            class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Work Info</h3>
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-clipboard-list text-white text-lg"></i>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                    <span class="text-sm text-gray-700 font-medium">Today</span>
+                    <span class="text-xl font-bold text-cyan-600">{{ work_info_today|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <span class="text-sm text-gray-700 font-medium">This Week</span>
+                    <span class="text-xl font-bold text-blue-600">{{ work_info_week|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <span class="text-sm text-gray-700 font-medium">This Month</span>
+                    <span class="text-xl font-bold text-indigo-600">{{ work_info_month|default:"0" }}</span>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <a href="{% url 'ipqc_work_info' %}" class="cyber-button text-sm py-2">
+                    <i class="fas fa-plus mr-1"></i>New
+                </a>
+                <a href="{% url 'info_dash' %}" class="cyber-button-secondary text-sm py-2">
+                    <i class="fas fa-list mr-1"></i>View All
+                </a>
+            </div>
+        </div>
+
+        <!-- FAI Stats Card -->
+        <div
+            class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">FAI Testing</h3>
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-clipboard-check text-white text-lg"></i>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <span class="text-sm text-gray-700 font-medium">Today</span>
+                    <span class="text-xl font-bold text-orange-600">{{ fai_today|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-200">
+                    <span class="text-sm text-gray-700 font-medium">This Week</span>
+                    <span class="text-xl font-bold text-red-600">{{ fai_week|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-rose-50 rounded-lg border border-rose-200">
+                    <span class="text-sm text-gray-700 font-medium">This Month</span>
+                    <span class="text-xl font-bold text-rose-600">{{ fai_month|default:"0" }}</span>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <a href="{% url 'testing_fai_create' %}" class="cyber-button text-sm py-2">
+                    <i class="fas fa-plus mr-1"></i>New
+                </a>
+                <a href="{% url 'testing_fai_list' %}" class="cyber-button-secondary text-sm py-2">
+                    <i class="fas fa-list mr-1"></i>View All
+                </a>
+            </div>
+        </div>
+
+        <!-- Assembly Audit Stats Card -->
+        <div
+            class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Assembly Audit</h3>
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-purple-400 to-indigo-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-clipboard-check text-white text-lg"></i>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <span class="text-sm text-gray-700 font-medium">Today</span>
+                    <span class="text-xl font-bold text-purple-600">{{ audit_today|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <span class="text-sm text-gray-700 font-medium">This Week</span>
+                    <span class="text-xl font-bold text-indigo-600">{{ audit_week|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-pink-50 rounded-lg border border-pink-200">
+                    <span class="text-sm text-gray-700 font-medium">This Month</span>
+                    <span class="text-xl font-bold text-pink-600">{{ audit_month|default:"0" }}</span>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <a href="{% url 'ipqc_assembly_audit_create' %}" class="cyber-button text-sm py-2">
+                    <i class="fas fa-plus mr-1"></i>New
+                </a>
+                <a href="{% url 'ipqc_audit_list' %}" class="cyber-button-secondary text-sm py-2">
+                    <i class="fas fa-list mr-1"></i>View All
+                </a>
+            </div>
+        </div>
+
+        <!-- ESD Compliance -->
+        <div
+            class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">ESD Compliance</h3>
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-sky-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-white text-lg"></i>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                    <span class="text-sm text-gray-700 font-medium">Today</span>
+                    <span class="text-xl font-bold text-cyan-600">{{ esd_today|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-sky-50 rounded-lg border border-sky-200">
+                    <span class="text-sm text-gray-700 font-medium">This Week</span>
+                    <span class="text-xl font-bold text-sky-600">{{ esd_week|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <span class="text-sm text-gray-700 font-medium">This Month</span>
+                    <span class="text-xl font-bold text-blue-600">{{ esd_month|default:"0" }}</span>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <a href="{% url 'esd_compliance_checklist_add' %}" class="cyber-button text-sm py-2">
+                    <i class="fas fa-plus mr-1"></i>New
+                </a>
+                <a href="{% url 'esd_compliance_checklist_list' %}" class="cyber-button-secondary text-sm py-2">
+                    <i class="fas fa-list mr-1"></i>View All
+                </a>
+            </div>
+        </div>
+
+        <!-- IPQC Disassemble -->
+        <div
+            class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">IPQC Disassemble</h3>
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-tools text-white text-lg"></i>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <span class="text-sm text-gray-700 font-medium">Today</span>
+                    <span class="text-xl font-bold text-orange-600">{{ disassemble_today|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-200">
+                    <span class="text-sm text-gray-700 font-medium">This Week</span>
+                    <span class="text-xl font-bold text-red-600">{{ disassemble_week|default:"0" }}</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-rose-50 rounded-lg border border-rose-200">
+                    <span class="text-sm text-gray-700 font-medium">This Month</span>
+                    <span class="text-xl font-bold text-rose-600">{{ disassemble_month|default:"0" }}</span>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <a href="{% url 'ipqc_disassemble_add' %}" class="cyber-button text-sm py-2">
+                    <i class="fas fa-plus mr-1"></i>New
+                </a>
+                <a href="{% url 'ipqc_disassemble_list' %}" class="cyber-button-secondary text-sm py-2">
+                    <i class="fas fa-list mr-1"></i>View All
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Feed -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-100">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900">Recent Activity</h3>
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-2 w-2 bg-green-500 rounded-full">
+                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+                </span>
+                <span class="text-sm text-gray-600">Live Updates</span>
+            </div>
+        </div>
+        
+        <div class="space-y-4">
+            {% if latest_work_info %}
+            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl border border-cyan-200">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-clipboard-list text-cyan-600"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">Today's Work Info</p>
+                        <p class="text-xs text-gray-600">
+                            {{ latest_work_info.line }} - {{ latest_work_info.model }} - {{ latest_work_info.color }}
+                        </p>
+                    </div>
+                </div>
+                <span class="text-xs text-cyan-600 font-medium">Completed</span>
+            </div>
+            {% endif %}
+            
+            {% for audit in recent_audits %}
+            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-clipboard-check text-purple-600"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">Assembly Audit</p>
+                        <p class="text-xs text-gray-600">
+                            {{ audit.model }} - {{ audit.created_at|date:"H:i" }}
+                        </p>
+                    </div>
+                </div>
+                <span class="text-xs text-purple-600 font-medium">{{ audit.get_status_display|default:"Active" }}</span>
+            </div>
+            {% empty %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-inbox fa-3x mb-4 text-gray-300"></i>
+                <p class="text-lg font-medium">No recent activity</p>
+                <p class="text-sm">Complete your first check to see updates here</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

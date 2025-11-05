@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="holographic-card p-4 rounded-xl">
+  <h1 class="text-2xl font-bold mb-4 glow-text"><i class="fas fa-comments"></i> Chats</h1>
+
+  <a href="{% url 'chat:create_group' %}" class="cyber-button py-2 px-4 rounded text-white">
+    <i class="fas fa-users"></i> New Group
+  </a>
+
+  <ul class="mt-6 space-y-3">
+    {% for room in rooms %}
+    <li class="p-3 rounded cyber-border hover:bg-gray-800">
+      <a href="{% url 'chat:room' room.id %}" class="flex justify-between">
+        <span>{{ room.display_name }}</span>
+        <span class="text-xs text-gray-400">{{ room.updated_at|date:"H:i" }}</span>
+      </a>
+    </li>
+    {% empty %}
+    <li>No active chats.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

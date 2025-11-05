@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}FAI Record Detail{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
+            <h1 class="text-2xl font-bold">FAI Record: {{ fai_record.model }} ({{ fai_record.color }})</h1>
+            <p class="text-blue-100 mt-2">Inspection Date: {{ fai_record.date|date:"Y-m-d" }} | Inspector: {{
+                fai_record.inspector_name }}</p>
+        </div>
+        <!-- Body -->
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Basic Information -->
+                <div class="col-span-full">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Basic Information</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div><strong>Date:</strong> {{ fai_record.date }}</div>
+                        <div><strong>Shift:</strong> {{ fai_record.shift }}</div>
+                        <div><strong>Emp ID:</strong> {{ fai_record.emp_id }}</div>
+                        <div><strong>Name:</strong> {{ fai_record.name }}</div>
+                        <div><strong>Section:</strong> {{ fai_record.section }}</div>
+                        <div><strong>Line:</strong> {{ fai_record.line }}</div>
+                        <div><strong>Model:</strong> {{ fai_record.model }}</div>
+                        <div><strong>Color:</strong> {{ fai_record.color }}</div>
+                        <div><strong>Work Order:</strong> {{ fai_record.production_work_order_no }}</div>
+                        <div><strong>FAI Type:</strong> {{ fai_record.get_first_article_type_display }}</div>
+                    </div>
+                </div>
+                <!-- Check Results -->
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-3 border-b pb-2">Order & Software</h2>
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.software_ver_check
+                    label="Software Version Check" %}
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.android_ver_check label="Android
+                    Version Check" %}
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.memory_inbuilt_check
+                    label="Memory Check" %}
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.order_confirm_check label="Order
+                    Confirmation Check" %}
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-3 border-b pb-2">Visual & Labels</h2>
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.label_check label="Label Check"
+                    %}
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.label_position_check
+                    label="Label Position Check" %}
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.visual_inspection_handset
+                    label="Visual Handset" %}
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.logo_check label="Logo Check" %}
+                    {% include 'ipqc/partials/field_display.html' with field=fai_record.assembly_battery_check
+                    label="Assembly Check" %}
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-3 border-b pb-2">Final Results</h2>
+                    <div><strong>Visual & Functional Result:</strong>
+                        <span class="px-2 py-1 text-xs rounded-full 
+	                            {% if fai_record.visual_functional_result == 'QUALIFIED' %}bg-green-100 text-green-800
+	                            {% elif fai_record.visual_functional_result == 'UNQUALIFIED' %}bg-red-100 text-red-800
+	                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {{ fai_record.visual_functional_result }}
+                        </span>
+                    </div>
+                    <div class="mt-2"><strong>Reliability Result:</strong>
+                        <span class="px-2 py-1 text-xs rounded-full 
+	                            {% if fai_record.reliability_result == 'QUALIFIED' %}bg-green-100 text-green-800
+	                            {% elif fai_record.reliability_result == 'UNQUALIFIED' %}bg-red-100 text-red-800
+	                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {{ fai_record.reliability_result }}
+                        </span>
+                    </div>
+                    <div class="mt-2"><strong>Inspector Name:</strong> {{ fai_record.inspector_name }}</div>
+                    <div class="mt-2"><strong>QE Name:</strong> {{ fai_record.qe_confirm_name|default:"N/A" }}</div>
+                    <div class="mt-2"><strong>QE Status:</strong> {{ fai_record.qe_confirm_status|default:"N/A" }}</div>
+                </div>
+                <!-- Photos -->
+                {% if fai_record.imei_photo or fai_record.label_check_evidence %}
+                <div class="col-span-full">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Evidence Photos</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {% if fai_record.imei_photo %}
+                        <div><strong>IMEI:</strong><a href="{{ fai_record.imei_photo.url }}" target="_blank"><img
+                                    src="{{ fai_record.imei_photo.url }}" alt="IMEI Photo"
+                                    class="w-full h-32 object-cover rounded"></a></div>
+                        {% endif %}
+                        {% if fai_record.label_check_evidence %}
+                        <div><strong>Label:</strong><a href="{{ fai_record.label_check_evidence.url }}"
+                                target="_blank"><img src="{{ fai_record.label_check_evidence.url }}" alt="Label Photo"
+                                    class="w-full h-32 object-cover rounded"></a></div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% comment %}
+Create a partial template for cleaner code at ipqc/templates/ipqc/partials/field_display.html:
+{% endcomment %}
+{% if field %}
+<div class="flex justify-between items-center py-2 border-b">
+    <span class="text-gray-600">{{ label }}:</span>
+    <span class="font-semibold 
+	            {% if field == 'OK' %}text-green-600
+	            {% elif field == 'Not OK' %}text-red-600
+	            {% else %}text-gray-500{% endif %}">
+        {{ field }}
+    </span>
+</div>
+{% endif %}
+{% endblock content %}

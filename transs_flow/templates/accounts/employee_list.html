@@ -1,0 +1,119 @@
+	{% extends 'base.html' %}
+	{% block title %}Employee Management{% endblock %}
+	{% block content %}
+	<div class="space-y-6">
+	    <!-- Header -->
+	    <div class="mb-6">
+	        <div class="flex items-center justify-between">
+	            <div>
+	                <h1 class="text-2xl font-bold text-gray-900">
+	                    <i class="fas fa-users mr-3 text-blue-500"></i>
+	                    Employee Management
+	                </h1>
+	                <p class="text-gray-600 mt-1">Manage employee accounts and permissions</p>
+	            </div>
+	            <a href="{% url 'employee_create' %}" class="btn btn-primary">
+	                <i class="fas fa-user-plus mr-2"></i>
+	                Add New Employee
+	            </a>
+	        </div>
+	    </div>
+	    <!-- Search Bar -->
+	    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+	        <div class="flex items-center space-x-4">
+	            <div class="flex-1 relative">
+	                <input type="text" id="searchInput" placeholder="Search employees..." 
+	                       class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 pl-10"
+	                       onkeyup="filterTable()">
+	                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+	            </div>
+	            <button class="btn btn-secondary">
+	                <i class="fas fa-filter"></i>
+	            </button>
+	        </div>
+	    </div>
+	    <!-- Employee Table -->
+	    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+	        <div class="overflow-x-auto">
+	            <table class="w-full" id="employeeTable">
+	                <thead class="bg-gray-50 border-b border-gray-200">
+	                    <tr>
+	                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+	                            <i class="fas fa-hashtag mr-1"></i> ID
+	                        </th>
+	                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+	                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
+	                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
+	                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Factory</th>
+	                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+	                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+	                    </tr>
+	                </thead>
+	                <tbody class="divide-y divide-gray-200">
+	                    {% for employee in employees %}
+	                        <tr class="hover:bg-gray-50 transition-colors">
+	                            <td class="px-4 py-3 text-sm font-mono text-gray-900">{{ employee.employee_id }}</td>
+	                            <td class="px-4 py-3 text-sm text-gray-900">
+	                                <div class="flex items-center">
+	                                    <div class="w-2 h-2 bg-{{ employee.is_active|yesno:'green' }}-500 rounded-full mr-2"></div>
+	                                    {{ employee.full_name }}
+	                                </div>
+	                            </td>
+	                            <td class="px-4 py-3 text-sm text-gray-900">
+	                                <span class="status-badge status-idle">{{ employee.role }}</span>
+	                            </td>
+	                            <td class="px-4 py-3 text-sm text-gray-900">{{ employee.department }}</td>
+	                            <td class="px-4 py-3 text-sm text-gray-900">{{ employee.factory_code }}</td>
+	                            <td class="px-4 py-3 text-center">
+	                                {% if employee.is_active %}
+	                                    <span class="status-badge status-running">Active</span>
+	                                {% else %}
+	                                    <span class="status-badge status-stop">Inactive</span>
+	                                {% endif %}
+	                            </td>
+	                            <td class="px-4 py-3 text-center">
+	                                <div class="flex items-center justify-center space-x-2">
+	                                    <a href="{% url 'employee_edit' employee.id %}" 
+	                                       class="text-blue-600 hover:text-blue-800 transition-colors"
+	                                       title="Edit Employee">
+	                                        <i class="fas fa-edit"></i>
+	                                    </a>
+	                                    <a href="{% url 'employee_delete' employee.id %}" 
+	                                       class="text-red-600 hover:text-red-800 transition-colors"
+	                                       title="Delete Employee"
+	                                       onclick="return confirm('Delete {{ employee.full_name }}?')">
+	                                        <i class="fas fa-trash"></i>
+	                                    </a>
+	                                </div>
+	                            </td>
+	                        </tr>
+	                    {% empty %}
+	                        <tr>
+	                            <td colspan="7" class="px-4 py-12 text-center text-gray-500">
+	                                <i class="fas fa-inbox text-4xl mb-3 block text-gray-300"></i>
+	                                <div class="text-lg font-medium">No employees found</div>
+	                                <div class="text-sm mt-1">Create your first employee to get started</div>
+	                            </td>
+	                        </tr>
+	                    {% endfor %}
+	                </tbody>
+	            </table>
+	        </div>
+	    </div>
+	</div>
+	<script>
+	    function filterTable() {
+	        const input = document.getElementById('searchInput');
+	        const filter = input.value.toLowerCase();
+	        const rows = document.querySelectorAll('#employeeTable tbody tr');
+	        rows.forEach(row => {
+	            const text = row.textContent.toLowerCase();
+	            if (text.includes(filter)) {
+	                row.style.display = '';
+	            } else {
+	                row.style.display = 'none';
+	            }
+	        });
+	    }
+	</script>
+	{% endblock %}

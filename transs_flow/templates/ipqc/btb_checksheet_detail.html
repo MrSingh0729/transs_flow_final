@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}BTB Checksheet Detail - {{ sheet.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Styling for the remark display divs */
+    .remark-display {
+        min-height: 50px;
+        padding: 5px;
+        white-space: pre-wrap; /* Preserves line breaks in remarks */
+    }
+    /* --- Mobile & Tablet Responsive Styles (same as form) --- */
+    @media (max-width: 767.98px) {
+        .table, .table tbody, .table tr, .table td { display: block; width: 100% !important; }
+        .table thead { display: none; }
+        .table tr { border: 1px solid #ccc; border-radius: 5px; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .table td { border: none; border-bottom: 1px solid #eee; text-align: right; padding-left: 50%; position: relative; }
+        .table td:before { content: attr(data-label) ": "; position: absolute; left: 15px; width: 45%; padding-right: 10px; white-space: nowrap; text-align: left; font-weight: bold; color: #333; }
+        .table td:first-child { background-color: #007bff; color: white; text-align: center; font-weight: bold; font-size: 1.1em; padding: 12px 5px; border-bottom: 2px solid #0056b3; }
+        .table td:first-child:before { content: "" !important; }
+        .table td.total-cell { text-align: center; padding-left: 15px; font-weight: bold; background-color: #f8f9fa; border-bottom: none; }
+        .table td.total-cell:before { content: "Row Total: "; }
+        .table tr.table-info { border: 1px solid #b8daff; background-color: #d1ecf1; border-radius: 5px; margin-bottom: 1.5rem; }
+        .table tr.table-info td { text-align: left; padding-left: 15px; border-bottom: 1px solid #bee5eb; }
+        .table tr.table-info td:before { display: none; }
+        .table tr.table-info td:first-child { background-color: transparent; color: #0c5460; padding: 10px 5px; }
+        .table tr.table-primary { border: 1px solid #b8daff; background-color: #cfe2ff; border-radius: 5px; }
+        .table tr.table-primary td { text-align: left; padding-left: 15px; border-bottom: none; }
+        .table tr.table-primary td:before { display: none; }
+        .table tr.table-primary td:first-child { background-color: #007bff; color: white; font-size: 1.1em; padding: 12px 5px; }
+    }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="pc-container">
+    <div class="pc-content">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">BTB Checksheet for {{ sheet.name }} ({{ sheet.date|date:"Y-m-d" }})</h4>
+                        <a href="{% url 'btb_checksheet_list' %}" class="btn btn-secondary">Back to List</a>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Header Information Display -->
+                        <div class="row mb-4 g-2 align-items-end">
+                            <div class="col-md-2"><strong>Date:</strong> {{ sheet.date|date:"Y-m-d" }}</div>
+                            <div class="col-md-1"><strong>Shift:</strong> {{ sheet.shift }}</div>
+                            <div class="col-md-1"><strong>Emp ID:</strong> {{ sheet.emp_id }}</div>
+                            <div class="col-md-2"><strong>Model:</strong> {{ sheet.name }}</div>
+                            <div class="col-md-1"><strong>Line:</strong> {{ sheet.line }}</div>
+                            <div class="col-md-1"><strong>Group:</strong> {{ sheet.group }}</div>
+                            <div class="col-md-1"><strong>Color:</strong> {{ sheet.color }}</div>
+                            <div class="col-md-3"><strong>Frequency:</strong> {{ sheet.frequency }}</div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm text-center align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th rowspan="2">Time</th>
+                                        <th colspan="6">Issue</th>
+                                        <th rowspan="2">Total</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Input</th>
+                                        <th>CAM BTB</th>
+                                        <th>LCD fitment</th>
+                                        <th>MAIN FPC</th>
+                                        <th>Battery</th>
+                                        <th>Finger printer</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data Rows Displaying Data -->
+                                    <tr><td>9:00</td><td data-label="Input">{{ sheet.input_9 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_9 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_9 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_9 }}</td><td data-label="Battery">{{ sheet.battery_9 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_9 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_9 }}</td></tr>
+                                    <tr><td>10:00</td><td data-label="Input">{{ sheet.input_10 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_10 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_10 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_10 }}</td><td data-label="Battery">{{ sheet.battery_10 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_10 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_10 }}</td></tr>
+                                    <tr><td>11:00</td><td data-label="Input">{{ sheet.input_11 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_11 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_11 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_11 }}</td><td data-label="Battery">{{ sheet.battery_11 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_11 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_11 }}</td></tr>
+                                    <tr><td>12:00</td><td data-label="Input">{{ sheet.input_12 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_12 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_12 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_12 }}</td><td data-label="Battery">{{ sheet.battery_12 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_12 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_12 }}</td></tr>
+                                    <tr><td>1:00</td><td data-label="Input">{{ sheet.input_1 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_1 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_1 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_1 }}</td><td data-label="Battery">{{ sheet.battery_1 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_1 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_1 }}</td></tr>
+                                    <tr><td>2:00</td><td data-label="Input">{{ sheet.input_2 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_2 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_2 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_2 }}</td><td data-label="Battery">{{ sheet.battery_2 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_2 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_2 }}</td></tr>
+                                    <tr><td>3:00</td><td data-label="Input">{{ sheet.input_3 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_3 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_3 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_3 }}</td><td data-label="Battery">{{ sheet.battery_3 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_3 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_3 }}</td></tr>
+                                    <tr><td>4:00</td><td data-label="Input">{{ sheet.input_4 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_4 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_4 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_4 }}</td><td data-label="Battery">{{ sheet.battery_4 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_4 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_4 }}</td></tr>
+                                    <tr><td>5:00</td><td data-label="Input">{{ sheet.input_5 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_5 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_5 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_5 }}</td><td data-label="Battery">{{ sheet.battery_5 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_5 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_5 }}</td></tr>
+                                    <tr><td>6:00</td><td data-label="Input">{{ sheet.input_6 }}</td><td data-label="CAM BTB">{{ sheet.cam_btb_6 }}</td><td data-label="LCD fitment">{{ sheet.lcd_fitment_6 }}</td><td data-label="MAIN FPC">{{ sheet.main_fpc_6 }}</td><td data-label="Battery">{{ sheet.battery_6 }}</td><td data-label="Finger printer">{{ sheet.finger_printer_6 }}</td><td class="table-secondary total-cell" data-label="Row Total">{{ sheet.total_6 }}</td></tr>
+
+                                    <!-- Remark Row -->
+                                    <tr class="table-info">
+                                        <td>Remark</td>
+                                        <td data-label="Input"><div class="remark-display">{{ sheet.remark_input|default:"-" }}</div></td>
+                                        <td data-label="CAM BTB"><div class="remark-display">{{ sheet.remark_cam_btb|default:"-" }}</div></td>
+                                        <td data-label="LCD fitment"><div class="remark-display">{{ sheet.remark_lcd_fitment|default:"-" }}</div></td>
+                                        <td data-label="MAIN FPC"><div class="remark-display">{{ sheet.remark_main_fpc|default:"-" }}</div></td>
+                                        <td data-label="Battery"><div class="remark-display">{{ sheet.remark_battery|default:"-" }}</div></td>
+                                        <td data-label="Finger printer"><div class="remark-display">{{ sheet.remark_finger_printer|default:"-" }}</div></td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                    <!-- Total Row -->
+                                    <tr class="table-primary fw-bold">
+                                        <td>Total</td>
+                                        <td data-label="Input">{{ sheet.input_total }}</td>
+                                        <td data-label="CAM BTB">{{ sheet.cam_btb_total }}</td>
+                                        <td data-label="LCD fitment">{{ sheet.lcd_fitment_total }}</td>
+                                        <td data-label="MAIN FPC">{{ sheet.main_fpc_total }}</td>
+                                        <td data-label="Battery">{{ sheet.battery_total }}</td>
+                                        <td data-label="Finger printer">{{ sheet.finger_printer_total }}</td>
+                                        <td data-label="Grand Total">{{ sheet.grand_total }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

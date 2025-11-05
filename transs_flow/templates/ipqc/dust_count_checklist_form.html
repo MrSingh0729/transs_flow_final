@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dust Count Checklist{% endblock %}
+
+{% block content %}
+<div class="pc-container">
+  <div class="pc-content">
+    <div class="row justify-content-center">
+      <div class="col-lg-10 col-xl-8">
+        <div class="card shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h4 class="card-title mb-0">Dust Count Checklist</h4>
+          </div>
+          <div class="card-body">
+            <form method="post">
+              {% csrf_token %}
+              <div class="accordion" id="dustAccordion">
+
+                <!-- BASIC INFO -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingBasic">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBasic" aria-expanded="true" aria-controls="collapseBasic">
+                      Basic Information
+                    </button>
+                  </h2>
+                  <div id="collapseBasic" class="accordion-collapse collapse show" aria-labelledby="headingBasic">
+                    <div class="accordion-body row g-3">
+                      {% for field in form %}
+                        {% if field.name in 'date shift emp_id name line group model color' %}
+                          <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                          </div>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- PARTICLE MEASUREMENTS -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingMeasurements">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMeasurements" aria-expanded="false" aria-controls="collapseMeasurements">
+                      Particle Measurements
+                    </button>
+                  </h2>
+                  <div id="collapseMeasurements" class="accordion-collapse collapse" aria-labelledby="headingMeasurements">
+                    <div class="accordion-body row g-3">
+                      {% for field in form %}
+                        {% if field.name in 'micrometer_0_3 micrometer_0_5 micrometer_1_0 checked_by verified_by remark' %}
+                          <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                          </div>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                <button type="submit" class="btn btn-success btn-lg">Submit Checklist</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

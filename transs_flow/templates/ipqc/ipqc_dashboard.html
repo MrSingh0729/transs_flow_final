@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}IPQC Work Info{% endblock title %}
+
+{% block content %}
+<div class="pc-container">
+    <div class="pc-content">
+
+        <!-- Welcome & Dashboard Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title mb-0">Welcome back, {{ first_name }}!</h4>
+                        <p class="text-muted mb-0">{{ designation }} | {% now "jS F Y, H:i" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="avatar-sm bg-primary rounded">
+                                    <i class="fas fa-calendar-day text-white avatar-title font-size-24"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">Today's Records</h6>
+                                <h3 class="mb-0">{{ today_records }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="avatar-sm bg-success rounded">
+                                    <i class="fas fa-calendar-week text-white avatar-title font-size-24"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">This Week</h6>
+                                <h3 class="mb-0">{{ week_records }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="avatar-sm bg-info rounded">
+                                    <i class="fas fa-database text-white avatar-title font-size-24"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">Total Records</h6>
+                                <h3 class="mb-0">{{ total_records }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">IPQC Work Information</h4>
+                        <p class="text-muted mb-0">Fill in the work information details below</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Employee ID</label>
+                                <input type="text" class="form-control" value="{{ user_emp_id }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-control" value="{{ user_name }}" readonly>
+                            </div>
+                        </div>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Date</label>
+                                    {{ form.date }}
+                                    {% if form.date.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.date.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Shift</label>
+                                    {{ form.shift }}
+                                    {% if form.shift.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.shift.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Section</label>
+                                    {{ form.section }}
+                                    {% if form.section.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.section.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Line</label>
+                                    {{ form.line }}
+                                    {% if form.line.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.line.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Group</label>
+                                    {{ form.group }}
+                                    {% if form.group.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.group.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Model</label>
+                                    {{ form.model }}
+                                    {% if form.model.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.model.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Color</label>
+                                    {{ form.color }}
+                                    {% if form.color.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.color.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Records -->
+        {% if recent_records %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Recent Records</h5>
+                    </div>
+                    <div class="card-body table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Shift</th>
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Model</th>
+                                    <th>Color</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in recent_records %}
+                                <tr>
+                                    <td>{{ record.date|date:"Y-m-d" }}</td>
+                                    <td>{{ record.shift }}</td>
+                                    <td>{{ record.emp_id }}</td>
+                                    <td>{{ record.name }}</td>
+                                    <td>{{ record.model }}</td>
+                                    <td>{{ record.color }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock content %}

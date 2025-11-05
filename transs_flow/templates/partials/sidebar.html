@@ -1,0 +1,154 @@
+<div class="flex flex-col h-full">
+    <!-- Navigation -->
+    <nav class="flex-1 px-4 space-y-8">
+        <!-- Logo Section -->
+        <div class="border-b border-cyan-500 flex items-center space-x-3">
+            <div
+                class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center">
+                <i class="fas fa-microchip text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold glow-text">Transs Flow</h1>
+                <p class="text-xs text-gray-400">Manufacturing Control System</p>
+            </div>
+        </div>
+        <div class="space-y-2 sidebar_padding">
+            <!-- Dashboard -->
+            {% if request.user.is_superuser or request.user.role == "admin" %}
+            <!-- Show both Dashboard and Home -->
+            <li class="pc-item">
+                <a href="{% url 'dashboard' %}" class="pc-link">
+                    <span class="pc-micon"><i class="ti ti-home"></i></span>
+                    <span class="pc-mtext">Home</span>
+                </a>
+            </li>
+            <li class="pc-item">
+                <a href="{% url 'ipqc_home' %}" class="pc-link">
+                    <span class="pc-micon"><i class="ti ti-home"></i></span>
+                    <span class="pc-mtext">IPQC Home</span>
+                </a>
+            </li>
+            {% else %}
+
+            <!-- Work Info -->
+            <a href="{% url 'ipqc_work_info' %}" class="sidebar-item">
+                <i class="fas fa-clipboard-list text-purple-400 w-5"></i>
+                <span>Work Info</span>
+            </a>
+
+            <!-- Assembly Audit -->
+            <div class="relative">
+                <button onclick="toggleSubmenu('audit')" class="sidebar-item w-full text-left">
+                    <i class="fas fa-clipboard-check text-pink-400 w-5"></i>
+                    <span>Assembly Audit</span>
+                    <i id="audit-chevron" class="fas fa-chevron-down ml-auto transition-transform"></i>
+                </button>
+                <div id="audit-submenu" class="hidden mt-2 ml-8 space-y-1">
+                    <a href="{% url 'ipqc_assembly_audit_create' %}" class="sidebar-item text-sm">
+                        <i class="fas fa-plus-circle mr-2"></i>New Audit
+                    </a>
+                    <a href="{% url 'ipqc_audit_list' %}" class="sidebar-item text-sm">
+                        <i class="fas fa-list mr-2"></i>Audit History
+                    </a>
+                </div>
+            </div>
+            <!-- Add this new menu item in the sidebar nav section -->
+            <li class="pc-item">
+                <a href="{% url 'testing_fai_create' %}" class="pc-link">
+                    <span class="pc-micon"><i class="ti ti-clipboard"></i></span>
+                    <span class="pc-mtext">FAI Testing</span>
+                    {% if request.resolver_match.url_name == 'testing_fai_create' %}
+                    <span class="ml-auto bg-cyan-500 w-2 h-2 rounded-full"></span>
+                    {% endif %}
+                </a>
+            </li>
+
+            <!-- Add to the submenu section if you have one -->
+            <div class="relative">
+                <button onclick="toggleSubmenu('fai')" class="sidebar-item w-full text-left">
+                    <i class="fas fa-clipboard-check text-orange-400 w-5"></i>
+                    <span>FAI Testing</span>
+                    <i id="fai-chevron" class="fas fa-chevron-down ml-auto transition-transform"></i>
+                </button>
+                <div id="fai-submenu" class="hidden mt-2 ml-8 space-y-1">
+                    <a href="{% url 'testing_fai_create' %}" class="sidebar-item text-sm">
+                        <i class="fas fa-plus-circle mr-2"></i>New FAI Test
+                    </a>
+                    <a href="{% url 'testing_fai_list' %}" class="sidebar-item text-sm">
+                        <i class="fas fa-list mr-2"></i>FAI History
+                    </a>
+                </div>
+            </div>
+
+            <!-- Chat System -->
+            <div class="relative">
+                <button onclick="toggleSubmenu('chat')" class="sidebar-item w-full text-left">
+                    <i class="fas fa-comments text-cyan-400 w-5"></i>
+                    <span>Chat System</span>
+                    <i id="chat-chevron" class="fas fa-chevron-down ml-auto transition-transform"></i>
+                </button>
+                <div id="chat-submenu" class="hidden mt-2 ml-8 space-y-1">
+                    <a href="{% url 'chat:index' %}" class="sidebar-item text-sm">
+                        <i class="fas fa-home mr-2 text-cyan-400"></i>Chat Dashboard
+                    </a>
+                    <a href="{% url 'chat:create_group' %}" class="sidebar-item text-sm">
+                        <i class="fas fa-users mr-2 text-purple-400"></i>Create Group
+                    </a>
+                    <a href="{% url 'chat:index' %}#private" class="sidebar-item text-sm">
+                        <i class="fas fa-user-friends mr-2 text-pink-400"></i>Private Chats
+                    </a>
+                </div>
+            </div>
+
+            <!-- Other Menu Items -->
+            <a href="{% url 'btb_checksheet_create' %}" class="sidebar-item">
+                <i class="fas fa-clipboard-check text-green-400 w-5"></i>
+                <span>BTB Checksheet</span>
+            </a>
+
+            <a href="{% url 'ass_dummy_test_create' %}" class="sidebar-item">
+                <i class="fas fa-flask text-yellow-400 w-5"></i>
+                <span>Dummy Test</span>
+            </a>
+
+            <a href="{% url 'ipqc_disassemble_add' %}" class="sidebar-item">
+                <i class="fas fa-tools text-orange-400 w-5"></i>
+                <span>Disassemble</span>
+            </a>
+
+            <a href="{% url 'nc_issue_tracking_create' %}" class="sidebar-item">
+                <i class="fas fa-exclamation-triangle text-red-400 w-5"></i>
+                <span>NC Issues</span>
+            </a>
+
+            <a href="{% url 'esd_compliance_checklist_add' %}" class="sidebar-item">
+                <i class="fas fa-shield-alt text-blue-400 w-5"></i>
+                <span>ESD Compliance</span>
+            </a>
+
+            <a href="{% url 'dust_count_checklist_add' %}" class="sidebar-item">
+                <i class="fas fa-cloud text-indigo-400 w-5"></i>
+                <span>Dust Count</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- User Profile -->
+    <div class="border-t border-cyan-500 p-6">
+        <div class="flex items-center space-x-3 mb-3">
+            <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full"></div>
+            <div>
+                <p class="text-sm font-medium text-white">
+                    {{ user.get_full_name|default_if_none:"Guest" }}
+                </p>
+                <p class="text-xs text-gray-400">
+                    {{ user.role|default_if_none:"-" }}
+                </p>
+            </div>
+        </div>
+        <a href="{% url 'logout' %}"
+            class="cyber-button w-full text-white py-2 px-4 rounded-lg text-center block text-center">
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+        </a>
+    </div>
+</div>

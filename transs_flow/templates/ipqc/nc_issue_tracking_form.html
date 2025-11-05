@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}NC Issue Tracking{% endblock title %}
+
+{% block content %}
+<div class="pc-container">
+    <div class="pc-content">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="card-title mb-0">NC Issue Tracking Form</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="accordion" id="issueAccordion">
+
+                                <!-- BASIC INFO -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingBasic">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBasic" aria-expanded="true" aria-controls="collapseBasic">
+                                            <i class="bi bi-person-badge me-2"></i> Basic Information
+                                        </button>
+                                    </h2>
+                                    <div id="collapseBasic" class="accordion-collapse collapse show" aria-labelledby="headingBasic">
+                                        <div class="accordion-body">
+                                            <div class="row g-3">
+                                                {% for field in form %}
+                                                    {% if field.name in 'date shift emp_id name section line group model color' %}
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">{{ field.label }}</label>
+                                                            {{ field }}
+                                                            <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ISSUE TRACKING FIELDS -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingIssue">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIssue" aria-expanded="false" aria-controls="collapseIssue">
+                                            <i class="bi bi-exclamation-triangle me-2"></i> Issue Tracking Details
+                                        </button>
+                                    </h2>
+                                    <div id="collapseIssue" class="accordion-collapse collapse" aria-labelledby="headingIssue">
+                                        <div class="accordion-body">
+                                            <div class="row g-3">
+                                                {% for field in form %}
+                                                    {% if field.name not in 'date shift emp_id name section line group model color created_at updated_at' %}
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">{{ field.label }}</label>
+                                                            {{ field }}
+                                                            <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-send-check me-2"></i> Submit Issue
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock extra_js %}

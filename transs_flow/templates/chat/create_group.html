@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="holographic-card p-4 rounded-xl">
+  <h2 class="text-xl font-semibold glow-text mb-4"><i class="fas fa-users"></i> Create Group</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <label class="block mb-2">Group Name:</label>
+    <input type="text" name="name" required class="w-full p-2 mb-4 rounded bg-gray-800 border border-cyan-400">
+
+    <label class="block mb-2">Select Members:</label>
+    <select multiple name="participants" class="w-full p-2 mb-4 rounded bg-gray-800 border border-cyan-400">
+      {% for user in users %}
+      <option value="{{ user.id }}">{{ user.full_name }}</option>
+      {% endfor %}
+    </select>
+
+    <button class="cyber-button py-2 px-4 rounded text-white">Create Group</button>
+  </form>
+</div>
+{% endblock %}

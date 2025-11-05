@@ -1,0 +1,138 @@
+<!-- templates/404.html -->
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | Transs Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --neon-blue: #00d9ff;
+            --neon-purple: #9333ea;
+            --neon-pink: #f472b6;
+            --dark-bg: #0a0e27;
+        }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #030712 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .error-container {
+            position: relative;
+            max-width: 800px;
+            width: 100%;
+            padding: 2rem;
+        }
+        .error-number {
+            font-size: 12rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 
+                0 0 10px var(--neon-blue),
+                0 0 20px var(--neon-purple),
+                0 0 30px var(--neon-pink);
+            animation: pulse 2s infinite;
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .error-message {
+            margin-top: 80px;
+            font-size: 2.5rem;
+            text-align: center;
+            color: var(--text-primary);
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .glitch-text {
+            position: relative;
+            animation: glitch 3s infinite;
+        }
+        @keyframes glitch {
+            0%, 100% { 
+                text-shadow: 
+                    0 0 10px var(--neon-blue),
+                    0 0 20px var(--neon-purple);
+            }
+            50% { 
+                text-shadow: 
+                    0 0 10px var(--neon-pink),
+                    0 0 20px var(--neon-blue);
+            }
+        }
+        .home-link {
+            display: inline-block;
+            margin-top: 3rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .home-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.6);
+        }
+        .binary-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .binary-rain::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(transparent, rgba(0, 217, 255, 0.1), transparent);
+            animation: binary-fall 10s linear infinite;
+        }
+        @keyframes binary-fall {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+    </style>
+</head>
+<body>
+    <div class="binary-rain"></div>
+    <div class="error-container">
+        <div class="error-number glitch-text">404</div>
+        <div class="error-message">
+            <div class="glitch-text">PAGE NOT FOUND</div>
+            <p>The requested URL was not found on this server.</p>
+            <p>Error code: 404</p>
+        </div>
+        <a href="/" class="home-link">
+            <i class="fas fa-home mr-2"></i>
+            Return to Home
+        </a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ESD Compliance Checklist{% endblock title %}
+
+{% block content %}
+<!-- Page Title -->
+<h1 class="text-2xl font-bold text-gray-900 mb-6">ESD Compliance Checklist Records</h1>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ today_records|default:"0" }}</div>
+        <div class="metric-label">Today's Records</div>
+      </div>
+      <div class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-calendar-day text-sky-600"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ week_records|default:"0" }}</div>
+        <div class="metric-label">This Week</div>
+      </div>
+      <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-calendar-week text-teal-600"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="metric-value">{{ total_records|default:"0" }}</div>
+        <div class="metric-label">Total Records</div>
+      </div>
+      <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-database text-gray-600"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Bar -->
+<div class="bg-white shadow-md rounded-xl p-4 mb-6">
+  <form method="get" class="flex flex-col sm:flex-row gap-3">
+    <div class="flex-1">
+      <input type="text" name="q" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" 
+             placeholder="Search by Name, Employee ID, Model, Line..." value="{{ request.GET.q }}">
+    </div>
+    <button type="submit" class="px-6 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition">
+      <i class="fas fa-search"></i> Search
+    </button>
+    {% if request.GET.q %}
+    <a href="{% url 'esd_compliance_checklist_list' %}" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+      <i class="fas fa-times"></i> Clear
+    </a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Records Table -->
+<div class="bg-white shadow-md rounded-xl overflow-hidden">
+  <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between gap-3 sm:items-center">
+    <h5 class="text-lg font-bold text-gray-900">Recent ESD Records</h5>
+    <a href="{% url 'esd_compliance_checklist_add' %}"
+      class="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 text-center transition">
+      <i class="fas fa-plus"></i> Add New
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shift</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Line</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Model</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for record in records %}
+        <tr class="hover:bg-gray-50 transition">
+          <td class="px-3 sm:px-6 py-3 text-gray-900 font-medium">{{ record.date|date:"Y-m-d" }}</td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700">
+            <span class="px-2 py-1 text-xs rounded-full bg-gray-100">{{ record.shift }}</span>
+          </td>
+          <td class="px-3 sm:px-6 py-3">
+            <div>
+              <div class="text-gray-900 font-medium">{{ record.name }}</div>
+              <div class="text-xs text-gray-500">{{ record.emp_id|default:"" }}</div>
+            </div>
+          </td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700 hidden md:table-cell">{{ record.line }}</td>
+          <td class="px-3 sm:px-6 py-3 text-gray-700 hidden md:table-cell">{{ record.model }}</td>
+          <td class="px-3 sm:px-6 py-3">
+            {% if record.get_overall_status == 'PASS' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">PASS</span>
+            {% elif record.get_overall_status == 'FAIL' %}
+              <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">FAIL</span>
+            {% else %}
+              <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">MIXED</span>
+            {% endif %}
+          </td>
+          <td class="px-3 sm:px-6 py-3">
+            <div class="flex gap-2">
+              <a href="#" onclick="event.preventDefault(); showESDDetails({{ record.id }})" class="text-sky-600 font-semibold text-xs sm:text-sm hover:underline">
+                <i class="fas fa-eye"></i> View
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-6 text-gray-500">No records found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="mt-6 flex justify-center">
+  <nav class="flex items-center space-x-1">
+    {% if page_obj.has_previous %}
+      <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-double-left"></i>
+      </a>
+      <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-left"></i>
+      </a>
+    {% endif %}
+
+    <span class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-right"></i>
+      </a>
+      <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <i class="fas fa-angle-double-right"></i>
+      </a>
+    {% endif %}
+  </nav>
+</div>
+{% endif %}
+
+<!-- Details Modal -->
+<div id="esdDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl w-[95%] sm:w-[90%] md:w-[80%] lg:w-[70%] max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center px-4 sm:px-6 py-4 border-b">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-800">ESD Compliance Details</h2>
+      <button onclick="closeESDDetails()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+    </div>
+    <div id="esdModalBody" class="p-4 sm:p-6">
+      <p class="text-gray-500 text-center">Loading...</p>
+    </div>
+  </div>
+</div>
+
+<!-- CSS Styles -->
+<style>
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+</style>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+  function showESDDetails(pk) {
+    const modal = document.getElementById('esdDetailsModal');
+    const modalBody = document.getElementById('esdModalBody');
+    modal.classList.remove('hidden');
+    modalBody.innerHTML = `<p class='text-gray-500 text-center'>Loading...</p>`;
+
+    fetch(`/ipqc/esd-compliance-checklist/details/${pk}/`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        modalBody.innerHTML = buildDetailsUI(data);
+      })
+      .catch(error => {
+        console.error('Error fetching details:', error);
+        modalBody.innerHTML = `<p class='text-red-500 text-center'>Error loading details: ${error.message}</p>`;
+      });
+  }
+
+  function closeESDDetails() {
+    document.getElementById('esdDetailsModal').classList.add('hidden');
+  }
+
+  function buildDetailsUI(data) {
+    // Helper function to create status badge HTML
+    function createStatusBadge(value, label) {
+      let bgColor = 'bg-gray-100';
+      let textColor = 'text-gray-700';
+      let icon = '';
+      const val = (value || '').toString().toUpperCase();
+
+      if (['PASS', 'OK', 'YES'].includes(val)) {
+        bgColor = 'bg-green-100'; textColor = 'text-green-700'; icon = '✅ ';
+      } else if (['FAIL', 'NOT_OK', 'NO'].includes(val)) {
+        bgColor = 'bg-red-100'; textColor = 'text-red-700'; icon = '❌ ';
+      } else if (['NA', 'N/A'].includes(val)) {
+        bgColor = 'bg-yellow-100'; textColor = 'text-yellow-700'; icon = '➖ ';
+      }
+      return `<div class="${bgColor} ${textColor} p-2 rounded text-center text-xs"><div class="font-semibold">${icon}${value || 'N/A'}</div><div class="opacity-75 mt-1">${label}</div></div>`;
+    }
+    
+    let html = '<div class="space-y-6">';
+
+    // Overall Status Section (NEW)
+    if (data.overall_status) {
+      html += `
+        <div class="flex items-center justify-between p-4 bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg border border-sky-200">
+          <h3 class="text-lg font-bold text-gray-800">Overall Result</h3>
+          <span class="px-4 py-2 rounded-full text-md font-bold shadow-sm">
+            ${createStatusBadge(data.overall_status, '').replace('text-xs', 'text-md').replace('p-2 rounded text-center', '')}
+          </span>
+        </div>
+      `;
+    }
+    
+    // Basic Information
+    if (data.basic_info) {
+      html += `
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-info-circle text-sky-500"></i> Basic Information
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
+      for (const key in data.basic_info) {
+        const item = data.basic_info[key];
+        html += `<div class="bg-gray-50 p-3 rounded"><div class="text-xs text-gray-500">${item.label}</div><div class="font-semibold text-sm">${item.value || 'N/A'}</div></div>`;
+      }
+      html += `</div></div>`;
+    }
+
+    // ESD Compliance Sections
+    if (data.compliance) {
+      for (const sectionKey in data.compliance) {
+        const section = data.compliance[sectionKey];
+        html += `
+          <div>
+            <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <i class="fas ${section.icon || 'fa-shield-alt'} text-sky-500"></i> ${section.title}
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">`;
+        section.items.forEach(item => html += createStatusBadge(item.value, item.label));
+        html += `</div></div>`;
+      }
+    }
+
+    // Readings Section
+    if (data.readings) {
+      html += `
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-tachometer-alt text-blue-500"></i> Measurements & Readings
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">`;
+      for (const key in data.readings) {
+        const item = data.readings[key];
+        html += `<div class="bg-blue-50 p-3 rounded border border-blue-200"><div class="text-xs text-blue-600">${item.label}</div><div class="font-semibold text-blue-700">${item.value || 'N/A'}</div></div>`;
+      }
+      html += `</div></div>`;
+    }
+
+    // Photos Section
+    if (data.photos && data.photos.length > 0) {
+      html += `
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-camera text-sky-500"></i> Evidence Photos
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">`;
+      data.photos.forEach(photo => {
+        html += `
+          <div class="border rounded-lg overflow-hidden hover:shadow-lg transition cursor-pointer" onclick="openPhotoPreview('${photo.url}', '${photo.label}')">
+            <img src="${photo.url}" alt="${photo.label}" class="w-full h-40 object-cover">
+            <div class="text-center py-2 text-xs text-gray-600 bg-gray-50">${photo.label}</div>
+          </div>`;
+      });
+      html += `</div></div>`;
+    }
+
+    // Remarks Section
+    if (data.remark) {
+      html += `
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-clipboard text-gray-500"></i> Remarks
+          </h3>
+          <p class="text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-sm sm:text-base">${data.remark}</p>
+        </div>`;
+    }
+    
+    // Creation Timestamp
+    if (data.created_at) {
+      html += `<div class="text-center text-xs text-gray-500 border-t pt-3">Record Created: ${data.created_at}</div>`;
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  // --- Photo Preview Utility ---
+  function openPhotoPreview(url, label) {
+    if (document.getElementById('photoPreviewOverlay')) return;
+    document.documentElement.style.overflow = 'hidden';
+    const overlay = document.createElement('div');
+    overlay.id = 'photoPreviewOverlay';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.innerHTML = `
+      <div class="bg-white rounded-lg overflow-hidden shadow-xl flex flex-col max-h-[90vh] max-w-4xl w-full">
+        <div class="flex items-center justify-between px-4 py-3 bg-gray-100 border-b">
+          <h2 class="text-sm sm:text-base font-semibold text-gray-800 truncate">${escapeHtml(label)}</h2>
+          <div class="flex items-center gap-2">
+            <a href="${url}" download class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-md text-sm"><i class="fas fa-download"></i> Download</a>
+            <button onclick="closePhotoPreview()" class="text-gray-700 hover:text-gray-900 text-2xl leading-none bg-transparent border-0">&times;</button>
+          </div>
+        </div>
+        <div class="flex-1 flex items-center justify-center bg-black p-2">
+          <img src="${url}" alt="${escapeHtml(label)}" class="max-h-[80vh] w-auto object-contain rounded-md" />
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closePhotoPreview(); });
+    document.addEventListener('keydown', escHandler);
+    function escHandler(e) { if (e.key === 'Escape') closePhotoPreview(); }
+    overlay._escHandler = escHandler;
+  }
+  function closePhotoPreview() {
+    const overlay = document.getElementById('photoPreviewOverlay');
+    if (!overlay) return;
+    document.removeEventListener('keydown', overlay._escHandler);
+    overlay.remove();
+    document.documentElement.style.overflow = '';
+  }
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+</script>
+{% endblock %}
