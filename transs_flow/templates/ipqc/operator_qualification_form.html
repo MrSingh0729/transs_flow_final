@@ -1,72 +1,954 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load widget_tweaks %}
+{% block title %}Operator Qualification Check Form{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <h4 class="mb-3">Operator Qualification Check Form</h4>
-
-    <form method="post" enctype="multipart/form-data" id="qualification-form">
-        {% csrf_token %}
-        <div class="row">
-            {% for field in form.visible_fields %}
-                <div class="col-md-6 mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label"><b>{{ field.label }}</b></label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small">{{ field.errors|join:", " }}</div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>
-
-        <!-- Live QR Scanner -->
-        <div class="col-12 mb-3" id="qr-scan-section">
-            <label class="form-label"><b>📷 Live QR / Barcode Scanner</b></label>
-            <div id="reader" style="width:100%; max-width:400px; margin:auto;"></div>
-            <input type="text" id="scanned-result" name="scanned_result" class="form-control mt-2" readonly>
-        </div>
-
-        <div id="feishu-preview" class="col-12 mt-4"></div>
-
-        <div class="text-center mt-3">
-            <button type="submit" class="btn btn-success px-4">Save</button>
-        </div>
-    </form>
-</div>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const preview = document.getElementById('feishu-preview');
-    const input = document.getElementById('scanned-result');
-    const qr = new Html5Qrcode("reader");
-
-    function fetchFeishuData(url) {
-        preview.innerHTML = "<p>⏳ Fetching Feishu data...</p>";
-        fetch(`/ipqc/fetch-feishu-record/?url=${encodeURIComponent(url)}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    preview.innerHTML = `<p class="text-danger">❌ Error: ${data.error}</p>`;
-                } else {
-                    const fields = data.fields || {};
-                    let html = "<h5>🧾 Employee Data Preview</h5><table class='table table-bordered'>";
-                    for (const [key, value] of Object.entries(fields)) {
-                        html += `<tr><td><b>${key}</b></td><td>${value}</td></tr>`;
-                    }
-                    html += "</table>";
-                    preview.innerHTML = html;
-                }
-            })
-            .catch(err => {
-                preview.innerHTML = `<p class="text-danger">❌ Fetch error: ${err}</p>`;
-            });
+<style>
+    :root {
+        --primary: #0EA5E9;
+        --success: #22C55E;
+        --danger: #EF4444;
+        --warning: #F59E0B;
+        --text-primary: #111827;
+        --text-secondary: #6B7280;
+        --text-light: #94A3B8;
+        --border: #E5E7EB;
+        --bg-secondary: #F9FAFB;
     }
 
-    qr.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, decoded => {
-        input.value = decoded;
-        qr.stop().catch(() => {});
-        fetchFeishuData(decoded);
+    .audit-form {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 16px;
+        width: 100%;
+    }
+
+    .step-indicator {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .step-progress {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        position: relative;
+    }
+
+    .step-progress::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--border);
+        z-index: 0;
+    }
+
+    .step-progress-line {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        height: 2px;
+        background: var(--primary);
+        z-index: 1;
+        transition: width 0.3s ease;
+        transform: translateY(-50%);
+    }
+
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 3px solid var(--border);
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text-light);
+        transition: all 0.3s ease;
+    }
+
+    .step-circle.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+    }
+
+    .step-circle.completed {
+        background: var(--success);
+        color: white;
+        border-color: var(--success);
+    }
+
+    .step-label {
+        font-size: 11px;
+        color: var(--text-secondary);
+        text-align: center;
+        margin-top: 6px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 640px) {
+        .step-label {
+            display: none;
+        }
+
+        .step-circle {
+            width: 36px;
+            height: 36px;
+            font-size: 13px;
+        }
+
+        .step-item {
+            flex-shrink: 1;
+        }
+    }
+
+    .form-section {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-grid {
+        display: grid;
+        gap: 16px;
+        width: 100%;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        background: white;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    }
+
+    .form-group input[readonly] {
+        background: var(--bg-secondary);
+        cursor: not-allowed;
+        color: var(--text-secondary);
+    }
+
+    .form-group .is-invalid {
+        border-color: var(--danger) !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+    }
+
+    .status-select {
+        border-radius: 8px;
+        font-weight: 500;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 20px;
+        padding-right: 44px;
+        appearance: none;
+    }
+
+    .status-select[value="Have"],
+    .status-select[value="Done"],
+    .status-select[value="Old"],
+    .status-select[value="Trained"] {
+        border-color: var(--success);
+        background-color: rgba(34, 197, 94, 0.05);
+    }
+
+    .status-select[value="Not Have"],
+    .status-select[value="Pending"],
+    .status-select[value="New"],
+    .status-select[value="Not Trained"],
+    .status-select[value="Training Pending"] {
+        border-color: var(--warning);
+        background-color: rgba(245, 158, 11, 0.05);
+    }
+
+    .status-select[value="NA"],
+    .status-select[value="Not Applicable"],
+    .status-select[value="Rotating"],
+    .status-select[value="Replace Operator"] {
+        border-color: var(--text-light);
+        background-color: rgba(100, 116, 139, 0.05);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .bottom-nav {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 1px solid var(--border);
+        padding: 16px;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .progress-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .nav-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .nav-btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 80px;
+    }
+
+    .nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .nav-btn-secondary {
+        background: white;
+        color: var(--text-secondary);
+        border: 2px solid var(--border);
+    }
+
+    .nav-btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+
+    .nav-btn-success {
+        background: var(--success);
+        color: white;
+    }
+
+    .error-message {
+        color: var(--danger);
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+
+    .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+    }
+
+    .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+    }
+
+    .alert-info {
+        color: #004085;
+        background-color: #cce7ff;
+        border-color: #b8daff;
+    }
+
+    /* QR Scanner Section */
+    #qr-scan-section {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    #qr-scan-section.hidden {
+        display: none;
+    }
+
+    #reader {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    #feishu-preview {
+        margin-top: 16px;
+    }
+
+    #feishu-iframe-container {
+        margin-top: 16px;
+    }
+
+    #feishu-iframe {
+        width: 100%;
+        height: 400px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+
+    .scan-preview {
+        position: relative;
+        display: inline-block;
+    }
+
+    .scan-preview img {
+        width: 100%;
+        max-width: 200px;
+        border-radius: 8px;
+        border: 2px solid var(--success);
+        margin-top: 10px;
+    }
+
+    @media (min-width: 768px) {
+        .form-grid {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .form-section {
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+        }
+    }
+</style>
+<!-- Messages and errors -->
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% if form.non_field_errors %}
+<div class="alert alert-danger">
+    <strong>Error:</strong>
+    <ul>
+        {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+<div class="audit-form">
+    <!-- Step Progress Indicator -->
+    <div class="step-indicator">
+        <div class="step-progress">
+            <div class="step-progress-line" id="progressLine" style="width: 0%;"></div>
+            <div class="step-item" onclick="goToStep(1)">
+                <div class="step-circle active" id="step1">1</div>
+                <div class="step-label">Basic Info</div>
+            </div>
+            <div class="step-item" onclick="goToStep(2)">
+                <div class="step-circle" id="step2">2</div>
+                <div class="step-label">Job Card</div>
+            </div>
+            <div class="step-item" onclick="goToStep(3)">
+                <div class="step-circle" id="step3">3</div>
+                <div class="step-label">Verification</div>
+            </div>
+            <div class="step-item" onclick="goToStep(4)">
+                <div class="step-circle" id="step4">4</div>
+                <div class="step-label">Summary</div>
+            </div>
+        </div>
+        <div class="progress-text">
+            Step <span id="currentStep">1</span> of 4
+        </div>
+    </div>
+    <form method="post" id="qualificationForm" enctype="multipart/form-data" onsubmit="return validateForm()">
+        {% csrf_token %}
+        <!-- STEP 1: Basic Information -->
+        <div class="form-section" id="step1-content">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-sky-100">
+                        <i class="fas fa-info-circle text-sky-600"></i>
+                    </div>
+                    Basic Information
+                </h2>
+                <div class="step-circle active">1</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+                    {{ form.date|attr:"readonly" }}
+                    {% if form.date.errors %}<div class="error-message">{{ form.date.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.shift.id_for_label }}">{{ form.shift.label }}</label>
+                    {{ form.shift|attr:"readonly" }}
+                    {% if form.shift.errors %}<div class="error-message">{{ form.shift.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.emp_id.id_for_label }}">{{ form.emp_id.label }}</label>
+                    {{ form.emp_id|attr:"readonly" }}
+                    {% if form.emp_id.errors %}<div class="error-message">{{ form.emp_id.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                    {{ form.name|attr:"readonly" }}
+                    {% if form.name.errors %}<div class="error-message">{{ form.name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.section.id_for_label }}">{{ form.section.label }}</label>
+                    {{ form.section|attr:"readonly" }}
+                    {% if form.section.errors %}<div class="error-message">{{ form.section.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.line.id_for_label }}">{{ form.line.label }}</label>
+                    {{ form.line|attr:"readonly" }}
+                    {% if form.line.errors %}<div class="error-message">{{ form.line.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.group.id_for_label }}">{{ form.group.label }}</label>
+                    {{ form.group|attr:"readonly" }}
+                    {% if form.group.errors %}<div class="error-message">{{ form.group.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.model.id_for_label }}">{{ form.model.label }}</label>
+                    {{ form.model|attr:"readonly" }}
+                    {% if form.model.errors %}<div class="error-message">{{ form.model.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.color.id_for_label }}">{{ form.color.label }}</label>
+                    {{ form.color|attr:"readonly" }}
+                    {% if form.color.errors %}<div class="error-message">{{ form.color.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- STEP 2: Job Card Scanning -->
+        <div class="form-section" id="step2-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-purple-100">
+                        <i class="fas fa-qrcode text-purple-600"></i>
+                    </div>
+                    Job Card Scanning
+                </h2>
+                <div class="step-circle">2</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.key_station_name.id_for_label }}">{{ form.key_station_name.label }}</label>
+                    {{ form.key_station_name|attr:"required" }}
+                    {% if form.key_station_name.errors %}<div class="error-message">{{ form.key_station_name.errors.0 }}
+                    </div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.key_station_job_card_status.id_for_label }}">{{ form.key_station_job_card_status.label }}</label>
+                    {{ form.key_station_job_card_status|attr:"required:required"|add_class:"status-select" }}
+                    {% if form.key_station_job_card_status.errors %}<div class="error-message">{{ form.key_station_job_card_status.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            <!-- QR Scanner Section - Initially Hidden -->
+            <div id="qr-scan-section" class="hidden">
+                <div class="form-group">
+                    <label>📷 Scan Job Card QR/Barcode</label>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Position QR code within the frame to scan automatically
+                    </div>
+                    <div class="scan-preview">
+                        <div id="reader"></div>
+                        <div id="scanSnapshot"></div>
+                    </div>
+                    <!-- Use the actual form field -->
+                    {{ form.scanned_barcode_text|attr:"placeholder:Scan result will appear here" }}
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.scanned_barcode_image.id_for_label }}">{{ form.scanned_barcode_image.label }}</label>
+                    {{ form.scanned_barcode_image|add_class:"form-control-file" }}
+                    <div id="scanStatus" class="mt-2"></div>
+                    {% if form.scanned_barcode_image.errors %}<div class="error-message">{{ form.scanned_barcode_image.errors.0 }}</div>{% endif %}
+                    <small class="text-muted">{{ form.scanned_barcode_image.help_text }}</small>
+                </div>
+            </div>
+            <!-- Feishu Preview -->
+            <div id="feishu-preview" class="mt-4"></div>
+            <div id="feishu-iframe-container" style="display:none;">
+                <h5>🔗 Feishu Record Preview</h5>
+                <iframe id="feishu-iframe" src=""
+                    style="width:100%; height:400px; border:1px solid var(--border); border-radius:8px;"></iframe>
+            </div>
+        </div>
+        <!-- STEP 3: Verification -->
+        <div class="form-section" id="step3-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-blue-100">
+                        <i class="fas fa-user-check text-blue-600"></i>
+                    </div>
+                    Operator Verification
+                </h2>
+                <div class="step-circle">3</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.key_station_operator_status.id_for_label }}">{{ form.key_station_operator_status.label }}</label>
+                    {{ form.key_station_operator_status|attr:"required:required"|add_class:"status-select" }}
+                    {% if form.key_station_operator_status.errors %}<div class="error-message">{{ form.key_station_operator_status.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.new_or_rotating_operator_status.id_for_label }}">{{ form.new_or_rotating_operator_status.label }}</label>
+                    {{ form.new_or_rotating_operator_status|attr:"required:required"|add_class:"status-select" }}
+                    {% if form.new_or_rotating_operator_status.errors %}<div class="error-message">{{ form.new_or_rotating_operator_status.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.check_operator_work_instruction.id_for_label }}">{{ form.check_operator_work_instruction.label }}</label>
+                    {{ form.check_operator_work_instruction|attr:"required:required"|add_class:"status-select" }}
+                    {% if form.check_operator_work_instruction.errors %}<div class="error-message">{{ form.check_operator_work_instruction.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.pqe_training_and_verification_status.id_for_label }}">{{ form.pqe_training_and_verification_status.label }}</label>
+                    {{ form.pqe_training_and_verification_status|attr:"required:required"|add_class:"status-select" }}
+                    {% if form.pqe_training_and_verification_status.errors %}<div class="error-message">{{ form.pqe_training_and_verification_status.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.operator_job_card_image.id_for_label }}">{{ form.operator_job_card_image.label }}</label>
+                    {{ form.operator_job_card_image|add_class:"form-control-file" }}
+                    {% if form.operator_job_card_image.errors %}<div class="error-message">{{ form.operator_job_card_image.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- STEP 4: Summary -->
+        <div class="form-section" id="step4-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-green-100">
+                        <i class="fas fa-clipboard-check text-green-600"></i>
+                    </div>
+                    Summary & Verification
+                </h2>
+                <div class="step-circle">4</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="{{ form.job_card_verification_summary.id_for_label }}">{{ form.job_card_verification_summary.label }}</label>
+                    {{ form.job_card_verification_summary|attr:"required:required" }}
+                    {% if form.job_card_verification_summary.errors %}<div class="error-message">{{ form.job_card_verification_summary.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-content">
+            <div class="progress-text">
+                Section <span id="currentSection">1</span> of 4
+            </div>
+            <div class="nav-buttons">
+                <button type="button" onclick="previousStep()" id="prev-btn" class="nav-btn nav-btn-secondary" disabled>
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button type="button" onclick="nextStep()" id="next-btn" class="nav-btn nav-btn-primary">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" form="qualificationForm" id="submit-btn" class="nav-btn nav-btn-success" disabled>
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    let currentStep = 1;
+    const totalSteps = 4;
+    let html5QrCode = null;
+    let isScanSuccessful = false;
+    
+    function updateStepIndicator() {
+        const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        document.getElementById('progressLine').style.width = progressPercentage + '%';
+        document.getElementById('currentStep').textContent = currentStep;
+        document.getElementById('currentSection').textContent = currentStep;
+        
+        for (let i = 1; i <= totalSteps; i++) {
+            const stepCircle = document.getElementById(`step${i}`);
+            const stepContent = document.getElementById(`step${i}-content`);
+            
+            if (stepCircle) {
+                stepCircle.classList.remove('active', 'completed');
+                if (i < currentStep) {
+                    stepCircle.classList.add('completed');
+                    stepCircle.innerHTML = '✓';
+                } else if (i === currentStep) {
+                    stepCircle.classList.add('active');
+                    stepCircle.innerHTML = i;
+                } else {
+                    stepCircle.innerHTML = i;
+                }
+            }
+            
+            if (stepContent) {
+                stepContent.style.display = i === currentStep ? 'block' : 'none';
+            }
+        }
+        
+        document.getElementById('prev-btn').disabled = currentStep === 1;
+        document.getElementById('next-btn').disabled = currentStep === totalSteps;
+        document.getElementById('submit-btn').disabled = currentStep !== totalSteps;
+        
+        // Start/stop QR scanner based on current step and job card status
+        if (currentStep === 2) {
+            checkJobCardStatus();
+        } else {
+            stopQRScanner();
+        }
+        
+        document.querySelector('.audit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    function goToStep(step) {
+        if (step >= 1 && step <= totalSteps) {
+            currentStep = step;
+            updateStepIndicator();
+        }
+    }
+    
+    function nextStep() {
+        if (currentStep < totalSteps) {
+            currentStep++;
+            updateStepIndicator();
+        }
+    }
+    
+    function previousStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            updateStepIndicator();
+        }
+    }
+    
+    function validateForm() {
+        // Clear previous validation styles and messages
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        const existingErrorDiv = document.getElementById('form-validation-error');
+        if (existingErrorDiv) {
+            existingErrorDiv.remove();
+        }
+        
+        // Validate required fields, step by step
+        for (let step = 1; step <= totalSteps; step++) {
+            const currentStepDiv = document.getElementById(`step${step}-content`);
+            if (!currentStepDiv) continue;
+            
+            let stepHasError = false;
+            const requiredFields = currentStepDiv.querySelectorAll('input[required], select[required], textarea[required]');
+            
+            for (const field of requiredFields) {
+                // Skip readonly fields as they are pre-filled
+                if (field.hasAttribute('readonly')) {
+                    continue;
+                }
+                
+                let isEmpty = false;
+                if (field.type === 'file') {
+                    isEmpty = !field.files || field.files.length === 0;
+                } else { // Covers text, number, select, textarea
+                    isEmpty = !field.value || field.value.trim() === '';
+                }
+                
+                if (isEmpty) {
+                    field.classList.add('is-invalid');
+                    stepHasError = true;
+                }
+            }
+            
+            // If current step has any errors, jump to it and stop validation
+            if (stepHasError) {
+                const stepName = document.querySelector(`#step${step}-content .section-title`).textContent.trim();
+                const errorMessage = `Error in Step ${step}: Please fill in all required fields marked in red.`;
+                
+                let errorDiv = document.createElement('div');
+                errorDiv.id = 'form-validation-error';
+                errorDiv.className = 'alert alert-danger';
+                document.querySelector('.audit-form').insertBefore(
+                    errorDiv,
+                    document.querySelector('.step-indicator')
+                );
+                errorDiv.innerHTML = `<strong>${errorMessage}</strong>`;
+                
+                goToStep(step);
+                return false; // Stop form submission
+            }
+        }
+        
+        // If all validations pass
+        return true;
+    }
+    
+    // Check job card status and show/hide scanner
+    function checkJobCardStatus() {
+        const jobCardStatus = document.getElementById('id_key_station_job_card_status').value;
+        const qrSection = document.getElementById('qr-scan-section');
+        
+        if (jobCardStatus === 'Have') {
+            qrSection.classList.remove('hidden');
+            startQRScanner();
+        } else {
+            qrSection.classList.add('hidden');
+            stopQRScanner();
+            // Clear scanned data if status changes
+            const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
+            barcodeField.value = '';
+            document.getElementById('scanStatus').innerHTML = '';
+            document.getElementById('scanSnapshot').innerHTML = '';
+            isScanSuccessful = false;
+        }
+    }
+    
+    // Detect device type
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+            (window.innerWidth <= 768);
+    }
+    
+    // QR Scanner functions
+    function startQRScanner() {
+        if (html5QrCode) return;
+        
+        html5QrCode = new Html5Qrcode("reader");
+        const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
+        const preview = document.getElementById('feishu-preview');
+        const iframeContainer = document.getElementById('feishu-iframe-container');
+        const iframe = document.getElementById('feishu-iframe');
+        const scanStatus = document.getElementById('scanStatus');
+        const scanSnapshot = document.getElementById('scanSnapshot');
+        
+        // Determine camera based on device
+        const cameraConfig = isMobileDevice() ?
+            { facingMode: "environment" } : // Back camera for mobile
+            { facingMode: "user" };          // Front camera for desktop
+            
+        function showFeishuLink(url) {
+            preview.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                    <br>
+                    <a href="${url}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                        <i class="fas fa-external-link-alt"></i> Open Record
+                    </a>
+                </div>
+            `;
+            // Show iframe preview
+            iframeContainer.style.display = 'block';
+            iframe.src = url;
+        }
+        
+        // Generate filename and capture snapshot from video
+        function captureSnapshot() {
+            const video = document.querySelector('#reader video');
+            if (!video) return;
+            
+            // Get key station name and format it
+            const keyStationName = document.getElementById('id_key_station_name').value || 'scan';
+            const formattedName = keyStationName.toLowerCase().replace(/\s+/g, '');
+            
+            // Get current date and time
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const year = now.getFullYear();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            // Format: DDMMYYYYHHMMSS
+            const timestamp = `${day}${month}${year}${hours}${minutes}${seconds}`;
+            const filename = `${formattedName}${timestamp}.png`;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            // Convert to blob with custom filename
+            canvas.toBlob(blob => {
+                const file = new File([blob], filename, { type: 'image/png' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                const fileInput = document.querySelector('[name="scanned_barcode_image"]');
+                fileInput.files = dataTransfer.files;
+                
+                // Show preview of captured image
+                scanSnapshot.innerHTML = `
+                    <img src="${URL.createObjectURL(blob)}" alt="Scan Snapshot" />
+                    <div class="text-sm text-gray-600 mt-2">✓ Scan snapshot captured (${filename})</div>
+                `;
+                
+                scanStatus.innerHTML = `
+                    <div class="alert alert-success mt-2">
+                        <i class="fas fa-camera"></i> Scan snapshot automatically saved as: <strong>${filename}</strong>
+                    </div>
+                `;
+            });
+        }
+        
+        html5QrCode.start(
+            cameraConfig,
+            { fps: 10, qrbox: 250 },
+            decoded => {
+                // Update single form field
+                barcodeField.value = decoded;
+                
+                // Capture snapshot before stopping
+                captureSnapshot();
+                
+                stopQRScanner();
+                showFeishuLink(decoded);
+                isScanSuccessful = true;
+            },
+            error => {
+                // Ignore scan errors
+            }
+        ).catch(err => {
+            console.error(`Unable to start scanning: ${err}`);
+            const readerDiv = document.getElementById('reader');
+            readerDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Camera access denied or not available. Please enter the URL manually.
+                </div>
+            `;
+            scanStatus.innerHTML = `
+                <div class="alert alert-warning mt-2">
+                    Camera not available. Please upload the scan image manually if needed.
+                </div>
+            `;
+        });
+    }
+    
+    function stopQRScanner() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                html5QrCode = null;
+            }).catch(err => {
+                console.error(`Failed to stop scanning: ${err}`);
+            });
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        updateStepIndicator();
+        // Add event listener to job card status dropdown
+        document.getElementById('id_key_station_job_card_status').addEventListener('change', checkJobCardStatus);
     });
-});
 </script>
-{% endblock %}
+{% endblock content %}

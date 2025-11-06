@@ -17,6 +17,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import DetailView
 from accounts.role_decorator import RoleRequiredMixin, role_required
 from django.db.models import Q
+from django.db import models
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, Http404
 from django.db import connections
@@ -25,7 +26,6 @@ from django.conf import settings
 from django.http import HttpResponse
 import os
 from django.urls import reverse
-from .services import fetch_feishu_bitable_record_via_api, extract_fields_from_standard_response
  
 # ==============================================================================
 # EXISTING FUNCTION-BASED VIEWS (UNCHANGED)
@@ -1683,69 +1683,6 @@ class TestingFAIDetailsJsonView(LoginRequiredMixin, DetailView):
  
         return JsonResponse(data)
 
-def get_feishu_access_token():
-    """Fetches a valid tenant_access_token for Feishu Open API"""
-    url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/"
-    headers = {"Content-Type": "application/json"}
-    data = {
-        "app_id": getattr(settings, "FEISHU_APP_ID", None),
-        "app_secret": getattr(settings, "FEISHU_APP_SECRET", None),
-    }
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        token_data = response.json()
-        return token_data.get("tenant_access_token")
-    except Exception as e:
-        print("❌ Error fetching Feishu token:", e)
-        return None
-
-import requests
-# 🔹 Fetch record data from Feishu Bitable
-def fetch_feishu_record(request):
-    """
-    Fetch Feishu Bitable record using the scanned record URL.
-    Example:
-      /ipqc/fetch-feishu-record/?url=https://transsioner.feishu.cn/record/ByMDrsohBe7wiEcaTDtcncYznpG
-    """
-    record_url = request.GET.get("url")
-    if not record_url:
-        return JsonResponse({"error": "Missing URL"}, status=400)
-
-    access_token = get_feishu_access_token()
-    if not access_token:
-        return JsonResponse({"error": "TokenError"}, status=500)
-
-    api_url = "https://open.feishu.cn/open-apis/bitable/v1/record/get_by_url"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-
-    try:
-        response = requests.post(api_url, headers=headers, json={"url": record_url})
-        data = response.json()
-
-        # Debug print (optional)
-        print("Feishu API response:", data)
-
-        if response.status_code != 200 or "data" not in data:
-            return JsonResponse({
-                "error": data.get("msg", "Invalid response"),
-                "details": data
-            }, status=400)
-
-        record = data["data"]
-        fields = record.get("fields", {})
-        return JsonResponse({
-            "app_token": record.get("app_token"),
-            "table_id": record.get("table_id"),
-            "record_id": record.get("record_id"),
-            "fields": fields
-        })
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
 class OperatorQualificationCheckCreateView(CreateView):
     model = OperatorQualificationCheck
     form_class = OperatorQualificationCheckForm
@@ -1753,93 +1690,113 @@ class OperatorQualificationCheckCreateView(CreateView):
     success_url = reverse_lazy("operator_qualification_list")
 
     def get_initial(self):
-        """Pre-fill operator info from IPQCWorkInfo if available."""
         initial = super().get_initial()
         user = self.request.user
-        emp_id = getattr(user, "employee_id", None)
-
+        emp_id = getattr(user, 'employee_id', None)
         if emp_id:
             try:
-                from ipqc.models import IPQCWorkInfo
-                latest = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest("created_at")
+                latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
                 initial.update({
-                    "date": latest.date,
-                    "shift": latest.shift,
-                    "emp_id": latest.emp_id,
-                    "name": latest.name,
-                    "section": getattr(latest, "section", ""),
-                    "line": latest.line,
-                    "group": latest.group,
-                    "model": latest.model,
-                    "color": latest.color,
+                    'date': latest_work_info.date, 'shift': latest_work_info.shift,
+                    'emp_id': latest_work_info.emp_id, 'name': latest_work_info.name,
+                    'section': getattr(latest_work_info, 'section', ''), 'line': latest_work_info.line,
+                    'group': latest_work_info.group, 'model': latest_work_info.model,
+                    'color': latest_work_info.color,
                 })
-            except Exception:
+            except IPQCWorkInfo.DoesNotExist:
                 messages.warning(self.request, "⚠️ No pre-filled work information found.")
-
         return initial
 
     def form_valid(self, form):
-        """Save record and store Feishu scan result."""
+        """Save the scanned Feishu URL in DB."""
         scanned_url = self.request.POST.get("scanned_result")
         if scanned_url:
             form.instance.scanned_barcode_text = scanned_url
-
-            # Fetch data live from Feishu API
-            feishu_data = self.fetch_feishu_record(scanned_url)
-            if "error" not in feishu_data:
-                form.instance.feishu_record_data = feishu_data.get("fields", {})
-                messages.success(self.request, "✅ Data fetched from Feishu successfully.")
-            else:
-                messages.warning(self.request, f"⚠️ Error fetching Feishu record: {feishu_data['error']}")
-
-        messages.success(self.request, "✅ Operator Qualification record saved successfully.")
+            messages.success(self.request, "✅ QR/Barcode scanned and saved successfully.")
+        else:
+            messages.warning(self.request, "⚠️ No QR/Barcode scanned.")
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
-        """Add Feishu preview data if available."""
+        """Pass scanned URL to template for preview link."""
         context = super().get_context_data(**kwargs)
         scanned_url = self.request.GET.get("scanned_url")
         if scanned_url:
-            record_data = self.fetch_feishu_record(scanned_url)
-            context["employee_data"] = record_data.get("fields") if "error" not in record_data else None
+            context["scanned_url"] = scanned_url
         return context
-
-    # 🔹 Helper Function to Fetch Feishu Data
-    def fetch_feishu_record(self, record_url):
-        """Fetch a Feishu record using the 'record/get_by_url' API."""
-        try:
-            access_token = get_feishu_access_token()
-            if not access_token:
-                return {"error": "Access token missing"}
-
-            api_url = "https://open.feishu.cn/open-apis/bitable/v1/record/get_by_url"
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json"
-            }
-            payload = {"url": record_url}
-            response = requests.post(api_url, headers=headers, json=payload)
-            data = response.json()
-
-            if response.status_code != 200 or "data" not in data:
-                return {"error": data.get("msg", "Invalid response"), "details": data}
-
-            record = data["data"]
-            return {
-                "app_token": record.get("app_token"),
-                "table_id": record.get("table_id"),
-                "record_id": record.get("record_id"),
-                "fields": record.get("fields", {}),
-            }
-
-        except Exception as e:
-            return {"error": str(e)}
-    
 
 class OperatorQualificationCheckListView(ListView):
     model = OperatorQualificationCheck
     template_name = 'ipqc/operator_qualification_list.html'
     context_object_name = 'records'
     ordering = ['-created_at']
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        q = self.request.GET.get('q')
+        if q:
+            queryset = queryset.filter(
+                models.Q(emp_id__icontains=q) |
+                models.Q(name__icontains=q) |
+                models.Q(model__icontains=q) |
+                models.Q(color__icontains=q) |
+                models.Q(line__icontains=q)
+            )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Statistics
+        today = timezone.now().date()
+        week_ago = today - timedelta(days=7)
+        
+        context['stats'] = {
+            'today': OperatorQualificationCheck.objects.filter(date=today).count(),
+            'week': OperatorQualificationCheck.objects.filter(date__gte=week_ago).count(),
+            'total': OperatorQualificationCheck.objects.count(),
+        }
+        
+        return context
+
+def operator_qualification_detail(request, pk):
+    """AJAX view to get record details for modal"""
+    record = get_object_or_404(OperatorQualificationCheck, pk=pk)
     
+    data = {
+        'date': record.date.strftime('%Y-%m-%d'),
+        'shift': record.shift,
+        'emp_id': record.emp_id,
+        'name': record.name,
+        'section': record.section,
+        'line': record.line,
+        'group': record.group,
+        'model': record.model,
+        'color': record.color,
+        'key_station_name': record.key_station_name,
+        'key_station_job_card_status': record.key_station_job_card_status,
+        'key_station_operator_status': record.key_station_operator_status,
+        'new_or_rotating_operator_status': record.new_or_rotating_operator_status,
+        'check_operator_work_instruction': record.check_operator_work_instruction,
+        'pqe_training_and_verification_status': record.pqe_training_and_verification_status,
+        'job_card_verification_summary': record.job_card_verification_summary,
+        'scanned_barcode_text': record.scanned_barcode_text,
+        'created_at': record.created_at.strftime('%Y-%m-%d %H:%M'),
+    }
     
+    # Add photos if available
+    photos = []
+    if record.scanned_barcode_image:
+        photos.append({
+            'url': record.scanned_barcode_image.url,
+            'label': 'Scanned Barcode Image'
+        })
+    if record.operator_job_card_image:
+        photos.append({
+            'url': record.operator_job_card_image.url,
+            'label': 'Operator Job Card'
+        })
+    data['photos'] = photos
+    
+    return JsonResponse(data)

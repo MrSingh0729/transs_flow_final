@@ -825,6 +825,15 @@
                         </div>
                     </div>
 
+                    <a href="{% url 'operator_qualification_create' %}"
+                        class="nav-item {% if request.resolver_match.url_name == 'operator_qualification_create' %}active{% endif %}">
+                        <i class="fas fa-search"></i>
+                        MP Audit
+                        {% if request.resolver_match.url_name == 'operator_qualification_create' %}
+                        <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
+                        {% endif %}
+                    </a>
+
                     <a href="{% url 'ipqc_assembly_audit_create' %}"
                         class="nav-item {% if request.resolver_match.url_name == 'ipqc_assembly_audit_create' %}active{% endif %}">
                         <i class="fas fa-search"></i>

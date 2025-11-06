@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'factories.assembly',
     'factories',
     
+    'widget_tweaks',
+    
 ]
 
 MIDDLEWARE = [

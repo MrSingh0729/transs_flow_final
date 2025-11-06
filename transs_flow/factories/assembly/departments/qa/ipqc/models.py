@@ -835,36 +835,36 @@ class  TestingFirstArticleInspection(models. Model):
 
 class OperatorQualificationCheck(models.Model):
     JOB_CARD_STATUS = [
-    ('Have', 'Have'),
-    ('Not Have', 'NO'),
-    ('NA', 'Not Applicable'),
-]
+        ('Have', 'Have'),
+        ('Not Have', 'NO'),
+        ('NA', 'Not Applicable'),
+    ]
     TRAINING_STATUS = [
-    ('Done', 'Done'),
-    ('Pending', 'Pending'),
-    ('NA', 'Not Applicable'),
-]
+        ('Done', 'Done'),
+        ('Pending', 'Pending'),
+        ('NA', 'Not Applicable'),
+    ]
     OPERATOR_STATUS = [
-    ('Old', 'Old'),
-    ('New', 'New'),
-    ('Rotating', 'Rotating'),
-]
+        ('Old', 'Old'),
+        ('New', 'New'),
+        ('Rotating', 'Rotating'),
+    ]
     PQE_INFO_STATUS = [
-    ('Training Pending', 'Training Pending'),
-    ('Already Done', 'Already Done'),
-    ('Replace Operator', 'Replace Operator'),
-]
+        ('Training Pending', 'Training Pending'),
+        ('Already Done', 'Already Done'),
+        ('Replace Operator', 'Replace Operator'),
+    ]
     PQE_TRAINING_STATUS = [
-    ('Done', 'Done'),
-    ('Training Pending', 'Training Pending'),
-    ('Already Done', 'Already Done'),
-    ('Replace Operator', 'Replace Operator'),
-]
+        ('Done', 'Done'),
+        ('Training Pending', 'Training Pending'),
+        ('Already Done', 'Already Done'),
+        ('Replace Operator', 'Replace Operator'),
+    ]
     OPERATOR_QUALIFICATION = [
-    ('Trained', 'Trained'),
-    ('Not Trained', 'Not Trained'),
-    ('Replace Operator', 'Replace Operator'),
-]
+        ('Trained', 'Trained'),
+        ('Not Trained', 'Not Trained'),
+        ('Replace Operator', 'Replace Operator'),
+    ]
     
     # Basic Information
     emp_id = models.CharField(max_length=20, null=True, blank=True)
@@ -877,9 +877,8 @@ class OperatorQualificationCheck(models.Model):
     model = models.CharField(max_length=100)
     color = models.CharField(max_length=50)
     
-    
     # Job Card Scanning
-    key_station_name = models.TextField(verbose_name="Select/Write the key station number")
+    key_station_name = models.TextField(verbose_name="Select/Write the key station Name")
     key_station_job_card_status = models.CharField(max_length=50, choices=JOB_CARD_STATUS, verbose_name="Check whether the key station operator has a job card, if not, it is considered a new operator")
     scanned_barcode_image = models.ImageField(upload_to='ipqc/manpower/barcode_scans/', blank=True, null=True, verbose_name="Optional scan snapshot (image)", help_text="Image captured during scanning, optional")
     scanned_barcode_text = models.URLField(max_length=500, blank=True, null=True, verbose_name="Scanned Job Card URL", help_text="Auto-filled from barcode scan")
@@ -898,10 +897,10 @@ class OperatorQualificationCheck(models.Model):
     class Meta:
         verbose_name = "Operator Qualification Procedure"
         verbose_name_plural = "Operator Qualification Procedures"
-        ordering = ["id"]
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.date} - {self.emp_id} - {self.model})"
+        return f"{self.date} - {self.emp_id} - {self.model}"
 
 
 

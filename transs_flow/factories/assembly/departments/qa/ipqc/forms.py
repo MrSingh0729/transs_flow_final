@@ -605,13 +605,15 @@ class OperatorQualificationCheckForm(forms.ModelForm):
             'job_card_verification_summary': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'scanned_barcode_text': forms.URLInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'scanned_barcode_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+            'key_station_name': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Add Bootstrap classes
         for field in self.fields.values():
-            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+            if field.widget.__class__.__name__ not in ['CheckboxInput', 'RadioSelect']:
+                field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
         # Read-only fields
         readonly_fields = ['emp_id','name','date','shift','section','line','group','model','color']
