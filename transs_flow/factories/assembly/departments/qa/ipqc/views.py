@@ -12,7 +12,7 @@ from datetime import timedelta, datetime, date
 from .models import IPQCWorkInfo, DynamicForm, DynamicFormField, DynamicFormSubmission, IPQCAssemblyAudit, BTBFitmentChecksheet, AssDummyTest, IPQCDisassembleCheckList, NCIssueTracking, ESDComplianceChecklist, DustCountCheck, TestingFirstArticleInspection, OperatorQualificationCheck
 import pandas as pd
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, UpdateView, DeleteView
+from django.views.generic import CreateView, ListView, UpdateView, DeleteView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import DetailView
 from accounts.role_decorator import RoleRequiredMixin, role_required
@@ -25,6 +25,7 @@ from django.conf import settings
 from django.http import HttpResponse
 import os
 from django.urls import reverse
+from .services import fetch_feishu_bitable_record, extract_required_fields_feishu
  
 # ==============================================================================
 # EXISTING FUNCTION-BASED VIEWS (UNCHANGED)
@@ -1682,7 +1683,25 @@ class TestingFAIDetailsJsonView(LoginRequiredMixin, DetailView):
  
         return JsonResponse(data)
     
-    
+
+class FetchFeishuRecordView(View):
+    """AJAX endpoint to fetch Feishu record data"""
+    def get(self, request):
+        record_url = request.GET.get('record_url')
+        if not record_url:
+            return JsonResponse({'error': 'No record URL provided'}, status=400)
+
+        record_id = record_url.rstrip('/').split('/')[-1]
+        app_id = getattr(settings, "FEISHU_APP_ID", None)
+        table_id = getattr(settings, "FEISHU_TABLE_ID", None)
+
+        try:
+            record_data = fetch_feishu_bitable_record(record_id, app_id, table_id)
+            extracted_fields = extract_required_fields_feishu(record_data)
+            return JsonResponse({'data': extracted_fields})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 class OperatorQualificationCheckCreateView(CreateView):
     model = OperatorQualificationCheck
     form_class = OperatorQualificationCheckForm
@@ -1690,7 +1709,7 @@ class OperatorQualificationCheckCreateView(CreateView):
     success_url = reverse_lazy('operator_qualification_list')
 
     def get_initial(self):
-        """Pre-fill basic info from IPQCWorkInfo for current logged-in user."""
+        """Auto-fill basic info from IPQCWorkInfo"""
         initial = super().get_initial()
         user = self.request.user
         emp_id = getattr(user, 'employee_id', None)
@@ -1711,15 +1730,48 @@ class OperatorQualificationCheckCreateView(CreateView):
                 })
             except IPQCWorkInfo.DoesNotExist:
                 messages.warning(self.request, "⚠️ No pre-filled work information found.")
-        
         return initial
 
     def form_valid(self, form):
+        scanned_text = self.request.POST.get('scanned_result')
+        if scanned_text:
+            form.instance.scanned_barcode_text = scanned_text
+            record_id = scanned_text.rstrip('/').split('/')[-1]
+            app_id = getattr(settings, "FEISHU_APP_ID", None)
+            table_id = getattr(settings, "FEISHU_TABLE_ID", None)
+            record_data = fetch_feishu_bitable_record(record_id, app_id, table_id)
+            extracted_fields = extract_required_fields_feishu(record_data)
+            
+            # Fill form instance fields dynamically
+            for key, value in extracted_fields.items():
+                if hasattr(form.instance, key):
+                    setattr(form.instance, key, value)
+            
+            form.instance.feishu_record_data = extracted_fields
+
         messages.success(self.request, "✅ Operator Qualification record saved successfully.")
         return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['employee_data'] = {}
+
+        # If scanned_result is submitted, fetch Feishu record for preview
+        scanned_text = self.request.POST.get('scanned_result') or self.request.GET.get('scanned_result')
+        if scanned_text:
+            record_id = scanned_text.rstrip('/').split('/')[-1]
+            app_id = getattr(settings, "FEISHU_APP_ID", None)
+            table_id = getattr(settings, "FEISHU_TABLE_ID", None)
+            record_data = fetch_feishu_bitable_record(record_id, app_id, table_id)
+            context['employee_data'] = extract_required_fields_feishu(record_data)
+
+        return context
     
+
 class OperatorQualificationCheckListView(ListView):
     model = OperatorQualificationCheck
     template_name = 'ipqc/operator_qualification_list.html'
     context_object_name = 'records'
     ordering = ['-created_at']
+    
+    

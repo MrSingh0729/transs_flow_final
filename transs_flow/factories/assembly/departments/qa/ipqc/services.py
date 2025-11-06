@@ -5,6 +5,66 @@ from django.conf import settings
 from .models import BTBFitmentChecksheet
 
 
+def get_feishu_access_token():
+    """Get Feishu access token"""
+    url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "app_id": getattr(settings, "FEISHU_APP_ID", None),
+        "app_secret": getattr(settings, "FEISHU_APP_SECRET", None)
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        json_data = response.json()
+        return json_data.get("tenant_access_token")
+    except Exception as e:
+        print("❌ Feishu token error:", e)
+        return None
+
+
+def fetch_feishu_bitable_record(record_id, app_id, table_id):
+    """Fetch a single record from Feishu Bitable"""
+    token = get_feishu_access_token()
+    if not token:
+        return None
+
+    url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{app_id}/tables/{table_id}/records/{record_id}"
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print("❌ Feishu fetch record error:", e)
+        return None
+
+
+def extract_required_fields_feishu(record_data):
+    """Extract only the required fields from Feishu record payload"""
+    try:
+        docs_pc = record_data.get('data', {}).get('docs_pc', {})
+        if not docs_pc:
+            return None
+        
+        # Assuming we want the first item in the list
+        first_item = docs_pc.get('list', [{}])[0]
+
+        required = {
+            "emp_id": first_item.get("emp_id"),
+            "name": first_item.get("name"),
+            "group": first_item.get("group"),
+            "department": first_item.get("department"),
+            "ctq_stage": first_item.get("ctq_stage"),
+            "total_marks": first_item.get("total_marks")
+        }
+        return required
+    except Exception as e:
+        print("Field extraction error:", e)
+        return None
+
 def get_lark_access_token():
     """Get Lark access token"""
     url = "https://open.larkoffice.com/open-apis/auth/v3/tenant_access_token/internal/"

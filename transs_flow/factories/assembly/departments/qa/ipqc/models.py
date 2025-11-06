@@ -882,6 +882,7 @@ class OperatorQualificationCheck(models.Model):
     key_station_name = models.TextField(verbose_name="Select/Write the key station number")
     key_station_job_card_status = models.CharField(max_length=50, choices=JOB_CARD_STATUS, verbose_name="Check whether the key station operator has a job card, if not, it is considered a new operator")
     scanned_barcode_image = models.ImageField(upload_to='ipqc/manpower/barcode_scans/', blank=True, null=True, verbose_name="Optional scan snapshot (image)", help_text="Image captured during scanning, optional")
+    scanned_barcode_text = models.URLField(max_length=500, blank=True, null=True, verbose_name="Scanned Job Card URL", help_text="Auto-filled from barcode scan")
     
     # Verification Fields
     key_station_operator_status = models.CharField(max_length=50, choices=OPERATOR_STATUS, verbose_name="Select Key station operator status: old/new/rotating operator")
@@ -892,6 +893,7 @@ class OperatorQualificationCheck(models.Model):
     job_card_verification_summary = models.TextField(verbose_name="Summary: Verify operator job card; if missing, monitor and perform Dummy test")
 
     created_at = models.DateTimeField(auto_now_add=True)
+    feishu_record_data = models.JSONField(blank=True, null=True, verbose_name="Feishu Record Data")
     
     class Meta:
         verbose_name = "Operator Qualification Procedure"

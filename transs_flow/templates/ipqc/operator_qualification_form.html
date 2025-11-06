@@ -2,6 +2,7 @@
 {% block content %}
 <div class="container mt-4">
     <h4 class="mb-3">Operator Qualification Check Form</h4>
+
     <form method="post" enctype="multipart/form-data" id="qualification-form">
         {% csrf_token %}
         <div class="row">
@@ -18,31 +19,103 @@
                 </div>
             {% endfor %}
         </div>
+
+        <!-- Barcode Scanner Section -->
+        <div class="col-12 mb-3" id="qr-scan-section" style="display:none;">
+            <label class="form-label"><b>Live QR / Barcode Scanner</b></label>
+            <div id="reader" style="width:100%; max-width:400px;"></div>
+            <input type="text" id="scanned-result" name="scanned_result" 
+                   class="form-control mt-2" placeholder="Scanned code will appear here" readonly>
+        </div>
+
+        <!-- Feishu Record Live Preview -->
+        <div class="col-12 mb-3" id="feishu-preview" style="display:none;">
+            <h5>Employee Data Preview</h5>
+            <ul id="feishu-data-list" class="list-group"></ul>
+        </div>
+
         <div class="text-center mt-3">
             <button type="submit" class="btn btn-success px-4">Save</button>
         </div>
     </form>
 </div>
 
+<!-- Include HTML5 QR Code library -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
-    // Show/hide barcode scan field dynamically
-    document.addEventListener('DOMContentLoaded', function() {
-        const jobCardField = document.getElementById('id_key_station_job_card_status');
-        const scanField = document.getElementById('field-scanned_barcode_image');
+document.addEventListener('DOMContentLoaded', function() {
+    const jobCardField = document.getElementById('id_key_station_job_card_status');
+    const scanField = document.getElementById('field-scanned_barcode_image');
+    const qrScanSection = document.getElementById('qr-scan-section');
+    const scannedResultInput = document.getElementById('scanned-result');
+    const previewDiv = document.getElementById('feishu-preview');
+    const previewList = document.getElementById('feishu-data-list');
 
-        function toggleScanField() {
-            if (jobCardField.value === 'Have') {
-                scanField.style.display = 'block';
-            } else {
-                scanField.style.display = 'none';
-                // Optional: clear file input when hiding
-                const input = document.getElementById('id_scanned_barcode_image');
-                if (input) input.value = '';
-            }
+    let html5QrCode;
+
+    function toggleScanField() {
+        if (jobCardField.value === 'Have') {
+            scanField.style.display = 'block';
+            qrScanSection.style.display = 'block';
+            startScanner();
+        } else {
+            scanField.style.display = 'none';
+            qrScanSection.style.display = 'none';
+            scannedResultInput.value = '';
+            previewDiv.style.display = 'none';
+            stopScanner();
         }
+    }
 
-        jobCardField.addEventListener('change', toggleScanField);
-        toggleScanField(); // run once on page load
-    });
+    function startScanner() {
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+        const qrConfig = { fps: 10, qrbox: { width: 250, height: 250 } };
+        html5QrCode.start(
+            { facingMode: "environment" },
+            qrConfig,
+            qrCodeMessage => {
+                scannedResultInput.value = qrCodeMessage;
+                stopScanner();
+                fetchFeishuData(qrCodeMessage);
+            },
+            errorMessage => console.warn("QR scan error:", errorMessage)
+        ).catch(err => console.error("Camera start error:", err));
+    }
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().catch(() => {});
+        }
+    }
+
+    function fetchFeishuData(recordUrl) {
+        fetch(`/ajax/fetch-feishu/?record_url=${encodeURIComponent(recordUrl)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.data) {
+                    previewList.innerHTML = '';
+                    Object.entries(data.data).forEach(([key, value]) => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.innerHTML = `<b>${key.charAt(0).toUpperCase() + key.slice(1)}:</b> ${value}`;
+                        previewList.appendChild(li);
+                    });
+                    previewDiv.style.display = 'block';
+                } else {
+                    previewList.innerHTML = '<li class="list-group-item text-danger">No data found</li>';
+                    previewDiv.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                console.error("Feishu fetch error:", err);
+                previewList.innerHTML = '<li class="list-group-item text-danger">Error fetching data</li>';
+                previewDiv.style.display = 'block';
+            });
+    }
+
+    jobCardField.addEventListener('change', toggleScanField);
+    toggleScanField(); // initialize on page load
+});
 </script>
 {% endblock %}

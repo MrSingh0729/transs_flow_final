@@ -603,25 +603,18 @@ class OperatorQualificationCheckForm(forms.ModelForm):
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'job_card_verification_summary': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'scanned_barcode_text': forms.URLInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+            'scanned_barcode_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Add Bootstrap-style classes for form control
+        # Add Bootstrap classes
         for field in self.fields.values():
-            field.widget.attrs['class'] = 'form-control'
-        
-        # Make basic info read-only (auto-filled)
-        readonly_fields = [
-            'emp_id', 'name', 'date', 'shift',
-            'section', 'line', 'group', 'model', 'color'
-        ]
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
+        # Read-only fields
+        readonly_fields = ['emp_id','name','date','shift','section','line','group','model','color']
         for field in readonly_fields:
             if field in self.fields:
                 self.fields[field].widget.attrs['readonly'] = True
-
-        # Initially hide the scan image field
-        self.fields['scanned_barcode_image'].widget.attrs.update({
-            'style': 'display:none;',
-            'class': 'form-control-file'
-        })

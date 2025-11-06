@@ -186,6 +186,11 @@ LARK_APP_SECRET = "mfbtudMamxM9nKq5tUoh43AJNJT7iJWu"  # Your Lark App Secret
 # Bitable App token
 LARK_BITABLE_APP_TOKEN_QA = "UbZRbYrtqaDGwMsY9WmlqhAmgGf"  # Your Bitable App Token
 
+# Feishu App ID for IPQC Department
+FEISHU_APP_ID = "cli_a83144a175fad00c"
+FEISHU_APP_SECRET = "btMHmH3lAqIPQrX5RdIPRcAqn066kCmj"
+FEISHU_TABLE_ID  = "tblMZ9PkpgS4cmrq"
+
 # Table IDs for different types of records
 LARK_TABLE_IPQC_WORK_INFO = "tblVIUGu6K3bLdJa"                 # For normal work info
 LARK_TABLE_BTB_FITMENT_CHECKSHEET = "tbl2t96Qr6eA0jiA"
