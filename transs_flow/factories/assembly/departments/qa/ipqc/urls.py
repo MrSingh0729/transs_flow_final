@@ -33,7 +33,7 @@ urlpatterns = [
     # Operator Qualification Check URLs
     path('operator-qualification/create/', views.OperatorQualificationCheckCreateView.as_view(), name='operator_qualification_create'), 
     path('operator-qualification/list/', views.OperatorQualificationCheckListView.as_view(), name='operator_qualification_list'),
-    path('ajax/fetch-feishu/', views.FetchFeishuRecordView.as_view(), name='fetch_feishu_record'),
+    path("fetch-feishu-record/", views.fetch_feishu_record, name="fetch_feishu_record"),
     
     # --- NEW URLS FOR LIST, UPDATE, DELETE ---
     path('assembly-audit/create/', views. IPQCAssemblyAuditCreateView.as_view(), name='ipqc_assembly_audit_create'),

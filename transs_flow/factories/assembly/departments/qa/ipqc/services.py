@@ -6,63 +6,73 @@ from .models import BTBFitmentChecksheet
 
 
 def get_feishu_access_token():
-    """Get Feishu access token"""
+    """获取飞书访问令牌"""
     url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/"
     headers = {"Content-Type": "application/json"}
     data = {
         "app_id": getattr(settings, "FEISHU_APP_ID", None),
         "app_secret": getattr(settings, "FEISHU_APP_SECRET", None)
     }
-
     try:
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
-        json_data = response.json()
-        return json_data.get("tenant_access_token")
+        return response.json().get("tenant_access_token")
     except Exception as e:
         print("❌ Feishu token error:", e)
         return None
 
-
-def fetch_feishu_bitable_record(record_id, app_id, table_id):
-    """Fetch a single record from Feishu Bitable"""
+# --- 核心API获取函数 ---
+def fetch_feishu_bitable_record_via_api(record_id, app_token, table_id):
+    """根据您的描述，调用官方API获取记录数据"""
     token = get_feishu_access_token()
     if not token:
         return None
 
-    url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{app_id}/tables/{table_id}/records/{record_id}"
-    headers = {"Authorization": f"Bearer {token}"}
+    # ✅ 使用您提供的标准API端点
+    url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        return response.json()
+        return response.json() # 返回完整的JSON响应
     except Exception as e:
-        print("❌ Feishu fetch record error:", e)
+        print(f"❌ API request failed for {record_id}: {e}")
+        # 尝试打印响应内容以便调试
+        if e.response:
+            print(f"Response Status: {e.response.status_code}")
+            print(f"Response Text: {e.response.text}")
         return None
 
-
-def extract_required_fields_feishu(record_data):
-    """Extract only the required fields from Feishu record payload"""
-    try:
-        docs_pc = record_data.get('data', {}).get('docs_pc', {})
-        if not docs_pc:
-            return None
-        
-        # Assuming we want the first item in the list
-        first_item = docs_pc.get('list', [{}])[0]
-
-        required = {
-            "emp_id": first_item.get("emp_id"),
-            "name": first_item.get("name"),
-            "group": first_item.get("group"),
-            "department": first_item.get("department"),
-            "ctq_stage": first_item.get("ctq_stage"),
-            "total_marks": first_item.get("total_marks")
+# --- 根据标准JSON结构提取字段 ---
+def extract_fields_from_standard_response(record_json):
+    """
+    根据您提供的标准响应格式提取字段:
+    {
+      "data": {
+        "record": {
+          "fields": { ... }
         }
-        return required
+      }
+    }
+    """
+    try:
+        # ✅ 关键：正确的JSON路径
+        fields = record_json.get("data", {}).get("record", {}).get("fields", {})
+        
+        # ✅ 根据您的示例字段名进行映射
+        extracted = {
+            "emp_id": fields.get("Employee ID"),
+            "name": fields.get("Name"),
+            "group": fields.get("Group"),
+            "department": fields.get("Department"),
+            "ctq_stage": fields.get("CTQ Stage"),
+            "total_marks": fields.get("Total Marks") # 假设存在这个字段
+        }
+        # 过滤掉值为None的字段
+        return {k: v for k, v in extracted.items() if v is not None}
     except Exception as e:
-        print("Field extraction error:", e)
+        print(f"❌ Failed to extract fields: {e}")
         return None
 
 def get_lark_access_token():

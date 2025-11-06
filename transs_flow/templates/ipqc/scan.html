@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live QR / Barcode Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial; text-align: center; }
+    #preview { border: 2px solid #ccc; padding: 10px; margin-top: 20px; }
+    #result { margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>📷 Live QR / Barcode Scanner</h2>
+  <div id="reader" style="width: 300px; margin: auto;"></div>
+  <div id="preview"></div>
+
+  <script>
+    function onScanSuccess(decodedText) {
+      document.getElementById("preview").innerHTML =
+        `<p>🔗 ${decodedText}</p><p>Fetching record data...</p>`;
+
+      fetch(`/ipqc/fetch-feishu-record/?url=${encodeURIComponent(decodedText)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            document.getElementById("preview").innerHTML =
+              `<p>❌ Error: ${data.error}</p><pre>${JSON.stringify(data.details || data, null, 2)}</pre>`;
+          } else {
+            const fields = data.fields || {};
+            let html = "<h3>✅ Employee Data</h3><table border='1' style='margin:auto;'>";
+            for (const [key, value] of Object.entries(fields)) {
+              html += `<tr><td><b>${key}</b></td><td>${value}</td></tr>`;
+            }
+            html += "</table>";
+            document.getElementById("preview").innerHTML = html;
+          }
+        })
+        .catch(err => {
+          document.getElementById("preview").innerHTML = `<p>❌ Fetch error: ${err}</p>`;
+        });
+    }
+
+    new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 })
+      .render(onScanSuccess);
+  </script>
+</body>
+</html>

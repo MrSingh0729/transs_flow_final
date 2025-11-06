@@ -7,12 +7,9 @@
         {% csrf_token %}
         <div class="row">
             {% for field in form.visible_fields %}
-                <div class="col-md-6 mb-3" id="field-{{ field.name }}">
+                <div class="col-md-6 mb-3">
                     <label for="{{ field.id_for_label }}" class="form-label"><b>{{ field.label }}</b></label>
                     {{ field }}
-                    {% if field.help_text %}
-                        <small class="text-muted">{{ field.help_text }}</small>
-                    {% endif %}
                     {% if field.errors %}
                         <div class="text-danger small">{{ field.errors|join:", " }}</div>
                     {% endif %}
@@ -20,19 +17,14 @@
             {% endfor %}
         </div>
 
-        <!-- Barcode Scanner Section -->
-        <div class="col-12 mb-3" id="qr-scan-section" style="display:none;">
-            <label class="form-label"><b>Live QR / Barcode Scanner</b></label>
-            <div id="reader" style="width:100%; max-width:400px;"></div>
-            <input type="text" id="scanned-result" name="scanned_result" 
-                   class="form-control mt-2" placeholder="Scanned code will appear here" readonly>
+        <!-- Live QR Scanner -->
+        <div class="col-12 mb-3" id="qr-scan-section">
+            <label class="form-label"><b>📷 Live QR / Barcode Scanner</b></label>
+            <div id="reader" style="width:100%; max-width:400px; margin:auto;"></div>
+            <input type="text" id="scanned-result" name="scanned_result" class="form-control mt-2" readonly>
         </div>
 
-        <!-- Feishu Record Live Preview -->
-        <div class="col-12 mb-3" id="feishu-preview" style="display:none;">
-            <h5>Employee Data Preview</h5>
-            <ul id="feishu-data-list" class="list-group"></ul>
-        </div>
+        <div id="feishu-preview" class="col-12 mt-4"></div>
 
         <div class="text-center mt-3">
             <button type="submit" class="btn btn-success px-4">Save</button>
@@ -40,82 +32,41 @@
     </form>
 </div>
 
-<!-- Include HTML5 QR Code library -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const jobCardField = document.getElementById('id_key_station_job_card_status');
-    const scanField = document.getElementById('field-scanned_barcode_image');
-    const qrScanSection = document.getElementById('qr-scan-section');
-    const scannedResultInput = document.getElementById('scanned-result');
-    const previewDiv = document.getElementById('feishu-preview');
-    const previewList = document.getElementById('feishu-data-list');
+document.addEventListener('DOMContentLoaded', () => {
+    const preview = document.getElementById('feishu-preview');
+    const input = document.getElementById('scanned-result');
+    const qr = new Html5Qrcode("reader");
 
-    let html5QrCode;
-
-    function toggleScanField() {
-        if (jobCardField.value === 'Have') {
-            scanField.style.display = 'block';
-            qrScanSection.style.display = 'block';
-            startScanner();
-        } else {
-            scanField.style.display = 'none';
-            qrScanSection.style.display = 'none';
-            scannedResultInput.value = '';
-            previewDiv.style.display = 'none';
-            stopScanner();
-        }
-    }
-
-    function startScanner() {
-        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-        const qrConfig = { fps: 10, qrbox: { width: 250, height: 250 } };
-        html5QrCode.start(
-            { facingMode: "environment" },
-            qrConfig,
-            qrCodeMessage => {
-                scannedResultInput.value = qrCodeMessage;
-                stopScanner();
-                fetchFeishuData(qrCodeMessage);
-            },
-            errorMessage => console.warn("QR scan error:", errorMessage)
-        ).catch(err => console.error("Camera start error:", err));
-    }
-
-    function stopScanner() {
-        if (html5QrCode) {
-            html5QrCode.stop().catch(() => {});
-        }
-    }
-
-    function fetchFeishuData(recordUrl) {
-        fetch(`/ajax/fetch-feishu/?record_url=${encodeURIComponent(recordUrl)}`)
+    function fetchFeishuData(url) {
+        preview.innerHTML = "<p>⏳ Fetching Feishu data...</p>";
+        fetch(`/ipqc/fetch-feishu-record/?url=${encodeURIComponent(url)}`)
             .then(res => res.json())
             .then(data => {
-                if (data.data) {
-                    previewList.innerHTML = '';
-                    Object.entries(data.data).forEach(([key, value]) => {
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item';
-                        li.innerHTML = `<b>${key.charAt(0).toUpperCase() + key.slice(1)}:</b> ${value}`;
-                        previewList.appendChild(li);
-                    });
-                    previewDiv.style.display = 'block';
+                if (data.error) {
+                    preview.innerHTML = `<p class="text-danger">❌ Error: ${data.error}</p>`;
                 } else {
-                    previewList.innerHTML = '<li class="list-group-item text-danger">No data found</li>';
-                    previewDiv.style.display = 'block';
+                    const fields = data.fields || {};
+                    let html = "<h5>🧾 Employee Data Preview</h5><table class='table table-bordered'>";
+                    for (const [key, value] of Object.entries(fields)) {
+                        html += `<tr><td><b>${key}</b></td><td>${value}</td></tr>`;
+                    }
+                    html += "</table>";
+                    preview.innerHTML = html;
                 }
             })
             .catch(err => {
-                console.error("Feishu fetch error:", err);
-                previewList.innerHTML = '<li class="list-group-item text-danger">Error fetching data</li>';
-                previewDiv.style.display = 'block';
+                preview.innerHTML = `<p class="text-danger">❌ Fetch error: ${err}</p>`;
             });
     }
 
-    jobCardField.addEventListener('change', toggleScanField);
-    toggleScanField(); // initialize on page load
+    qr.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, decoded => {
+        input.value = decoded;
+        qr.stop().catch(() => {});
+        fetchFeishuData(decoded);
+    });
 });
 </script>
 {% endblock %}
