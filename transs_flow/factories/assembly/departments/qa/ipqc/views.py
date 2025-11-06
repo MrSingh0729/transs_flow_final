@@ -1684,23 +1684,6 @@ class TestingFAIDetailsJsonView(LoginRequiredMixin, DetailView):
         return JsonResponse(data)
     
 
-class FetchFeishuRecordView(View):
-    """AJAX endpoint to fetch Feishu record data"""
-    def get(self, request):
-        record_url = request.GET.get('record_url')
-        if not record_url:
-            return JsonResponse({'error': 'No record URL provided'}, status=400)
-
-        record_id = record_url.rstrip('/').split('/')[-1]
-        app_id = getattr(settings, "FEISHU_APP_ID", None)
-        table_id = getattr(settings, "FEISHU_TABLE_ID", None)
-
-        try:
-            record_data = fetch_feishu_bitable_record(record_id, app_id, table_id)
-            extracted_fields = extract_required_fields_feishu(record_data)
-            return JsonResponse({'data': extracted_fields})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
 
 class OperatorQualificationCheckCreateView(CreateView):
     model = OperatorQualificationCheck
