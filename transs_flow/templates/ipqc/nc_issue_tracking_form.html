@@ -1,90 +1,779 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}NC Issue Tracking{% endblock title %}
-
+{% load custom_filters %}
+{% block title %}NC Issue{% endblock %}
 {% block content %}
-<div class="pc-container">
-    <div class="pc-content">
-        <div class="row justify-content-center">
-            <div class="col-lg-10 col-xl-8">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="card-title mb-0">NC Issue Tracking Form</h4>
+<style>
+/* --- NC Issue Tracking Form Styles --- */
+.nc-form { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 16px; 
+    width: 100%; 
+}
+
+.step-indicator { 
+    background: white; 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    padding: 16px 12px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+}
+
+.step-progress { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 12px; 
+    position: relative; 
+}
+
+.step-progress::before { 
+    content: ''; 
+    position: absolute; 
+    top: 50%; 
+    left: 0; 
+    right: 0; 
+    height: 2px; 
+    background: var(--border); 
+    z-index: 0; 
+}
+
+.step-progress-line { 
+    position: absolute; 
+    top: 50%; 
+    left: 0; 
+    height: 2px; 
+    background: var(--primary); 
+    z-index: 1; 
+    transition: width 0.3s ease; 
+    transform: translateY(-50%); 
+}
+
+.step-item { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    position: relative; 
+    z-index: 2; 
+    cursor: pointer; 
+    flex-shrink: 0; 
+}
+
+.step-circle { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    border: 3px solid var(--border); 
+    background: white; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: 700; 
+    font-size: 14px; 
+    color: var(--text-light); 
+    transition: all 0.3s ease; 
+}
+
+.step-circle.active { 
+    background: var(--primary); 
+    color: white; 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); 
+}
+
+.step-circle.completed { 
+    background: var(--success); 
+    color: white; 
+    border-color: var(--success); 
+}
+
+.step-label { 
+    font-size: 11px; 
+    color: var(--text-secondary); 
+    text-align: center; 
+    margin-top: 6px; 
+    font-weight: 500; 
+    white-space: nowrap; 
+}
+
+@media (max-width: 640px) {
+    .step-label { display: none; }
+    .step-circle { width: 36px; height: 36px; font-size: 13px; }
+    .step-item { flex-shrink: 1; }
+}
+
+.form-section { 
+    background: white; 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    padding: 20px 16px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+}
+
+.section-header { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    margin-bottom: 16px; 
+    padding-bottom: 12px; 
+    border-bottom: 1px solid var(--border); 
+}
+
+.section-title { 
+    font-size: 18px; 
+    font-weight: 700; 
+    color: var(--text-primary); 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+}
+
+.section-icon { 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 8px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.form-grid { 
+    display: grid; 
+    gap: 16px; 
+    width: 100%; 
+}
+
+.form-group { 
+    display: flex; 
+    flex-direction: column; 
+    width: 100%; 
+}
+
+.form-group label { 
+    display: block; 
+    font-size: 14px; 
+    font-weight: 600; 
+    color: var(--text-primary); 
+    margin-bottom: 6px; 
+}
+
+.form-group input, .form-group select, .form-group textarea { 
+    width: 100%; 
+    padding: 12px; 
+    background: white; 
+    border: 2px solid var(--border); 
+    border-radius: 8px; 
+    color: var(--text-primary); 
+    font-size: 14px; 
+    transition: all 0.2s ease; 
+    font-family: inherit; 
+    box-sizing: border-box; 
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+    outline: none; 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); 
+}
+
+.form-group input[readonly] { 
+    background: var(--bg-secondary); 
+    cursor: not-allowed; 
+    color: var(--text-secondary); 
+}
+
+.form-group .is-invalid {
+    border-color: var(--danger) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.severity-select { 
+    border-radius: 8px; 
+    font-weight: 500; 
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); 
+    background-repeat: no-repeat; 
+    background-position: right 12px center; 
+    background-size: 20px; 
+    padding-right: 44px; 
+    appearance: none; 
+}
+
+.severity-select[value="Critical"] { 
+    border-color: var(--danger); 
+    background-color: rgba(239, 68, 68, 0.05); 
+}
+
+.severity-select[value="High"] { 
+    border-color: #f97316; 
+    background-color: rgba(249, 115, 22, 0.05); 
+}
+
+.severity-select[value="Medium"] { 
+    border-color: var(--warning); 
+    background-color: rgba(245, 158, 11, 0.05); 
+}
+
+.severity-select[value="Low"] { 
+    border-color: var(--success); 
+    background-color: rgba(34, 197, 94, 0.05); 
+}
+
+.status-select { 
+    border-radius: 8px; 
+    font-weight: 500; 
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); 
+    background-repeat: no-repeat; 
+    background-position: right 12px center; 
+    background-size: 20px; 
+    padding-right: 44px; 
+    appearance: none; 
+}
+
+.status-select[value="Open"] { 
+    border-color: var(--danger); 
+    background-color: rgba(239, 68, 68, 0.05); 
+}
+
+.status-select[value="In Progress"] { 
+    border-color: var(--primary); 
+    background-color: rgba(14, 165, 233, 0.05); 
+}
+
+.status-select[value="Resolved"] { 
+    border-color: var(--success); 
+    background-color: rgba(34, 197, 94, 0.05); 
+}
+
+.status-select[value="Closed"] { 
+    border-color: var(--text-secondary); 
+    background-color: rgba(100, 116, 139, 0.05); 
+}
+
+.form-group textarea { 
+    resize: vertical; 
+    min-height: 100px; 
+}
+
+.bottom-nav { 
+    position: sticky; 
+    bottom: 0; 
+    background: white; 
+    border-top: 1px solid var(--border); 
+    padding: 16px; 
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05); 
+}
+
+.nav-content { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    flex-wrap: wrap; 
+    gap: 12px; 
+}
+
+.progress-text { 
+    font-size: 14px; 
+    color: var(--text-secondary); 
+    font-weight: 500; 
+}
+
+.nav-buttons { 
+    display: flex; 
+    gap: 8px; 
+    flex-wrap: wrap; 
+}
+
+.nav-btn { 
+    padding: 10px 16px; 
+    border-radius: 8px; 
+    font-weight: 600; 
+    font-size: 13px; 
+    border: none; 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 6px; 
+    min-width: 80px; 
+}
+
+.nav-btn:disabled { 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+}
+
+.nav-btn-secondary { 
+    background: white; 
+    color: var(--text-secondary); 
+    border: 2px solid var(--border); 
+}
+
+.nav-btn-primary { 
+    background: var(--primary); 
+    color: white; 
+}
+
+.nav-btn-danger { 
+    background: var(--danger); 
+    color: white; 
+}
+
+.error-message { 
+    color: var(--danger); 
+    font-size: 12px; 
+    margin-top: 4px; 
+}
+
+.alert { 
+    padding: 12px 16px; 
+    margin-bottom: 20px; 
+    border-radius: 8px; 
+    border: 1px solid transparent; 
+}
+
+.alert-danger { 
+    color: #721c24; 
+    background-color: #f8d7da; 
+    border-color: #f5c6cb; 
+}
+
+.alert-success { 
+    color: #155724; 
+    background-color: #d4edda; 
+    border-color: #c3e6cb; 
+}
+
+.alert-warning { 
+    color: #856404; 
+    background-color: #fff3cd; 
+    border-color: #ffeaa7; 
+}
+
+/* New styles for success section */
+.success-section {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+.success-section h2 {
+    margin-bottom: 16px;
+    color: #0f5132;
+}
+.url-display-box {
+    background: white;
+    border: 1px dashed #a9dcb5;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 16px;
+    word-break: break-all;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+.url-display-box p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #0f5132;
+    flex-grow: 1;
+}
+
+/* Priority indicator styles */
+.priority-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.priority-critical {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.priority-high {
+    background: rgba(249, 115, 22, 0.1);
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.priority-medium {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.priority-low {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+@media (min-width: 768px) {
+    .form-grid { 
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+        gap: 20px; 
+    }
+    .form-section { 
+        padding: 24px; 
+        margin-bottom: 24px; 
+    }
+    .section-title { 
+        font-size: 20px; 
+    }
+}
+</style>
+
+<!-- Messages and errors -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+{% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        <strong>Error:</strong>
+        <ul>
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<div class="nc-form">
+    <!-- This section will only be shown after a successful POST -->
+    {% if form.instance.public_url %}
+    <div class="success-section">
+        <h2><i class="fas fa-check-circle"></i> NC Issue Created Successfully!</h2>
+        <p>The issue has been recorded. You can now share the following link with relevant personnel.</p>
+        <div class="url-display-box">
+            <p id="publicUrl">{{ form.instance.public_url }}</p>
+            <button class="nav-btn nav-btn-primary" onclick="copyPublicUrl()">
+                <i class="fas fa-copy"></i> Copy Link
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Step Progress Indicator -->
+    <div class="step-indicator">
+        <div class="step-progress">
+            <div class="step-progress-line" id="progressLine" style="width: 0%;"></div>
+            <div class="step-item" onclick="goToStep(1)">
+                <div class="step-circle active" id="step1">1</div>
+                <div class="step-label">Basic Info</div>
+            </div>
+            <div class="step-item" onclick="goToStep(2)">
+                <div class="step-circle" id="step2">2</div>
+                <div class="step-label">Issue Details</div>
+            </div>
+        </div>
+        <div class="progress-text">
+            Step <span id="currentStep">1</span> of 2
+        </div>
+    </div>
+
+    <form method="post" id="ncIssueForm" enctype="multipart/form-data" onsubmit="return validateForm()">
+        {% csrf_token %}
+
+        <!-- STEP 1: Basic Information (Read-Only) -->
+        <div class="form-section" id="step1-content">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-sky-100">
+                        <i class="fas fa-info-circle text-sky-600"></i>
                     </div>
-                    <div class="card-body">
-                        <form method="post">
-                            {% csrf_token %}
-                            <div class="accordion" id="issueAccordion">
-
-                                <!-- BASIC INFO -->
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingBasic">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBasic" aria-expanded="true" aria-controls="collapseBasic">
-                                            <i class="bi bi-person-badge me-2"></i> Basic Information
-                                        </button>
-                                    </h2>
-                                    <div id="collapseBasic" class="accordion-collapse collapse show" aria-labelledby="headingBasic">
-                                        <div class="accordion-body">
-                                            <div class="row g-3">
-                                                {% for field in form %}
-                                                    {% if field.name in 'date shift emp_id name section line group model color' %}
-                                                        <div class="col-md-6 mb-3">
-                                                            <label class="form-label">{{ field.label }}</label>
-                                                            {{ field }}
-                                                            <div class="invalid-feedback d-block">{{ field.errors }}</div>
-                                                        </div>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- ISSUE TRACKING FIELDS -->
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingIssue">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIssue" aria-expanded="false" aria-controls="collapseIssue">
-                                            <i class="bi bi-exclamation-triangle me-2"></i> Issue Tracking Details
-                                        </button>
-                                    </h2>
-                                    <div id="collapseIssue" class="accordion-collapse collapse" aria-labelledby="headingIssue">
-                                        <div class="accordion-body">
-                                            <div class="row g-3">
-                                                {% for field in form %}
-                                                    {% if field.name not in 'date shift emp_id name section line group model color created_at updated_at' %}
-                                                        <div class="col-md-6 mb-3">
-                                                            <label class="form-label">{{ field.label }}</label>
-                                                            {{ field }}
-                                                            <div class="invalid-feedback d-block">{{ field.errors }}</div>
-                                                        </div>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                                <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="bi bi-send-check me-2"></i> Submit Issue
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    Basic Information
+                    <span class="badge bg-secondary ms-3">Auto-filled from Work Info</span>
+                </h2>
+                <div class="step-circle active">1</div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+                    {{ form.date|attr:"readonly" }}
+                    {% if form.date.errors %}<div class="error-message">{{ form.date.errors.0 }}</div>{% endif %}
                 </div>
+                <div class="form-group">
+                    <label for="{{ form.shift.id_for_label }}">{{ form.shift.label }}</label>
+                    {{ form.shift|attr:"readonly" }}
+                    {% if form.shift.errors %}<div class="error-message">{{ form.shift.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.emp_id.id_for_label }}">{{ form.emp_id.label }}</label>
+                    {{ form.emp_id|attr:"readonly" }}
+                    {% if form.emp_id.errors %}<div class="error-message">{{ form.emp_id.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                    {{ form.name|attr:"readonly" }}
+                    {% if form.name.errors %}<div class="error-message">{{ form.name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.section.id_for_label }}">{{ form.section.label }}</label>
+                    {{ form.section|attr:"readonly" }}
+                    {% if form.section.errors %}<div class="error-message">{{ form.section.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.line.id_for_label }}">{{ form.line.label }}</label>
+                    {{ form.line|attr:"readonly" }}
+                    {% if form.line.errors %}<div class="error-message">{{ form.line.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.group.id_for_label }}">{{ form.group.label }}</label>
+                    {{ form.group|attr:"readonly" }}
+                    {% if form.group.errors %}<div class="error-message">{{ form.group.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.model.id_for_label }}">{{ form.model.label }}</label>
+                    {{ form.model|attr:"readonly" }}
+                    {% if form.model.errors %}<div class="error-message">{{ form.model.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.color.id_for_label }}">{{ form.color.label }}</label>
+                    {{ form.color|attr:"readonly" }}
+                    {% if form.color.errors %}<div class="error-message">{{ form.color.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: Issue Tracking Details -->
+        <div class="form-section" id="step2-content" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <div class="section-icon bg-red-100">
+                        <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    </div>
+                    Issue Tracking Details
+                </h2>
+                <div class="step-circle">2</div>
+            </div>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name not in 'date shift emp_id name section line group model color created_at updated_at' %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}
+                                {% if 'severity' in field.name or 'priority' in field.name %}
+                                    <span id="priorityIndicator" class="priority-indicator priority-low"></span>
+                                {% endif %}
+                            </label>
+                            {% if 'severity' in field.name %}
+                                {{ field|attr:"required class:severity-select" }}
+                            {% elif 'status' in field.name %}
+                                {{ field|attr:"required class:status-select" }}
+                            {% elif 'description' in field.name or 'remarks' in field.name %}
+                                {{ field|attr:"required" }}
+                            {% else %}
+                                {{ field|attr:"required" }}
+                            {% endif %}
+                            {% if field.errors %}<div class="error-message">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </form>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-content">
+            <div class="progress-text">
+                Section <span id="currentSection">1</span> of 2
+            </div>
+            <div class="nav-buttons">
+                <button type="button" onclick="previousStep()" id="prev-btn" class="nav-btn nav-btn-secondary" disabled>
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button type="button" onclick="nextStep()" id="next-btn" class="nav-btn nav-btn-primary">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" form="ncIssueForm" id="submit-btn" class="nav-btn nav-btn-danger" disabled>
+                    <i class="fas fa-exclamation-circle"></i> Submit Issue
+                </button>
             </div>
         </div>
     </div>
 </div>
-{% endblock content %}
 
-{% block extra_js %}
 <script>
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    })
+let currentStep = 1; 
+const totalSteps = 2;
+
+function updateStepIndicator() {
+    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById('progressLine').style.width = progressPercentage + '%';
+    document.getElementById('currentStep').textContent = currentStep;
+    document.getElementById('currentSection').textContent = currentStep;
+    
+    for (let i = 1; i <= totalSteps; i++) {
+        const stepCircle = document.getElementById(`step${i}`); 
+        const stepContent = document.getElementById(`step${i}-content`);
+        
+        if (stepCircle) { 
+            stepCircle.classList.remove('active', 'completed');
+            if (i < currentStep) { 
+                stepCircle.classList.add('completed'); 
+                stepCircle.innerHTML = '✓'; 
+            }
+            else if (i === currentStep) { 
+                stepCircle.classList.add('active'); 
+                stepCircle.innerHTML = i; 
+            }
+            else { 
+                stepCircle.innerHTML = i; 
+            }
+        }
+        
+        if (stepContent) { 
+            stepContent.style.display = i === currentStep ? 'block' : 'none'; 
+        }
+    }
+    
+    document.getElementById('prev-btn').disabled = currentStep === 1;
+    document.getElementById('next-btn').disabled = currentStep === totalSteps;
+    document.getElementById('submit-btn').disabled = currentStep !== totalSteps;
+    
+    document.querySelector('.nc-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function goToStep(step) { 
+    if (step >= 1 && step <= totalSteps) { 
+        currentStep = step; 
+        updateStepIndicator(); 
+    } 
+}
+
+function nextStep() { 
+    if (currentStep < totalSteps) { 
+        currentStep++; 
+        updateStepIndicator(); 
+    } 
+}
+
+function previousStep() { 
+    if (currentStep > 1) { 
+        currentStep--; 
+        updateStepIndicator(); 
+    } 
+}
+
+function validateForm() {
+    // Clear previous validation styles and messages
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    const existingErrorDiv = document.getElementById('form-validation-error');
+    if (existingErrorDiv) {
+        existingErrorDiv.remove();
+    }
+
+    // Validate required fields, step by step
+    for (let step = 1; step <= totalSteps; step++) {
+        const currentStepDiv = document.getElementById(`step${step}-content`);
+        if (!currentStepDiv) continue;
+
+        let stepHasError = false;
+        const requiredFields = currentStepDiv.querySelectorAll('input[required], select[required], textarea[required]');
+
+        for (const field of requiredFields) {
+            // Skip readonly fields as they are pre-filled
+            if (field.hasAttribute('readonly')) {
+                continue;
+            }
+            
+            let isEmpty = false;
+            if (field.type === 'file') {
+                isEmpty = !field.files || field.files.length === 0;
+            } else { // Covers text, number, select, textarea
+                isEmpty = !field.value || field.value.trim() === '';
+            }
+
+            if (isEmpty) {
+                field.classList.add('is-invalid');
+                stepHasError = true;
+            }
+        }
+
+        // If current step has any errors, jump to it and stop validation
+        if (stepHasError) {
+            const stepName = document.querySelector(`#step${step}-content .section-title`).textContent.trim();
+            const errorMessage = `Error in Step ${step}: Please fill in all required fields marked in red.`;
+            
+            let errorDiv = document.createElement('div'); 
+            errorDiv.id = 'form-validation-error';
+            errorDiv.className = 'alert alert-danger'; 
+            document.querySelector('.nc-form').insertBefore(
+                errorDiv, 
+                document.querySelector('.step-indicator')
+            );
+            errorDiv.innerHTML = `<strong>${errorMessage}</strong>`; 
+            
+            goToStep(step);
+            return false; // Stop form submission
+        }
+    }
+
+    // If all validations pass
+    return true; 
+}
+
+// Function to copy public URL
+function copyPublicUrl() {
+    const urlText = document.getElementById('publicUrl').innerText;
+    navigator.clipboard.writeText(urlText).then(() => {
+        alert('Public URL copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy URL: ', err);
+    });
+}
+
+// Function to update priority indicator
+function updatePriorityIndicator(value) {
+    const indicator = document.getElementById('priorityIndicator');
+    if (!indicator) return;
+    
+    indicator.className = 'priority-indicator';
+    
+    if (value === 'Critical') {
+        indicator.classList.add('priority-critical');
+        indicator.innerHTML = '<i class="fas fa-exclamation-circle"></i> Critical';
+    } else if (value === 'High') {
+        indicator.classList.add('priority-high');
+        indicator.innerHTML = '<i class="fas fa-arrow-up"></i> High';
+    } else if (value === 'Medium') {
+        indicator.classList.add('priority-medium');
+        indicator.innerHTML = '<i class="fas fa-minus"></i> Medium';
+    } else if (value === 'Low') {
+        indicator.classList.add('priority-low');
+        indicator.innerHTML = '<i class="fas fa-arrow-down"></i> Low';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() { 
+    updateStepIndicator();
+    
+    // Add event listener for severity/priority fields
+    const severitySelects = document.querySelectorAll('select[name*="severity"], select[name*="priority"]');
+    severitySelects.forEach(select => {
+        updatePriorityIndicator(select.value);
+        select.addEventListener('change', function() {
+            updatePriorityIndicator(this.value);
+        });
+    });
+});
 </script>
-{% endblock extra_js %}
+{% endblock content %}

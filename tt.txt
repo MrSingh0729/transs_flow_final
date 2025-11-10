@@ -1152,14 +1152,17 @@
         <!-- Floating bottom nav (mobile only) -->
         <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-50 md:hidden mobile-bottom-nav no-print"
             role="navigation" aria-label="Mobile navigation">
+            {% if request.user.is_superuser or request.user.role == "admin" %}
             <a href="{% url 'dashboard' %}" class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Home">
                 <i class="fas fa-home text-lg"></i>
                 <span class="text-xs mt-1">Home</span>
             </a>
+            {% else %}
             <a href="{% url 'ipqc_home' %}" class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="IPQC">
                 <i class="fas fa-chart-line text-lg"></i>
-                <span class="text-xs mt-1">IPQC</span>
+                <span class="text-xs mt-1">Home</span>
             </a>
+            {% endif %}
             <a href="{% url 'nc_issue_tracking_create' %}" class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Issues">
                 <i class="fas fa-exclamation-triangle text-lg"></i>
                 <span class="text-xs mt-1">Issues</span>

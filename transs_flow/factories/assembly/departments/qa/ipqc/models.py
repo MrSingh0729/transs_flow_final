@@ -378,22 +378,22 @@ class AssDummyTest(models.Model):
     group = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
     color = models.CharField(max_length=50)
-    test_stage = models.CharField(max_length=100)
-    test_item = models.CharField(max_length=200)
-    operator_name = models.CharField(max_length=100)
-    operator_id = models.CharField(max_length=50)
+    test_stage = models.CharField(max_length=100, verbose_name="Test Stage")
+    test_item = models.CharField(max_length=200, verbose_name="Test Item")
+    operator_name = models.CharField(max_length=100, verbose_name="Operator Name")
+    operator_id = models.CharField(max_length=50, verbose_name="Operator ID")
     
     RESULT_CHOICES = [
         ('Pass', 'Pass'),
         ('Fail', 'Fail'),
         ('NA', 'NA'),
     ]
-    result = models.CharField(max_length=10, choices=RESULT_CHOICES)
+    result = models.CharField(max_length=10, choices=RESULT_CHOICES, verbose_name="Test Result")
     
-    cause = models.TextField(blank=True, null=True)
-    measure = models.TextField(blank=True, null=True)
-    ll_confirm = models.TextField(default=False)
-    remark = models.TextField(blank=True, null=True)
+    cause = models.TextField(blank=True, null=True, verbose_name="Cause of Failure")
+    measure = models.TextField(blank=True, null=True, verbose_name="Corrective Measure")
+    ll_confirm = models.TextField(verbose_name="Line Leader Confirm")
+    remark = models.TextField(blank=True, null=True, verbose_name="Remark")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

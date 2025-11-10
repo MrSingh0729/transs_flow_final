@@ -524,6 +524,31 @@ class IPQCAssemblyAuditCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateV
     form_class = IPQCAssemblyAuditForm
     template_name = 'ipqc/ipqc_assembly_audit_form.html'
     success_url = reverse_lazy('ipqc_audit_list') # Redirect to list page after creation
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
  
     def get_initial(self):
         initial = super().get_initial()
@@ -704,6 +729,31 @@ class BTBFitmentChecksheetCreateView(RoleRequiredMixin, LoginRequiredMixin, Crea
 
     # List of hours to use in template
     HOURS = ['9','10','11','12','1','2','3','4','5','6']
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         initial = super().get_initial()
@@ -813,6 +863,31 @@ class AssyDummyTestCreate(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     form_class = AssDummyTestForm
     template_name = 'ipqc/ass_dummy_test_form.html'
     success_url = reverse_lazy('ass_dummy_test_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         """Prefill form fields based on logged-in user and latest work info."""
@@ -881,6 +956,31 @@ class IPQCDisassembleCheckListCreateView(RoleRequiredMixin, LoginRequiredMixin, 
     form_class = IPQCDisassembleCheckListForm
     template_name = 'ipqc/ipqc_disassemble_form.html'
     success_url = reverse_lazy('ipqc_disassemble_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         """Prefill form fields based on latest work info for logged-in user."""
@@ -1125,6 +1225,31 @@ class NCIssueTrackingCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateVie
     form_class = NCIssueTrackingForm
     template_name = 'ipqc/nc_issue_tracking_form.html'
     success_url = reverse_lazy('nc_issue_tracking_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         """Prefill form fields based on logged-in user and latest work info."""
@@ -1202,6 +1327,31 @@ class ESDComplianceChecklistCreateView(RoleRequiredMixin, LoginRequiredMixin, Cr
     form_class = ESDComplianceChecklistForm
     template_name = 'ipqc/esd_compliance_checklist_form.html'
     success_url = reverse_lazy('esd_compliance_checklist_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         """Prefill form fields based on logged-in user and latest work info."""
@@ -1424,6 +1574,31 @@ class DustCountCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     form_class = DustCountCheckForm
     template_name = 'ipqc/dust_count_checklist_form.html'
     success_url = reverse_lazy('dust_count_checklist_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         """Prefill form fields based on logged-in user and latest work info."""
@@ -1478,6 +1653,31 @@ class TestingFirstArticleInspectionCreateView(LoginRequiredMixin, CreateView):
     form_class = TestingFirstArticleInspectionForm
     template_name = 'ipqc/testing_fai_form.html'
     success_url = reverse_lazy('testing_fai_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
     
     def get_initial(self):
         initial = super().get_initial()
@@ -1688,6 +1888,31 @@ class OperatorQualificationCheckCreateView(CreateView):
     form_class = OperatorQualificationCheckForm
     template_name = "ipqc/operator_qualification_form.html"
     success_url = reverse_lazy("operator_qualification_list")
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user filled Work Info for today before allowing access."""
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+
+            # Define today's 8 AM range (same as your home_view logic)
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         initial = super().get_initial()
