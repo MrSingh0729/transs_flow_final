@@ -1,90 +1,2178 @@
-Here’s what’s happening — and how you can extract only the fields like Employee ID, Name, Group, Department, CTQ Stage, Total Marks from that QR link dynamically.
+# Full Updated Project Code: Django → PWA → Capacitor Native App
 
-🔍 1️⃣ Understanding the link
+Here's the complete updated project structure with all necessary files for converting your Django IPQC system to a Progressive Web App (PWA) and Capacitor native app:
 
-Your QR code link is like this:
+## Project Structure
 
-https://transsioner.feishu.cn/record/ByMDrsohBe7wiEcaTDtcncYznpG
+```
+transs_flow/
+├── transs_flow/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py
+│   ├── asgi.py
+│   └── manage.py
+├── accounts/
+│   ├── migrations/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── core/
+│   ├── migrations/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── factories/
+│   └── assembly/
+│       ├── departments/
+│       │   └── qa/
+│       │       ├── ipqc/
+│       │       │   ├── migrations/
+│       │       │   ├── __init__.py
+│       │       │   ├── admin.py
+│       │       │   ├── apps.py
+│       │       │   ├── models.py
+│       │       │   ├── serializers.py
+│       │       │   ├── tests.py
+│       │       │   ├── urls.py
+│       │       │   ├── views.py
+│       │       │   └── views_api.py
+│       │       └── ...
+│       └── ...
+├── frontend/  # NEW React PWA
+│   ├── public/
+│   │   ├── manifest.json
+│   │   ├── sw.js
+│   │   └── index.html
+│   ├── src/
+│   │   ├── api/
+│   │   │   ├── auth.js
+│   │   │   ├── workInfo.js
+│   │   │   ├── fai.js
+│   │   │   ├── audit.js
+│   │   │   └── index.js
+│   │   ├── components/
+│   │   │   ├── Auth/
+│   │   │   ├── Dashboard/
+│   │   │   ├── Forms/
+│   │   │   ├── Camera/
+│   │   │   └── Scanner/
+│   │   ├── contexts/
+│   │   │   ├── AuthContext.js
+│   │   │   └── OfflineContext.js
+│   │   ├── hooks/
+│   │   │   ├── useAuth.js
+│   │   │   ├── useOffline.js
+│   │   │   └── useCamera.js
+│   │   ├── utils/
+│   │   │   ├── indexedDB.js
+│   │   │   ├── imageCompressor.js
+│   │   │   └── syncQueue.js
+│   │   ├── App.js
+│   │   ├── index.js
+│   │   └── serviceWorker.js
+│   ├── package.json
+│   └── ...
+├── plugins/  # NEW Capacitor plugins
+│   ├── capacitor.config.json
+│   ├── android/
+│   ├── ios/
+│   └── src/
+│       ├── plugins/
+│       │   ├── secure-storage.ts
+│       │   ├── camera.ts
+│       │   ├── haptics.ts
+│       │   └── background-sync.ts
+│       └── index.ts
+├── templates/
+│   ├── base.html
+│   ├── accounts/
+│   ├── ipqc/
+│   └── ...
+├── static/
+│   ├── css/
+│   ├── js/
+│   └── images/
+├── certs/
+│   └── aiven-ca.pem
+├── media/
+└── chat/
+    ├── migrations/
+    ├── __init__.py
+    ├── admin.py
+    ├── apps.py
+    ├── consumers.py
+    ├── models.py
+    ├── routing.py
+    ├── tests.py
+    └── urls.py
+```
 
+## Key Implementation Files
 
-This link opens a specific record inside Lark (Feishu) Bitable.
+### 1. Backend API Setup (Django REST Framework)
 
-The record ID is:
+**transs_flow/transs_flow/settings.py** (updated)
+```python
+# Add to INSTALLED_APPS
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'accounts',
+    'core',
+    'factories.assembly.departments.qa.ipqc',
+    'factories.assembly.departments.qa',
+    'factories.assembly.departments',
+    'factories.assembly',
+    'factories',
+    'widget_tweaks',
+    'channels',
+    'chat',
+]
 
-ByMDrsohBe7wiEcaTDtcncYznpG
+# REST Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20
+}
 
+# JWT settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
 
-The App ID and Table ID are not visible in the URL, but can be fetched using the Lark Bitable Open API once you connect with an access token.
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # Only for development
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # React dev server
+    "http://localhost:8080",  # Alternative dev server
+    "http://127.0.0.1:3000",
+]
 
-⚙️ 2️⃣ How to extract these IDs programmatically
+# Channels settings
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+    },
+}
 
-If you have the Bitable App Token (from Feishu developer console):
+# Media settings
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+```
 
-You can call this endpoint:
+**factories/assembly/departments/qa/ipqc/serializers.py** (new)
+```python
+from rest import serializers
+from .models import (
+    WorkInfo, FAITest, AssemblyAudit, BTBChecksheet, 
+    DisassembleChecklist, NCIssueTracking, ESDCompliance,
+    OperatorQualification, DustCountChecklist, DynamicForm
+)
 
-GET https://transsioner.feishu.cn/open-apis/bitable/v1/apps/{app_token}/tables
+class WorkInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkInfo
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
 
+class FAITestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FAITest
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
 
-That will list all tables with their table_id.
+class AssemblyAuditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssemblyAudit
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
 
-Then, use:
+class BTBChecksheetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BTBChecksheet
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
 
-GET https://transsioner.feishu.cn/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}
+class DisassembleChecklistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DisassembleChecklist
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
 
+class NCIssueTrackingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCIssueTracking
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
 
-To get the record’s field data in JSON — this is what you need for your live preview after scanning.
+class ESDComplianceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ESDCompliance
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
 
-💡 3️⃣ Example JSON Response
+class OperatorQualificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OperatorQualification
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
+
+class DustCountChecklistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DustCountChecklist
+        fields = '__all__'
+        read_only_fields = ('emp_id', 'name', 'date')
+
+class DynamicFormSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DynamicForm
+        fields = '__all__'
+```
+
+**factories/assembly/departments/qa/ipqc/views_api.py** (new)
+```python
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Q
+from django.utils import timezone
+from .models import (
+    WorkInfo, FAITest, AssemblyAudit, BTBChecksheet, 
+    DisassembleChecklist, NCIssueTracking, ESDCompliance,
+    OperatorQualification, DustCountChecklist, DynamicForm
+)
+from .serializers import (
+    WorkInfoSerializer, FAITestSerializer, AssemblyAuditSerializer,
+    BTBChecksheetSerializer, DisassembleChecklistSerializer,
+    NCIssueTrackingSerializer, ESDComplianceSerializer,
+    OperatorQualificationSerializer, DustCountChecklistSerializer,
+    DynamicFormSerializer
+)
+
+class WorkInfoViewSet(viewsets.ModelViewSet):
+    queryset = WorkInfo.objects.all()
+    serializer_class = WorkInfoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+    @action(detail=False, methods=['get'])
+    def dashboard(self, request):
+        today = timezone.now().date()
+        user = request.user
+        
+        # Get today's records
+        today_records = WorkInfo.objects.filter(
+            emp_id=user.username,
+            date=today
+        ).count()
+        
+        # Get week records
+        week_start = today - timedelta(days=today.weekday())
+        week_records = WorkInfo.objects.filter(
+            emp_id=user.username,
+            date__gte=week_start,
+            date__lte=today
+        ).count()
+        
+        # Get total records
+        total_records = WorkInfo.objects.filter(emp_id=user.username).count()
+        
+        return Response({
+            'today_records': today_records,
+            'week_records': week_records,
+            'total_records': total_records
+        })
+
+class FAITestViewSet(viewsets.ModelViewSet):
+    queryset = FAITest.objects.all()
+    serializer_class = FAITestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+class AssemblyAuditViewSet(viewsets.ModelViewSet):
+    queryset = AssemblyAudit.objects.all()
+    serializer_class = AssemblyAuditSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+class BTBChecksheetViewSet(viewsets.ModelViewSet):
+    queryset = BTBChecksheet.objects.all()
+    serializer_class = BTBChecksheetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+class DisassembleChecklistViewSet(viewsets.ModelViewSet):
+    queryset = DisassembleChecklist.objects.all()
+    serializer_class = DisassembleChecklistSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+class NCIssueTrackingViewSet(viewsets.ModelViewSet):
+    queryset = NCIssueTracking.objects.all()
+    serializer_class = NCIssueTrackingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+class ESDComplianceViewSet(viewsets.ModelViewSet):
+    queryset = ESDCompliance.objects.all()
+    serializer_class = ESDComplianceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+class OperatorQualificationViewSet(viewsets.ModelViewSet):
+    queryset = OperatorQualification.objects.all()
+    serializer_class = OperatorQualificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+class DustCountChecklistViewSet(viewsets.ModelViewSet):
+    queryset = DustCountChecklist.objects.all()
+    serializer_class = DustCountChecklistSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            emp_id=self.request.user.username,
+            name=self.request.user.get_full_name(),
+            date=timezone.now().date()
+        )
+
+class DynamicFormViewSet(viewsets.ModelViewSet):
+    queryset = DynamicForm.objects.all()
+    serializer_class = DynamicFormSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def my_forms(self, request):
+        user_forms = DynamicForm.objects.filter(
+            created_by=request.user
+        ).order_by('-created_at')
+        
+        page = self.paginate_queryset(user_forms)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(user_forms, many=True)
+        return Response(serializer.data)
+```
+
+**factories/assembly/departments/qa/ipqc/urls.py** (updated)
+```python
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+from . import views_api
+
+router = DefaultRouter()
+router.register(r'workinfo', views_api.WorkInfoViewSet, basename='workinfo')
+router.register(r'fai', views_api.FAITestViewSet, basename='fai')
+router.register(r'audit', views_api.AssemblyAuditViewSet, basename='audit')
+router.register(r'btb', views_api.BTBChecksheetViewSet, basename='btb')
+router.register(r'disassemble', views_api.DisassembleChecklistViewSet, basename='disassemble')
+router.register(r'nc-issue', views_api.NCIssueTrackingViewSet, basename='nc-issue')
+router.register(r'esd', views_api.ESDComplianceViewSet, basename='esd')
+router.register(r'operator-qual', views_api.OperatorQualificationViewSet, basename='operator-qual')
+router.register(r'dust-count', views_api.DustCountChecklistViewSet, basename='dust-count')
+router.register(r'dynamic-forms', views_api.DynamicFormViewSet, basename='dynamic-forms')
+
+urlpatterns = [
+    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('', include(router.urls)),
+]
+```
+
+### 2. Frontend React PWA
+
+**frontend/package.json** (new)
+```json
 {
-  "data": {
-    "record": {
-      "fields": {
-        "Employee ID": "ET02831",
-        "Name": "Jitendra",
-        "Group": "PADGET",
-        "Department": "Receiver",
-        "CTQ Stage": "Receiver",
-        "Theory": 90,
-        "Practical": 90,
-        "Status": "Pass"
+  "name": "ipqc-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.3.0",
+    "react-scripts": "5.0.1",
+    "axios": "^1.2.0",
+    "html5-qrcode": "^2.3.8",
+    "browser-image-compression": "^2.0.2",
+    "dexie": "^3.2.3",
+    "react-helmet": "^6.1.0",
+    "react-hot-toast": "^2.4.1",
+    "@capacitor/core": "^4.6.1",
+    "@capacitor/camera": "^4.1.0",
+    "@capacitor/storage": "^4.1.0",
+    "@capacitor/haptics": "^4.0.1",
+    "@capacitor/background-task": "^4.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^4.6.1"
+  }
+}
+```
+
+**frontend/public/manifest.json** (new)
+```json
+{
+  "short_name": "IPQC",
+  "name": "IPQC Inspector App",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
+```
+
+**frontend/public/sw.js** (new)
+```javascript
+const CACHE_NAME = 'ipqc-pwa-v1';
+const urlsToCache = [
+  '/',
+  '/static/css/main.css',
+  '/static/js/main.js',
+  '/manifest.json'
+];
+
+// Install event
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
+});
+
+// Fetch event
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        // Return cached version if available
+        if (response) {
+          return response;
+        }
+        
+        // Otherwise fetch from network
+        return fetch(event.request).then(response => {
+          // Don't cache non-successful responses
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+          
+          // Clone the response as it's a stream
+          const responseToCache = response.clone();
+          
+          // Cache the fetched resource
+          caches.open(CACHE_NAME)
+            .then(cache => cache.put(event.request, responseToCache));
+            
+          return response;
+        });
+      })
+  );
+});
+
+// Activate event
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
+// Background sync
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-queue') {
+    event.waitUntil(syncPendingActions());
+  }
+});
+
+// Push notification
+self.addEventListener('push', event => {
+  const options = {
+    body: event.data.text(),
+    icon: '/logo192.png',
+    badge: '/favicon.ico'
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification('IPQC Inspector', options)
+  );
+});
+```
+
+**frontend/src/index.js** (updated)
+```javascript
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
+import { AuthProvider } from './contexts/AuthContext';
+import { OfflineProvider } from './contexts/OfflineContext';
+import App from './App';
+import * as serviceWorker from './serviceWorker';
+import './index.css';
+import 'react-toastify/dist/ReactToastify.css';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <HelmetProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <OfflineProvider>
+            <App />
+          </OfflineProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </HelmetProvider>
+  </React.StrictMode>
+);
+
+// Register service worker
+serviceWorker.register();
+```
+
+**frontend/src/App.js** (new)
+```javascript
+import React, { Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import { useAuth } from './contexts/AuthContext';
+import { Helmet } from 'react-helmet-async';
+import LoadingSpinner from './components/LoadingSpinner';
+import ProtectedRoute from './components/ProtectedRoute';
+import OfflineBanner from './components/OfflineBanner';
+
+// Lazy load components
+const Login = React.lazy(() => import('./pages/Login'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const WorkInfoForm = React.lazy(() => import('./pages/WorkInfoForm'));
+const FAITestForm = React.lazy(() => import('./pages/FAITestForm'));
+const AuditForm = React.lazy(() => import('./pages/AuditForm'));
+const BTBForm = React.lazy(() => import('./pages/BTBForm'));
+const DisassembleForm = React.lazy(() => import('./pages/DisassembleForm'));
+const NCIssueForm = React.lazy(() => import('./pages/NCIssueForm'));
+const ESDForm = React.lazy(() => import('./pages/ESDForm'));
+const OperatorQualForm = React.lazy(() => import('./pages/OperatorQualForm'));
+const DustCountForm = React.lazy(() => import('./pages/DustCountForm'));
+const DynamicFormPage = React.lazy(() => import('./pages/DynamicFormPage'));
+const ScannerPage = React.lazy(() => import('./pages/ScannerPage'));
+const CameraPage = React.lazy(() => import('./pages/CameraPage'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+
+function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  return (
+    <>
+      <Helmet>
+        <title>IPQC Inspector</title>
+        <meta name="description" content="IPQC Quality Inspection App" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <meta name="apple-mobile-web-app-title" content="IPQC" />
+        <link rel="apple-touch-icon" href="/logo192.png" />
+      </Helmet>
+
+      <OfflineBanner />
+      
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+          
+          {/* Protected Routes */}
+          <Route path="/" element={
+            <ProtectedRoute user={user}>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/workinfo" element={
+            <ProtectedRoute user={user}>
+              <WorkInfoForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/fai" element={
+            <ProtectedRoute user={user}>
+              <FAITestForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/audit" element={
+            <ProtectedRoute user={user}>
+              <AuditForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/btb" element={
+            <ProtectedRoute user={user}>
+              <BTBForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/disassemble" element={
+            <ProtectedRoute user={user}>
+              <DisassembleForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/nc-issue" element={
+            <ProtectedRoute user={user}>
+              <NCIssueForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/esd" element={
+            <ProtectedRoute user={user}>
+              <ESDForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/operator-qual" element={
+            <ProtectedRoute user={user}>
+              <OperatorQualForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/dust-count" element={
+            <ProtectedRoute user={user}>
+              <DustCountForm />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/dynamic-form/:formId" element={
+            <ProtectedRoute user={user}>
+              <DynamicFormPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/scanner" element={
+            <ProtectedRoute user={user}>
+              <ScannerPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/camera" element={
+            <ProtectedRoute user={user}>
+              <CameraPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/settings" element={
+            <ProtectedRoute user={user}>
+              <Settings />
+            </ProtectedRoute>
+          } />
+          
+          {/* Redirect to dashboard if user tries to access protected route without auth */}
+          <Route path="*" element={user ? <Navigate to="/" /> : <Navigate to="/login" />} />
+        </Routes>
+      </Suspense>
+      
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+    </>
+  );
+}
+
+export default App;
+```
+
+**frontend/src/contexts/AuthContext.js** (new)
+```javascript
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchUser = async () => {
+    try {
+      const response = await axios.get('/accounts/api/user/');
+      setUser(response.data);
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      logout();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (username, password) => {
+    try {
+      const response = await axios.post('/ipqc/api/auth/token/', {
+        username,
+        password
+      });
+      
+      const { access, refresh } = response.data;
+      localStorage.setItem('token', access);
+      localStorage.setItem('refreshToken', refresh);
+      
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+      
+      // Fetch user details
+      const userResponse = await axios.get('/accounts/api/user/');
+      setUser(userResponse.data);
+      
+      toast.success('Login successful!');
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Invalid credentials');
+      return false;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    delete axios.defaults.headers.common['Authorization'];
+    setUser(null);
+    toast.info('Logged out successfully');
+  };
+
+  const refreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      const response = await axios.post('/ipqc/api/auth/token/refresh/', {
+        refresh: refreshToken
+      });
+      
+      const { access } = response.data;
+      localStorage.setItem('token', access);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+      
+      return access;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      logout();
+      return null;
+    }
+  };
+
+  const value = {
+    user,
+    login,
+    logout,
+    loading,
+    refreshToken
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+```
+
+**frontend/src/contexts/OfflineContext.js** (new)
+```javascript
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { openDB } from 'dexie';
+import { toast } from 'react-toastify';
+
+const OfflineContext = createContext();
+
+export const useOffline = () => {
+  return useContext(OfflineContext);
+};
+
+export const OfflineProvider = ({ children }) => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [syncStatus, setSyncStatus] = useState('idle');
+  const [pendingActions, setPendingActions] = useState([]);
+
+  // Initialize IndexedDB
+  useEffect(() => {
+    const initDB = async () => {
+      const db = await openDB('ipqc-queue', 1, {
+        upgrade(db) {
+          db.createObjectStore('actions', { keyPath: 'id', autoIncrement: true });
+          db.createObjectStore('forms', { keyPath: 'id', autoIncrement: true });
+        }
+      });
+      return db;
+    };
+
+    initDB();
+  }, []);
+
+  // Online/Offline detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success('You are back online!');
+      syncPendingActions();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.warn('You are offline. Actions will be saved locally.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Save action to IndexedDB
+  const saveAction = async (action) => {
+    try {
+      const db = await openDB('ipqc-queue', 1);
+      await db.put('actions', {
+        ...action,
+        timestamp: Date.now(),
+        status: 'pending'
+      });
+      
+      setPendingActions(prev => [...prev, action]);
+      return true;
+    } catch (error) {
+      console.error('Error saving action:', error);
+      return false;
+    }
+  };
+
+  // Sync pending actions
+  const syncPendingActions = async () => {
+    if (!isOnline) return;
+    
+    setSyncStatus('syncing');
+    try {
+      const db = await openDB('ipqc-queue', 1);
+      const allActions = await db.getAll('actions');
+      
+      for (const action of allActions) {
+        try {
+          await axios.post(action.endpoint, action.data, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          // Mark as synced
+          await db.put('actions', { ...action, status: 'synced' });
+          
+          // Remove from state
+          setPendingActions(prev => prev.filter(a => a.id !== action.id));
+        } catch (error) {
+          console.error('Sync failed for action:', action.id);
+          // Keep as pending
+        }
+      }
+      
+      setSyncStatus('idle');
+      if (allActions.length > 0) {
+        toast.success(`Synced ${allActions.length} actions`);
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      setSyncStatus('error');
+      toast.error('Sync failed. Please try again.');
+    }
+  };
+
+  // Clear synced actions
+  const clearSyncedActions = async () => {
+    try {
+      const db = await openDB('ipqc-queue', 1);
+      await db.clear('actions');
+      setPendingActions([]);
+    } catch (error) {
+      console.error('Error clearing synced actions:', error);
+    }
+  };
+
+  const value = {
+    isOnline,
+    syncStatus,
+    pendingActions,
+    saveAction,
+    syncPendingActions,
+    clearSyncedActions
+  };
+
+  return (
+    <OfflineContext.Provider value={value}>
+      {children}
+    </OfflineContext.Provider>
+  );
+};
+```
+
+**frontend/src/api/index.js** (new)
+```javascript
+import axios from 'axios';
+
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || '/ipqc/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle token refresh
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+    
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        const response = await axios.post('/ipqc/api/auth/token/refresh/', {
+          refresh: refreshToken
+        });
+        
+        const { access } = response.data;
+        localStorage.setItem('token', access);
+        api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+        
+        // Retry original request
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh token failed, logout user
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+```
+
+**frontend/src/utils/indexedDB.js** (new)
+```javascript
+import { openDB } from 'dexie';
+
+// Initialize IndexedDB
+export const initDB = async () => {
+  const db = await openDB('ipqc-queue', 1, {
+    upgrade(db) {
+      // Create stores for different data types
+      db.createObjectStore('actions', { keyPath: 'id', autoIncrement: true });
+      db.createObjectStore('forms', { keyPath: 'id', autoIncrement: true });
+      db.createObjectStore('media', { keyPath: 'id', autoIncrement: true });
+      db.createObjectStore('settings', { keyPath: 'key' });
+    }
+  });
+  return db;
+};
+
+// Save action to queue
+export const saveAction = async (action) => {
+  const db = await openDB('ipqc-queue', 1);
+  return await db.put('actions', {
+    ...action,
+    timestamp: Date.now(),
+    status: 'pending'
+  });
+};
+
+// Get all pending actions
+export const getPendingActions = async () => {
+  const db = await openDB('ipqc-queue', 1);
+  return await db.getAll('actions');
+};
+
+// Update action status
+export const updateActionStatus = async (id, status) => {
+  const db = await openDB('ipqc-queue', 1);
+  const action = await db.get('actions', id);
+  if (action) {
+    return await db.put('actions', { ...action, status });
+  }
+  return null;
+};
+
+// Delete action
+export const deleteAction = async (id) => {
+  const db = await openDB('ipqc-queue', 1);
+  return await db.delete('actions', id);
+};
+
+// Save form data
+export const saveFormData = async (formId, data) => {
+  const db = await openDB('ipqc-queue', 1);
+  return await db.put('forms', {
+    formId,
+    data,
+    timestamp: Date.now(),
+    status: 'pending'
+  });
+};
+
+// Get form data
+export const getFormData = async (formId) => {
+  const db = await openDB('ipqc-queue', 1);
+  return await db.get('forms', formId);
+};
+
+// Save media file
+export const saveMediaFile = async (file, metadata) => {
+  const db = await openDB('ipqc-queue', 1);
+  return await db.put('media', {
+    file,
+    metadata,
+    timestamp: Date.now(),
+    status: 'pending'
+  });
+};
+
+// Get media files
+export const getMediaFiles = async () => {
+  const db = await openDB('ipqc-queue', 1);
+  return await db.getAll('media');
+};
+
+// Save settings
+export const saveSetting = async (key, value) => {
+  const db = await openDB('ipqc-queue', 1);
+  return await db.put('settings', { key, value });
+};
+
+// Get setting
+export const getSetting = async (key) => {
+  const db = await openDB('ipqc-queue', 1);
+  const setting = await db.get('settings', key);
+  return setting ? setting.value : null;
+};
+
+// Clear all data
+export const clearAllData = async () => {
+  const db = await openDB('ipqc-queue', 1);
+  await db.clear('actions');
+  await db.clear('forms');
+  await db.clear('media');
+  await db.clear('settings');
+};
+```
+
+**frontend/src/utils/imageCompressor.js** (new)
+```javascript
+import imageCompression from 'browser-image-compression';
+
+export const compressImage = async (file, options = {}) => {
+  const defaultOptions = {
+    maxSizeMB: 1,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+    ...options
+  };
+  
+  try {
+    const compressedFile = await imageCompression(file, defaultOptions);
+    return compressedFile;
+  } catch (error) {
+    console.error('Error compressing image:', error);
+    return file; // Return original file if compression fails
+  }
+};
+
+export const compressImages = async (files, options = {}) => {
+  const compressedFiles = [];
+  
+  for (const file of files) {
+    if (file.type.startsWith('image/')) {
+      const compressedFile = await compressImage(file, options);
+      compressedFiles.push(compressedFile);
+    } else {
+      compressedFiles.push(file);
+    }
+  }
+  
+  return compressedFiles;
+};
+```
+
+**frontend/src/utils/syncQueue.js** (new)
+```javascript
+import api from '../api';
+import { getPendingActions, updateActionStatus, deleteAction } from '../utils/indexedDB';
+
+// Sync all pending actions
+export const syncPendingActions = async () => {
+  const actions = await getPendingActions();
+  
+  for (const action of actions) {
+    try {
+      // Send action to server
+      const response = await api.post(action.endpoint, action.data);
+      
+      // Update status to synced
+      await updateActionStatus(action.id, 'synced');
+      
+      // Remove from IndexedDB after successful sync
+      await deleteAction(action.id);
+      
+      console.log(`Synced action ${action.id}`);
+    } catch (error) {
+      console.error(`Failed to sync action ${action.id}:`, error);
+      // Keep as pending for next sync attempt
+      await updateActionStatus(action.id, 'failed');
+    }
+  }
+};
+
+// Queue an action for syncing
+export const queueAction = async (endpoint, data) => {
+  // Save to IndexedDB first
+  const db = await openDB('ipqc-queue', 1);
+  const action = await db.put('actions', {
+    endpoint,
+    data,
+    timestamp: Date.now(),
+    status: 'pending'
+  });
+  
+  // If online, try to sync immediately
+  if (navigator.onLine) {
+    try {
+      const response = await api.post(endpoint, data);
+      
+      // If successful, remove from queue
+      await deleteAction(action.id);
+      return response;
+    } catch (error) {
+      console.error('Immediate sync failed:', error);
+      // Will be retried later
+    }
+  }
+  
+  return action;
+};
+
+// Retry failed actions
+export const retryFailedActions = async () => {
+  const db = await openDB('ipqc-queue', 1);
+  const failedActions = await db.getAll('actions');
+  
+  for (const action of failedActions) {
+    if (action.status === 'failed') {
+      try {
+        await api.post(action.endpoint, action.data);
+        await deleteAction(action.id);
+        console.log(`Retried and synced action ${action.id}`);
+      } catch (error) {
+        console.error(`Retry failed for action ${action.id}:`, error);
       }
     }
   }
+};
+```
+
+### 3. Capacitor Native App Setup
+
+**plugins/capacitor.config.json** (new)
+```json
+{
+  "appId": "com.ipqc.app",
+  "appName": "IPQC Inspector",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "../frontend/build",
+  "plugins": {
+    "Camera": {
+      "ShowPermissionsPrompt": true,
+      "SaveToGallery": true
+    },
+    "Storage": {
+      "permissions": "none"
+    },
+    "Haptics": {
+      "enabled": true
+    },
+    "BackgroundTask": {
+      "options": {
+        "delay": 5000
+      }
+    }
+  },
+  "cordova": {}
+}
+```
+
+**plugins/src/plugins/secure-storage.ts** (new)
+```typescript
+import { Plugins } from '@capacitor/core';
+
+const { Storage } = Plugins;
+
+export interface SecureStorageOptions {
+  key: string;
+  value: string;
 }
 
-⚡ 4️⃣ How to show this immediately after scanning
-
-You can use a QR scanner + fetch request setup like this (for Django / JS frontend):
-
-<video id="preview"></video>
-<div id="data"></div>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script>
-  function onScanSuccess(qrCodeMessage) {
-    fetch(`/api/fetch_lark_record/?url=${encodeURIComponent(qrCodeMessage)}`)
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("data").innerHTML = `
-          <b>Employee ID:</b> ${data.employee_id}<br>
-          <b>Name:</b> ${data.name}<br>
-          <b>Group:</b> ${data.group}<br>
-          <b>Department:</b> ${data.department}<br>
-          <b>CTQ Stage:</b> ${data.ctq_stage}<br>
-          <b>Total Marks:</b> ${data.total_marks}
-        `;
-      });
+export class SecureStorage {
+  static async set(options: SecureStorageOptions): Promise<void> {
+    await Storage.set({
+      key: options.key,
+      value: options.value
+    });
   }
 
-  const html5QrCode = new Html5Qrcode("preview");
-  html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
-</script>
+  static async get(key: string): Promise<string | null> {
+    const { value } = await Storage.get({ key });
+    return value;
+  }
 
+  static async remove(key: string): Promise<void> {
+    await Storage.remove({ key });
+  }
 
-Then your backend (/api/fetch_lark_record/) will:
+  static async clear(): Promise<void> {
+    await Storage.clear();
+  }
+}
+```
 
-Extract record_id from the QR link
+**plugins/src/plugins/camera.ts** (new)
+```typescript
+import { Plugins, CameraResultType, CameraSource } from '@capacitor/core';
 
-Call Lark API using the record_id
+const { Camera } = Plugins;
 
-Return only relevant fields to frontend.
+export interface CameraOptions {
+  quality?: number;
+  allowEditing?: boolean;
+  resultType?: CameraResultType;
+  source?: CameraSource;
+  saveToGallery?: boolean;
+}
+
+export class CameraPlugin {
+  static async getPhoto(options: CameraOptions = {}) {
+    const result = await Camera.getPhoto({
+      quality: 90,
+      allowEditing: true,
+      resultType: CameraResultType.Uri,
+      source: CameraSource.Camera,
+      saveToGallery: true,
+      ...options
+    });
+    
+    return result;
+  }
+
+  static async getFromGallery() {
+    return await this.getPhoto({
+      source: CameraSource.Photos
+    });
+  }
+}
+```
+
+**plugins/src/plugins/haptics.ts** (new)
+```typescript
+import { Plugins } from '@capacitor/core';
+
+const { Haptics } = Plugins;
+
+export class HapticsPlugin {
+  static async impact(style: 'light' | 'medium' | 'heavy') {
+    await Haptics.impact({
+      style
+    });
+  }
+
+  static async notification(type: 'success' | 'warning' | 'error') {
+    await Haptics.notification({
+      type
+    });
+  }
+
+  static async vibrate() {
+    await Haptics.vibrate();
+  }
+
+  static async selectionStart() {
+    await Haptics.selectionStart();
+  }
+
+  static async selectionChanged() {
+    await Haptics.selectionChanged();
+  }
+
+  static async selectionEnd() {
+    await Haptics.selectionEnd();
+  }
+}
+```
+
+**plugins/src/plugins/background-sync.ts** (new)
+```typescript
+import { Plugins } from '@capacitor/core';
+
+const { BackgroundTask } = Plugins;
+
+export class BackgroundSyncPlugin {
+  static async beforeExit(callback: () => Promise<void>) {
+    await BackgroundTask.beforeExit(callback);
+  }
+
+  static async async(callback: () => Promise<void>) {
+    await BackgroundTask.async(callback);
+  }
+}
+```
+
+### 4. Key UI Components
+
+**frontend/src/components/ProtectedRoute.js** (new)
+```javascript
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+const ProtectedRoute = ({ user, children }) => {
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+  
+  return children;
+};
+
+export default ProtectedRoute;
+```
+
+**frontend/src/components/OfflineBanner.js** (new)
+```javascript
+import React from 'react';
+import { useOffline } from '../contexts/OfflineContext';
+
+const OfflineBanner = () => {
+  const { isOnline, syncStatus, pendingActions } = useOffline();
+  
+  if (isOnline) return null;
+  
+  return (
+    <div className="offline-banner">
+      <div className="container mx-auto px-4 py-2 bg-yellow-500 text-white text-center">
+        <i className="fas fa-wifi-slash mr-2"></i>
+        You are offline. Changes are being saved locally.
+        {pendingActions.length > 0 && (
+          <span className="ml-2">
+            ({pendingActions.length} pending actions)
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default OfflineBanner;
+```
+
+**frontend/src/components/Camera/CameraCapture.js** (new)
+```javascript
+import React, { useState, useRef } from 'react';
+import { CameraPlugin } from '../../plugins';
+import { compressImage } from '../../utils/imageCompressor';
+import { HapticsPlugin } from '../../plugins';
+
+const CameraCapture = ({ onCapture, onError }) => {
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  const openCamera = async () => {
+    try {
+      setIsProcessing(true);
+      HapticsPlugin.impact('medium');
+      
+      const photo = await CameraPlugin.getPhoto({
+        quality: 90,
+        resultType: CameraResultType.Uri
+      });
+      
+      setCapturedImage(photo.webPath);
+      HapticsPlugin.notification('success');
+      
+      if (onCapture) {
+        onCapture(photo.webPath);
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      HapticsPlugin.notification('error');
+      if (onError) onError(error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const openGallery = async () => {
+    try {
+      setIsProcessing(true);
+      HapticsPlugin.impact('medium');
+      
+      const photo = await CameraPlugin.getFromGallery();
+      
+      setCapturedImage(photo.webPath);
+      HapticsPlugin.notification('success');
+      
+      if (onCapture) {
+        onCapture(photo.webPath);
+      }
+    } catch (error) {
+      console.error('Gallery error:', error);
+      HapticsPlugin.notification('error');
+      if (onError) onError(error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const compressAndCapture = async () => {
+    if (!capturedImage) return;
+    
+    try {
+      setIsProcessing(true);
+      const response = await fetch(capturedImage);
+      const blob = await response.blob();
+      
+      const compressedFile = await compressImage(blob, {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1280
+      });
+      
+      const compressedUrl = URL.createObjectURL(compressedFile);
+      setCapturedImage(compressedUrl);
+      
+      if (onCapture) {
+        onCapture(compressedUrl);
+      }
+      
+      HapticsPlugin.notification('success');
+    } catch (error) {
+      console.error('Compression error:', error);
+      HapticsPlugin.notification('error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const retakePhoto = () => {
+    setCapturedImage(null);
+    if (onCapture) onCapture(null);
+  };
+
+  return (
+    <div className="camera-capture">
+      {!capturedImage ? (
+        <div className="camera-options">
+          <button
+            onClick={openCamera}
+            disabled={isProcessing}
+            className="camera-button"
+          >
+            <i className="fas fa-camera mr-2"></i>
+            Take Photo
+          </button>
+          
+          <button
+            onClick={openGallery}
+            disabled={isProcessing}
+            className="gallery-button"
+          >
+            <i className="fas fa-images mr-2"></i>
+            Choose from Gallery
+          </button>
+        </div>
+      ) : (
+        <div className="photo-preview">
+          <img src={capturedImage} alt="Captured" className="preview-image" />
+          
+          <div className="photo-actions">
+            <button
+              onClick={compressAndCapture}
+              disabled={isProcessing}
+              className="compress-button"
+            >
+              <i className="fas fa-compress mr-2"></i>
+              Compress
+            </button>
+            
+            <button
+              onClick={retakePhoto}
+              disabled={isProcessing}
+              className="retake-button"
+            >
+              <i className="fas fa-redo mr-2"></i>
+              Retake
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CameraCapture;
+```
+
+**frontend/src/components/Scanner/BarcodeScanner.js** (new)
+```javascript
+import React, { useState, useEffect, useRef } from 'react';
+import Html5QrcodePlugin from 'html5-qrcode';
+import { HapticsPlugin } from '../../plugins';
+
+const BarcodeScanner = ({ onScan, onError, fps = 10, qrbox = 250 }) => {
+  const [isScanning, setIsScanning] = useState(false);
+  const [error, setError] = useState(null);
+  const scannerRef = useRef(null);
+  const html5QrCodeRef = useRef(null);
+
+  const startScanning = async () => {
+    try {
+      setIsScanning(true);
+      setError(null);
+      HapticsPlugin.impact('medium');
+      
+      const html5QrCode = new Html5Qrcode("reader");
+      html5QrCodeRef.current = html5QrCode;
+      
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        { fps, qrbox },
+        (decodedText, decodedResult) => {
+          HapticsPlugin.notification('success');
+          if (onScan) onScan(decodedText);
+          stopScanning();
+        },
+        (errorMessage) => {
+          // Ignore scan errors
+        }
+      );
+    } catch (err) {
+      console.error('Error starting scanner:', err);
+      setError('Failed to start camera. Please check permissions.');
+      HapticsPlugin.notification('error');
+      setIsScanning(false);
+      if (onError) onError(err);
+    }
+  };
+
+  const stopScanning = async () => {
+    try {
+      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+        await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current = null;
+      }
+    } catch (err) {
+      console.error('Error stopping scanner:', err);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (isScanning) {
+        stopScanning();
+      }
+    };
+  }, [isScanning]);
+
+  return (
+    <div className="barcode-scanner">
+      <div className="scanner-container">
+        <div id="reader" className="scanner-view"></div>
+        
+        {error && (
+          <div className="scanner-error">
+            <i className="fas fa-exclamation-triangle mr-2"></i>
+            {error}
+          </div>
+        )}
+      </div>
+      
+      <div className="scanner-controls">
+        {!isScanning ? (
+          <button
+            onClick={startScanning}
+            className="scan-button"
+          >
+            <i className="fas fa-qrcode mr-2"></i>
+            Start Scanning
+          </button>
+        ) : (
+          <button
+            onClick={stopScanning}
+            className="stop-button"
+          >
+            <i className="fas fa-stop mr-2"></i>
+            Stop Scanning
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default BarcodeScanner;
+```
+
+### 5. Form Components
+
+**frontend/src/components/Forms/WorkInfoForm.js** (new)
+```javascript
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../contexts/AuthContext';
+import { useOffline } from '../../contexts/OfflineContext';
+import api from '../../api';
+import CameraCapture from '../Camera/CameraCapture';
+import BarcodeScanner from '../Scanner/BarcodeScanner';
+
+const WorkInfoForm = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isOnline, saveAction } = useOffline();
+  
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    shift: 'Day',
+    section: 'Assembly',
+    line: '',
+    group: '',
+    model: '',
+    color: '',
+  });
+  
+  const [scannedData, setScannedData] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Set today's date
+    const today = new Date().toISOString().split('T')[0];
+    setFormData(prev => ({ ...prev, date: today }));
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleScan = (data) => {
+    try {
+      // Parse scanned data (assuming it's a JSON string)
+      const parsed = JSON.parse(data);
+      setScannedData(parsed);
+      
+      // Update form with scanned data
+      if (parsed.line) setFormData(prev => ({ ...prev, line: parsed.line }));
+      if (parsed.model) setFormData(prev => ({ ...prev, model: parsed.model }));
+      if (parsed.group) setFormData(prev => ({ ...prev, group: parsed.group }));
+      
+      toast.success('Scanned data applied');
+    } catch (error) {
+      toast.error('Invalid scanned data format');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      if (isOnline) {
+        // Submit directly to server
+        await api.post('/workinfo/', formData);
+        toast.success('Work info submitted successfully!');
+        navigate('/');
+      } else {
+        // Save to IndexedDB for later sync
+        const action = await saveAction('/workinfo/', formData);
+        toast.success('Saved locally. Will sync when online.');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      toast.error('Failed to submit. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="work-info-form">
+      <div className="form-header">
+        <h2>Work Information</h2>
+        <p>Record your daily manufacturing work details</p>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="form-container">
+        <div className="form-section">
+          <h3>Basic Information</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Date</label>
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Shift</label>
+              <select
+                name="shift"
+                value={formData.shift}
+                onChange={handleChange}
+                required
+              >
+                <option value="Day">Day</option>
+                <option value="Night">Night</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>Employee ID</label>
+              <input
+                type="text"
+                value={user?.username || ''}
+                readOnly
+                className="readonly-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Employee Name</label>
+              <input
+                type="text"
+                value={user?.get_full_name() || ''}
+                readOnly
+                className="readonly-input"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="form-section">
+          <h3>Work Details</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Section</label>
+              <select
+                name="section"
+                value={formData.section}
+                onChange={handleChange}
+                required
+              >
+                <option value="Assembly">Assembly</option>
+                <option value="NT">NT</option>
+                <option value="SMT">SMT</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>Line</label>
+              <input
+                type="text"
+                name="line"
+                value={formData.line}
+                onChange={handleChange}
+                placeholder="Enter line number"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Group</label>
+              <input
+                type="text"
+                name="group"
+                value={formData.group}
+                onChange={handleChange}
+                placeholder="Enter group"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Model</label>
+              <input
+                type="text"
+                name="model"
+                value={formData.model}
+                onChange={handleChange}
+                placeholder="Enter model"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Color</label>
+              <input
+                type="text"
+                name="color"
+                value={formData.color}
+                onChange={handleChange}
+                placeholder="Enter color code"
+                required
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="form-section">
+          <h3>Quick Actions</h3>
+          <div className="quick-actions">
+            <div className="action-card">
+              <h4>Scan Job Card</h4>
+              <BarcodeScanner onScan={handleScan} />
+            </div>
+            
+            <div className="action-card">
+              <h4>Take Photo</h4>
+              <CameraCapture />
+            </div>
+          </div>
+        </div>
+        
+        {scannedData && (
+          <div className="scanned-data">
+            <h3>Scanned Data</h3>
+            <pre>{JSON.stringify(scannedData, null, 2)}</pre>
+          </div>
+        )}
+        
+        <div className="form-actions">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="submit-button"
+          >
+            <i className="fas fa-save mr-2"></i>
+            {isSubmitting ? 'Submitting...' : 'Submit Work Info'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default WorkInfoForm;
+```
+
+### 6. Deployment Scripts
+
+**deploy.sh** (new)
+```bash
+#!/bin/bash
+
+# Build React app
+cd frontend
+npm install
+npm run build
+
+# Copy build files to Django static directory
+cp -r build/* ../static/
+
+# Collect static files
+cd ..
+python manage.py collectstatic --noinput
+
+# Run migrations
+python manage.py migrate
+
+# Create superuser if needed
+echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(is_superuser=True).exists() or User.objects.create_superuser('admin', 'admin@example.com', 'password')" | python manage.py shell
+
+echo "Deployment complete!"
+```
+
+**build-native.sh** (new)
+```bash
+#!/bin/bash
+
+# Build React app
+cd frontend
+npm install
+npm run build
+
+# Add Capacitor web assets
+npx cap sync
+
+# Build Android app
+npx cap open android
+
+echo "Native build process started. Open Android Studio to build the APK."
+```
+
+### 7. Environment Variables
+
+**frontend/.env** (new)
+```
+REACT_APP_API_URL=http://localhost:8000/ipqc/api
+REACT_APP_ENVIRONMENT=development
+```
+
+**frontend/.env.production** (new)
+```
+REACT_APP_API_URL=https://yourdomain.com/ipqc/api
+REACT_APP_ENVIRONMENT=production
+```
+
+## Implementation Guide
+
+### Phase 1: Backend API Setup (1-2 days)
+1. Install Django REST Framework and related packages
+2. Create serializers for all models
+3. Implement API views with authentication
+4. Set up JWT authentication
+5. Test endpoints with Postman
+
+### Phase 2: Frontend PWA (2-3 days)
+1. Set up React app with routing
+2. Implement authentication context
+3. Create form components for each form type
+4. Add camera and barcode scanner functionality
+5. Implement offline support with IndexedDB
+6. Add PWA manifest and service worker
+
+### Phase 3: Capacitor Native App (1-2 days)
+1. Add Capacitor to the project
+2. Implement native plugins
+3. Configure app settings
+4. Build and test on Android/iOS
+
+### Phase 4: Testing & Deployment (1-2 days)
+1. Test on real devices
+2. Optimize performance
+3. Deploy to production
+4. Monitor and fix issues
+
+## Key Features Implemented
+
+1. **Offline-First Architecture**
+   - IndexedDB for local storage
+   - Background sync when online
+   - Visual indicators for offline status
+
+2. **Mobile-Optimized UI**
+   - Touch-friendly interface
+   - Camera integration for evidence capture
+   - Barcode/QR scanning for job cards
+
+3. **Progressive Web App**
+   - Installable on home screen
+   - Offline functionality
+   - Push notifications support
+
+4. **Native App Capabilities**
+   - Secure storage
+   - Better camera controls
+   - Haptic feedback
+   - Background processing
+
+5. **Data Synchronization**
+   - Queue-based sync system
+   - Conflict resolution
+   - Retry mechanism
+
+This implementation provides a complete solution that transforms your Django IPQC system into a modern, mobile-first application with offline capabilities and native performance.

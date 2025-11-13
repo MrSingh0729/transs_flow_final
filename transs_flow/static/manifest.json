@@ -1,67 +1,39 @@
 {
-  "name": "Transs Flow",
-  "short_name": "TranssFlow",
+  "name": "IPQC Inspector",
+  "short_name": "IPQC",
+  "description": "IPQC Quality Inspection App",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0ea5e9",
-  "orientation": "portrait-primary",
+  "theme_color": "#000000",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "/static/icons/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png"
-    },
-    {
-      "src": "/static/icons/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png"
-    },
-    {
-      "src": "/static/icons/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png"
-    },
-    {
-      "src": "/static/icons/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png"
-    },
-    {
-      "src": "/static/icons/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png"
-    },
-    {
-      "src": "/static/icons/icon-192.png",
+      "src": "/static/images/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/static/icons/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "/static/icons/icon-512.png",
+      "src": "/static/images/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "shortcuts": [
+  "screenshots": [
     {
-      "name": "New Audit",
-      "short_name": "New Audit",
-      "description": "Start a new assembly audit",
-      "url": "/ipqc/assembly-audit/create",
-      "icons": [{ "src": "/static/icons/icon-96.png", "sizes": "96x96" }]
+      "src": "/static/images/screenshot-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "mobile"
     },
     {
-      "name": "Report Issue",
-      "short_name": "Report",
-      "description": "Create a new NC issue",
-      "url": "/nc/issue/create",
-      "icons": [{ "src": "/static/icons/icon-96.png", "sizes": "96x96" }]
+      "src": "/static/images/screenshot-tablet.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide"
     }
-  ]
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en-US",
+  "dir": "ltr"
 }

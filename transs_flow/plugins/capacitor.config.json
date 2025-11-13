@@ -1,0 +1,25 @@
+	{
+  "appId": "com.ipqc.app",
+  "appName": "IPQC Inspector",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "../frontend/build",
+  "plugins": {
+    "Camera": {
+      "ShowPermissionsPrompt": true,
+      "SaveToGallery": true
+    },
+    "Storage": {
+      "permissions": "none"
+    },
+    "Haptics": {
+      "enabled": true
+    },
+    "BackgroundTask": {
+      "options": {
+        "delay": 5000
+      }
+    }
+  },
+  "cordova": {}
+}

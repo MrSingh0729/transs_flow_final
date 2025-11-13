@@ -95,7 +95,7 @@ class DynamicFormFieldForm(forms.ModelForm):
         
 # List of fields that require the special UI with a remark button
 FIELDS_WITH_REMARKS = [
-    'man_job_card', 'man_btb_mon', 'mach_epa_check', 'mach_screw_torque',
+    'mach_epa_check', 'mach_screw_torque', 'mach_sholdering_temp',
     'mach_light', 'mach_fixture_clean', 'mach_jig_label', 'mach_teflon',
     'mach_press_params', 'mach_glue_params', 'mach_eq_move_notify',
     'mach_feeler_gauge', 'mach_hot_cold_press', 'mach_ion_fan',

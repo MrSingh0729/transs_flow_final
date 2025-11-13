@@ -172,23 +172,34 @@ def home_view(request):
     user = request.user
     emp_id = getattr(user, 'employee_id', None)
 
-    # Calculate time periods
-    now = timezone.localtime()
+    now = timezone.localtime()  # current local datetime
+    today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
     today = now.date()
     start_of_week = today - timedelta(days=today.weekday())
     start_of_month = today.replace(day=1)
 
-    # Work info check
-    today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-    start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-    end_time = start_time + timedelta(days=1)
+    # Define the time range (8 AM today → 8 AM next day)
+    if now < today_8am:
+        # Before 8 AM → window is yesterday 8 AM → today 8 AM
+        start_time = today_8am - timedelta(days=1)
+        end_time = today_8am
+    else:
+        # After 8 AM → window is today 8 AM → tomorrow 8 AM
+        start_time = today_8am
+        end_time = today_8am + timedelta(days=1)
+
+    # ✅ Check if created_at is within current 8AM–8AM window
     has_filled = IPQCWorkInfo.objects.filter(
         emp_id=emp_id,
-        created_at__range=[start_time, end_time]
+        created_at__gte=start_time,
+        created_at__lt=end_time
     ).exists()
 
     if not has_filled:
-        messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+        messages.warning(
+            request,
+            "⚠️ You haven't filled your Work Info for the current period (8 AM to next day 8 AM). Please fill it before proceeding."
+        )
         return redirect('ipqc_work_info')
 
     is_admin = user.is_superuser or getattr(user, 'role', '').lower() == 'admin'
@@ -577,61 +588,42 @@ class IPQCAssemblyAuditCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateV
         form = context['form']
         
         # Each item is a tuple: (main_field, remark_field)
-        context['man_fields'] = [(form['man_job_card'], form['remark_man_job_card']), (form['man_btb_mon'], form['remark_man_btb_mon'])]
+        # context['man_fields'] = [(form['man_job_card'], form['remark_man_job_card']), (form['man_btb_mon'], form['remark_man_btb_mon'])]
         context['machine_fields'] = [
-            (form['mach_epa_check'], form['remark_mach_epa_check']), (form['mach_screw_torque'], form['remark_mach_screw_torque']),
-            (form['mach_light'], form['remark_mach_light']), (form['mach_fixture_clean'], form['remark_mach_fixture_clean']),
-            (form['mach_jig_label'], form['remark_mach_jig_label']), (form['mach_teflon'], form['remark_mach_teflon']),
-            (form['mach_press_params'], form['remark_mach_press_params']), (form['mach_glue_params'], form['remark_mach_glue_params']),
-            (form['mach_eq_move_notify'], form['remark_mach_eq_move_notify']), (form['mach_feeler_gauge'], form['remark_mach_feeler_gauge']),
-            (form['mach_hot_cold_press'], form['remark_mach_hot_cold_press']), (form['mach_ion_fan'], form['remark_mach_ion_fan']),
-            (form['mach_cleanroom_eq'], form['remark_mach_cleanroom_eq']), (form['mach_rti_check'], form['remark_mach_rti_check']),
-            (form['mach_current_test'], form['remark_mach_current_test']), (form['mach_pal_qr'], form['remark_mach_pal_qr']),
-            (form['mach_auto_screw'], form['remark_mach_auto_screw']),
+            form['mach_epa_check'], form['mach_screw_torque'], form['mach_sholdering_temp'], form['mach_light'], form['mach_fixture_clean'],
+            form['mach_jig_label'], form['mach_teflon'], form['mach_press_params'], form['mach_glue_params'],
+            form['mach_eq_move_notify'], form['mach_feeler_gauge'], form['mach_hot_cold_press'], form['mach_ion_fan'],
+            form['mach_cleanroom_eq'], form['mach_rti_check'], form['mach_current_test'], form['mach_pal_qr'],
+            form['mach_auto_screw'],
         ]
+
         context['material_fields'] = [
-            (form['mat_key_check'], form['remark_mat_key_check']), (form['mat_special_stop'], form['remark_mat_special_stop']),
-            (form['mat_improved_monitor'], form['remark_mat_improved_monitor']), (form['mat_result_check'], form['remark_mat_result_check']),
-            (form['mat_battery_issue'], form['remark_mat_battery_issue']), (form['mat_ipa_check'], form['remark_mat_ipa_check']),
-            (form['mat_thermal_gel'], form['remark_mat_thermal_gel']), (form['mat_verification'], form['remark_mat_verification']),
+            form['mat_key_check'], form['mat_special_stop'], form['mat_improved_monitor'], form['mat_result_check'],
+            form['mat_battery_issue'], form['mat_ipa_check'], form['mat_thermal_gel'], form['mat_verification'],
         ]
+
         context['method_fields'] = [
-            (form['meth_sop_seq'], form['remark_meth_sop_seq']), (form['meth_distance_sensor'], form['remark_meth_distance_sensor']),
-            (form['meth_rear_camera'], form['remark_meth_rear_camera']), (form['meth_material_handling'], form['remark_meth_material_handling']),
-            (form['meth_guideline_doc'], form['remark_meth_guideline_doc']), (form['meth_operation_doc'], form['remark_meth_operation_doc']),
-            (form['meth_defective_feedback'], form['remark_meth_defective_feedback']), (form['meth_line_record'], form['remark_meth_line_record']),
-            (form['meth_no_self_repair'], form['remark_meth_no_self_repair']), (form['meth_battery_fix'], form['remark_meth_battery_fix']),
-            (form['meth_line_change'], form['remark_meth_line_change']), (form['meth_trail_run'], form['remark_meth_trail_run']),
-            (form['meth_dummy_conduct'], form['remark_meth_dummy_conduct']),
+            form['meth_sop_seq'], form['meth_distance_sensor'], form['meth_rear_camera'], form['meth_material_handling'],
+            form['meth_guideline_doc'], form['meth_operation_doc'], form['meth_defective_feedback'], form['meth_line_record'],
+            form['meth_no_self_repair'], form['meth_battery_fix'], form['meth_line_change'], form['meth_trail_run'],
+            form['meth_dummy_conduct'],
         ]
-        context['environment_fields'] = [(form['env_prod_monitor'], form['remark_env_prod_monitor']), (form['env_5s'], form['remark_env_5s'])]
+
+        context['environment_fields'] = [
+            form['env_prod_monitor'], form['env_5s'],
+        ]
+
         context['trc_fields'] = [
-            (form['trc_flow_chart'], form['remark_trc_flow_chart']), (form['fai_check'], form['remark_fai_check']),
-            (form['defect_monitor'], form['remark_defect_monitor']), (form['spot_check'], form['remark_spot_check']),
-            (form['auto_screw_sample'], form['remark_auto_screw_sample']),
+            form['trc_flow_chart'], form['fai_check'], form['defect_monitor'], form['spot_check'], form['auto_screw_sample'],
         ]
+
         return context
  
     def form_valid(self, form):
         # --- KEY CHANGE: Assign employee_id and name from the logged-in user ---
         form.instance.emp_id = self.request.user.employee_id
         form.instance.name = self.request.user.full_name
- 
-        # --- Aggregate Remarks ---
-        aggregated_remarks = []
-        for field_name in FIELDS_WITH_REMARKS:
-            remark_key = f'remark_{field_name}'
-            remark_text = self.request.POST.get(remark_key, '').strip()
-            if remark_text:
-                verbose_name = form.fields[field_name].label
-                aggregated_remarks.append(f"{verbose_name}: {remark_text}")
-        
-        main_remark = self.request.POST.get('remarks', '').strip()
-        final_remarks = "\n".join(aggregated_remarks)
-        if main_remark:
-            final_remarks += f"\n\nGeneral Remarks:\n{main_remark}"
-        
-        form.instance.remarks = final_remarks
+        form.instance.remarks = self.request.POST.get('remarks', '').strip()
         
         messages.success(self.request, "Audit record created successfully!")
         return super().form_valid(form)
@@ -650,58 +642,41 @@ class IPQCAssemblyAuditUpdateView(RoleRequiredMixin, LoginRequiredMixin, UserCan
         context['is_update'] = True
         # Re-use the same context preparation as the create view
         form = context['form']
-        context['man_fields'] = [(form['man_job_card'], form['remark_man_job_card']), (form['man_btb_mon'], form['remark_man_btb_mon'])]
+        # context['man_fields'] = [(form['man_job_card'], form['remark_man_job_card']), (form['man_btb_mon'], form['remark_man_btb_mon'])]
         # ... (add all other field lists here, same as in CreateView) ...
         context['machine_fields'] = [
-            (form['mach_epa_check'], form['remark_mach_epa_check']), (form['mach_screw_torque'], form['remark_mach_screw_torque']),
-            (form['mach_light'], form['remark_mach_light']), (form['mach_fixture_clean'], form['remark_mach_fixture_clean']),
-            (form['mach_jig_label'], form['remark_mach_jig_label']), (form['mach_teflon'], form['remark_mach_teflon']),
-            (form['mach_press_params'], form['remark_mach_press_params']), (form['mach_glue_params'], form['remark_mach_glue_params']),
-            (form['mach_eq_move_notify'], form['remark_mach_eq_move_notify']), (form['mach_feeler_gauge'], form['remark_mach_feeler_gauge']),
-            (form['mach_hot_cold_press'], form['remark_mach_hot_cold_press']), (form['mach_ion_fan'], form['remark_mach_ion_fan']),
-            (form['mach_cleanroom_eq'], form['remark_mach_cleanroom_eq']), (form['mach_rti_check'], form['remark_mach_rti_check']),
-            (form['mach_current_test'], form['remark_mach_current_test']), (form['mach_pal_qr'], form['remark_mach_pal_qr']),
-            (form['mach_auto_screw'], form['remark_mach_auto_screw']),
+            form['mach_epa_check'], form['mach_screw_torque'], form['mach_sholdering_temp'] ,form['mach_light'], form['mach_fixture_clean'],
+            form['mach_jig_label'], form['mach_teflon'], form['mach_press_params'], form['mach_glue_params'],
+            form['mach_eq_move_notify'], form['mach_feeler_gauge'], form['mach_hot_cold_press'], form['mach_ion_fan'],
+            form['mach_cleanroom_eq'], form['mach_rti_check'], form['mach_current_test'], form['mach_pal_qr'],
+            form['mach_auto_screw'],
         ]
+
         context['material_fields'] = [
-            (form['mat_key_check'], form['remark_mat_key_check']), (form['mat_special_stop'], form['remark_mat_special_stop']),
-            (form['mat_improved_monitor'], form['remark_mat_improved_monitor']), (form['mat_result_check'], form['remark_mat_result_check']),
-            (form['mat_battery_issue'], form['remark_mat_battery_issue']), (form['mat_ipa_check'], form['remark_mat_ipa_check']),
-            (form['mat_thermal_gel'], form['remark_mat_thermal_gel']), (form['mat_verification'], form['remark_mat_verification']),
+            form['mat_key_check'], form['mat_special_stop'], form['mat_improved_monitor'], form['mat_result_check'],
+            form['mat_battery_issue'], form['mat_ipa_check'], form['mat_thermal_gel'], form['mat_verification'],
         ]
+
         context['method_fields'] = [
-            (form['meth_sop_seq'], form['remark_meth_sop_seq']), (form['meth_distance_sensor'], form['remark_meth_distance_sensor']),
-            (form['meth_rear_camera'], form['remark_meth_rear_camera']), (form['meth_material_handling'], form['remark_meth_material_handling']),
-            (form['meth_guideline_doc'], form['remark_meth_guideline_doc']), (form['meth_operation_doc'], form['remark_meth_operation_doc']),
-            (form['meth_defective_feedback'], form['remark_meth_defective_feedback']), (form['meth_line_record'], form['remark_meth_line_record']),
-            (form['meth_no_self_repair'], form['remark_meth_no_self_repair']), (form['meth_battery_fix'], form['remark_meth_battery_fix']),
-            (form['meth_line_change'], form['remark_meth_line_change']), (form['meth_trail_run'], form['remark_meth_trail_run']),
-            (form['meth_dummy_conduct'], form['remark_meth_dummy_conduct']),
+            form['meth_sop_seq'], form['meth_distance_sensor'], form['meth_rear_camera'], form['meth_material_handling'],
+            form['meth_guideline_doc'], form['meth_operation_doc'], form['meth_defective_feedback'], form['meth_line_record'],
+            form['meth_no_self_repair'], form['meth_battery_fix'], form['meth_line_change'], form['meth_trail_run'],
+            form['meth_dummy_conduct'],
         ]
-        context['environment_fields'] = [(form['env_prod_monitor'], form['remark_env_prod_monitor']), (form['env_5s'], form['remark_env_5s'])]
+
+        context['environment_fields'] = [
+            form['env_prod_monitor'], form['env_5s'],
+        ]
+
         context['trc_fields'] = [
-            (form['trc_flow_chart'], form['remark_trc_flow_chart']), (form['fai_check'], form['remark_fai_check']),
-            (form['defect_monitor'], form['remark_defect_monitor']), (form['spot_check'], form['remark_spot_check']),
-            (form['auto_screw_sample'], form['remark_auto_screw_sample']),
+            form['trc_flow_chart'], form['fai_check'], form['defect_monitor'], form['spot_check'], form['auto_screw_sample'],
         ]
+
         return context
  
     def form_valid(self, form):
-        # --- Aggregate Remarks (same logic as CreateView) ---
-        aggregated_remarks = []
-        for field_name in FIELDS_WITH_REMARKS:
-            remark_key = f'remark_{field_name}'
-            remark_text = self.request.POST.get(remark_key, '').strip()
-            if remark_text:
-                verbose_name = form.fields[field_name].label
-                aggregated_remarks.append(f"{verbose_name}: {remark_text}")
-        
-        main_remark = self.request.POST.get('remarks', '').strip()
-        final_remarks = "\n".join(aggregated_remarks)
-        if main_remark:
-            final_remarks += f"\n\nGeneral Remarks:\n{main_remark}"
-        
-        form.instance.remarks = final_remarks
+       
+        form.instance.remarks = self.request.POST.get('remarks', '').strip()
  
         messages.success(self.request, "Audit record updated successfully!")
         return super().form_valid(form)

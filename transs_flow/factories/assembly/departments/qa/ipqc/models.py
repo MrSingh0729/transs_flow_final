@@ -119,75 +119,71 @@ class  IPQCAssemblyAudit(models. Model):
     model = models. CharField(max_length=100, verbose_name="Model", blank=True, null=True)
     color = models. CharField(max_length=50, default="Unknown", verbose_name="Colour", blank=True, null=True)
     created_at = models. DateTimeField(auto_now_add=True)
-        
-        # MAN
-    man_job_card = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check the key stations for one time per shift whether the operator job card is available or not, if not then operator will be considered as a new operator, need to focus his its operation and the results.")
-    man_btb_mon = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="For install BTB station, IPQC monitor guideline/SOP as: In the Every 2Hrs, IPQC check these stations operator new or change , if no change Check 5-Device after BTB Buckling/Bending stage and Also Check BTB Buckling/Bending Process of operator on 5-devices, if have been changed/New, need check 10 device after BTB buckling/Bending and also check his process. Also Monitor in FAI devices and TRC repair devices and also Monitor to TRC Operator.")
-    
-        # MACHINE
-    mach_epa_check = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="In all EPA areas, check the antistatic clothing, caps and slipper of the operators wear well. Check that all stations requiring electrostatic protection are wearing electrostatic wrist bands / electrostatic gloves/Finger coat / Good grounding of Equipments, computers, electric iron, Manual screw driver etc.")
-        # ... Add choices=AUDIT_CHOICES to all fields from man_job_card to auto_screw_sample ...
-    mach_screw_torque = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check screw driver torque right or not, must less 0.9kgf/cm2/According To SOP. All Manual Screw Driver Hang In Spring Blancer And Hight Of Screw Bit Is 4CM From The Working Table And Always Manual screw Driver Hang On Flip Cover Side Of The Jigs. <b>Also Soldering Temperature must as per SOP standard.</b>")
-    mach_light = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="The Light illuminance of the CTQ Stages.The illuminance of the inspection station should match to the document requirements. (800 - 1200 Lux)")
-    mach_fixture_clean = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="There is no foreign body and obvious dirty in the fixture/Machine, especially pay attention to check the BTB pressing , Camera Lens pressing, Window lens pressing , Battery pressing & Automatic screw machine the working face must not have dirty, foreign body And After All jigs/Fixtures,  Machine/pressing Jigs/Equipment/Soldering Station Check 5 Sample & Check Visual Inspection.")
-    mach_jig_label = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="The model on the jig lable is match the actual model, fixture maintenance labels in the validity period.")
-    mach_teflon = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="The teflon adhesive paper pasted on the fixture shall not be raised, creased or damaged.")
-    mach_press_params = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="The presure & time of pressing jig within the range or not?")
-    mach_glue_params = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="The parameter of glueing machine, glueing route, glueing weight, glueing dispersion effect, whether meet the requirement? <b>(Glue Machine alignment should be proper from that glue directly go inside the PCBA hole, As per SOP)</b>")
-    mach_eq_move_notify = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="When find the vary of equipment, jig, tool on line, or the equipment have been moved, changed, or maintenanced should inform to PQE.")
-    mach_feeler_gauge = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Every shift 2 times (morning and afternoon) IPQC check FQC Feeler gauge condition ok or not")
-    mach_hot_cold_press = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check the parameter of temperature,time,pressure for hot press station/cold press station.")
-    mach_ion_fan = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="The ion fan should face to operation area, within 30-40 cm from work station.")
-    mach_cleanroom_eq = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check Clean room RTI, PAL, Audio, Current Test, All Pressing stages, IMEI Write / IMEI Check, WBG, Antenna Test etc. equipment maintenance same as per the requirement or not. Also verify the checksheet of all these stages are filled properly or not.")
-    mach_rti_check = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="RTI: Information of computer check, Manufacture: (Check printed QR code same as BOM (Color, SN), Check there should not repeted SN (5 Pcs at a time), QR Code print is OK or NOT. Check the Software Description should be match with BOM, if any change inform to PQC Engineer/PQE.)")
-    mach_current_test = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name=")Current Tester: Check the Test item/Parameters standard. Parameters should be same in all the system. Check Upper Limt and Lower Limit of items/Parameters match with the standard. Check Test station have the Defect label and Area or not.")
-    mach_pal_qr = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="PAL: Service QR code is OK or Not. (Check the Print of QR), Check the Test item/Parameters standard. Parameters should be same in all the system, SN No match the QR Code or not. (Check there should not repeated QR, 5 Pcs at a time).")
-    mach_auto_screw = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Automatic Screwing: Check the teaching of the machine is as per the SOP or not, check on sampling base, there should not screw miss / loose by machine (5pcs per hr). Check the Screw according to BOM (Color, Quantity etc.)")
-    
-        # MATERIAL
-    mat_key_check = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Key materials are checked one time every 2 hours, including: Main board, LCM, FPC, Camera, Receiver, Speaker, Motor, Fingerprint module, Battery,Battery Cover, All Label . Other materials random sampling to check, but need to ensure that check once every shift for all materials.")
-    mat_special_stop = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="If have a special document required to stop one material (including suspension of date code, material code, material batch, supplier's material, module number, etc.), need to check whether the production line has stopped to use.")
-    mat_improved_monitor = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="When find the improved material / concession materials /Deviation Material be fed to line, need monitor the production follow the document and feedback to PQE.")
-    mat_result_check = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Randomly check on the operation result of using the materials correctly, and the assembly results are correct; All supported materials (cushion / tape / cotton / PET /mylar etc.) should be flat, no shift, no lift,No missing etc. No screw missing issue and loose issue. 5pcs at a time.")
-    mat_battery_issue = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="When find the battery issue of leakage liquid, smoking, burning etc. must inform PQE immediately.")
-    mat_ipa_check = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check the use of IPA on the production line in accordance with the document requirements (0.5 ml for remove battery / Clean PCBA). Check the container to have a clear label.")
-    mat_thermal_gel = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check the use of Thermal Conductive Gel Weight (the amount of glue in gram) on the production line with the help of Glue Weight Machine in accordance with the document or model requirements, (such as 0.28+0.03g ), Check the dispensing position,route,path, direction is correct,")
-    mat_verification = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify the Material: Match with Bom / SOP / Physically (Nautral part-code), Also verify the process as per the Location and Quantity mentioned in SOP and BOM.")
-    
-        # METHOD
-    meth_sop_seq = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify the Sequence of the SOP, Check the operation manual,There should not be lack of process, whether operator working according to that or not. Check the tools, and units mentioned in SOP also the availability online.")
-    meth_distance_sensor = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify the Distance Sensor Jig Hight should be 2.25 CM range or not.")
-    meth_rear_camera = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify the rear camera Seal / cushion after battery cover installation station and after repaired devices in TRC area.")
-    meth_material_handling = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="In the process of transportation, storage, operation, unpacking, the material of identification, placement, stacking height , Pending, Handling and others whether according to the requirements of the document.")
-    meth_guideline_doc = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="When operation need guideline document, Production guide, SOP, OPL, the document need to be hung within valid period; need to timely return the document which is invalid/ no need for current model.")
-    meth_operation_doc = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="All operations on lines should be carried out as per the documents, mail notice, on-site guidance. Can not follow oral notice and can not privately splitting, merging, exchanging, omission, or changing document.")
-    meth_defective_feedback = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="If IPQC find defective Products / Process Skip should feedback to PQE for confirmation. When PQE judges need to segregate to rework, IPQC should supervise the production line to mark and segregate the materials, semi-finished product and finished products in a specific area, and follow up the rework of risk product.")
-    meth_line_record = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify that the production line report / check sheet is correctly recorded of required stations, Operation of the Equipment is ok or not.")
-    meth_no_self_repair = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="No self-repair of Device / Equipment / Modification of fixture by production person.")
-    meth_battery_fix = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="For the inbuilt battery model, should monitor whether the battery fix properly before install battery cover on line.")
-    meth_line_change = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="For production line change model, or new line start, should verificate all materials in 3 Hrs of beginning; and check the material of old model have been cleaned out.")
-    meth_trail_run = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="When there have trail run material order / New line/ New Model start on line, IPQC need monitor 4M1E and prepare Line readyness check sheet, and get more 5 pcs samples to check. Inform PQE at the same time .")
-    meth_dummy_conduct = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Conduct Dummy for Key stages, Also Machine Dummy & Manpower Dummy on daily basis / If any Machine change / after breakdown / any manpower change online / new manpower / top defect online etc. Conduct dummy for the concern issues. Also as per the defect found in Seg-2 / OQC, conduct dummy for the same issue online.")
-    
-        # ENVIRONMENT
-    env_prod_monitor = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Every shift 2 times (morning and afternoon) IPQC monitor the production environment the temperature, humidity and others match the requirement of production environment or not; The temperature of the production environment is controlled at 16℃ / 28℃ (the Aging room should not exceed 30℃), and the relative humidity is controlled at 45% - 75%.")
-    env_5s = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check the 5's requirment (Sort, Set in order, Shine, Standardize, Sustain) of Assembly line / Area, meets the standard.")
-    
-        # TRC / FAI / DEFECT / SPOT CHECK
-    trc_flow_chart = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check whether Flow Chart available or not. Randomly check the defect entry of any device to verify whether entry in MES or not, Operator working as per the flow chart or not. Check 5's and handling should be maintained at TRC station.")
-    fai_check = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check the First Article Inspection of the shift: 1) Do the functional and Appearance of the device, 2) Also verify the material as per the BOM & SOP, 3) Check the S/W version / SAR Value, Labels, Specially check Demo video, BIS, Extra applications / All functional test,  files etc.as per the document of FAI.")
-    defect_monitor = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check the key inspection station (Function, Appearance) defect devices have record or not, Check the defect rate is beyond the limit or not.")
-    spot_check = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Random selection of the disassemble main board / semi-finished product, to confirm whether they already finished entry MES (Online and TRC).")
-    auto_screw_sample = models. CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Each hour IPQC must check 4 samples Automatic Screwing, Before Seg-1 stage & RQC stage, in order to avoid battery cover impression mark & screw dent or any Appreance defect.")
-    
-        # Manual Input Fields
+
+    # MACHINE
+    mach_epa_check = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify EPA compliance—antistatic gear and proper grounding.")
+    mach_screw_torque = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check screwdriver torque (<0.9 kgf/cm²) per SOP.")
+    mach_sholdering_temp = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check soldering temp per SOP.")
+    mach_light = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Ensure CTQ light level 800–1200 Lux.")
+    mach_fixture_clean = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Fixtures/machines clean and free from dirt; verify 5 samples visually.")
+    mach_jig_label = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Jig label matches model; maintenance label valid.")
+    mach_teflon = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Teflon on fixture not raised, creased, or damaged.")
+    mach_press_params = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Pressing pressure/time within limit.")
+    mach_glue_params = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check glue parameters and alignment per SOP.")
+    mach_eq_move_notify = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Report any jig/equipment movement or change to PQE.")
+    mach_feeler_gauge = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check feeler gauge twice per shift.")
+    mach_hot_cold_press = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify hot/cold press parameters.")
+    mach_ion_fan = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Ion fan facing work area, 30–40 cm distance.")
+    mach_cleanroom_eq = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check cleanroom equipment and checklist compliance.")
+    mach_rti_check = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="RTI: Verify QR, SN, and software per BOM.")
+    mach_current_test = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Current test parameters match standard; limits OK.")
+    mach_pal_qr = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="PAL: Verify QR print, SN match, no duplicates.")
+    mach_auto_screw = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Auto screw: teaching per SOP; no loose/missing screws (5 pcs/hr).")
+
+    # MATERIAL
+    mat_key_check = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check key materials every 2 hrs (Mainboard, LCM, FPC, etc.); all others once per shift.")
+    mat_special_stop = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify stopped/suspended materials (date code, batch, supplier) are not in use.")
+    mat_improved_monitor = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Monitor use of improved/deviation materials per document and inform PQE.")
+    mat_result_check = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check assembly results—no shift, lift, missing or loose screws (5 pcs/sample).")
+    mat_battery_issue = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="If battery leaks, smokes, or burns—inform PQE immediately.")
+    mat_ipa_check = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify IPA use per SOP (0.5 ml for battery/PCBA); container labeled.")
+    mat_thermal_gel = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check thermal gel weight, position, and route per model/SOP.")
+    mat_verification = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify materials match BOM/SOP and correct quantity/location used.")
+
+    # METHOD
+    meth_sop_seq = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify SOP sequence, process completeness, and tool availability.")
+    meth_distance_sensor = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check distance sensor jig height = 2.25 cm ± tolerance.")
+    meth_rear_camera = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check rear camera seal/cushion after battery cover and TRC repair.")
+    meth_material_handling = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify material handling, storage, and stacking per document.")
+    meth_guideline_doc = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Ensure valid SOP/OPL displayed; remove expired or unused documents.")
+    meth_operation_doc = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Follow only approved documents; no verbal or unauthorized changes.")
+    meth_defective_feedback = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Report defects to PQE; supervise segregation and rework as required.")
+    meth_line_record = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify line reports/checksheets are properly filled and equipment OK.")
+    meth_no_self_repair = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="No self-repair or fixture modification by production staff.")
+    meth_battery_fix = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check inbuilt battery fixed properly before cover installation.")
+    meth_line_change = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="For line/model change, verify all materials within 3 hrs; clear old stock.")
+    meth_trail_run = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="During trial/new line start, monitor 4M1E, fill readiness sheet, and check 5 pcs.")
+    meth_dummy_conduct = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Conduct dummy checks for key stages, new changes, or top defects daily.")
+
+    # ENVIRONMENT
+    env_prod_monitor = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check temp (16–28°C), humidity (45–75%), and environment twice per shift per spec.")
+    env_5s = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify 5S compliance (Sort, Set, Shine, Standardize, Sustain) in assembly area.")
+
+    # TRC / FAI / DEFECT / SPOT CHECK
+    trc_flow_chart = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Ensure flow chart available; verify MES defect entry and 5S at TRC station.")
+    fai_check = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Check FAI: function, appearance, material per BOM/SOP, SW version, labels, and tests.")
+    defect_monitor = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify key station defect records and ensure defect rate within limits.")
+    spot_check = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Spot check boards/semi-finished units to confirm MES entry (Online/TRC).")
+    auto_screw_sample = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Hourly check 4 auto-screw samples before Seg-1/RQC; ensure no dent or mark.")
+
+    # Manual Input Fields
     manufacture = models. CharField(max_length=100, blank=True, null=True)
     work_order = models. CharField(max_length=100, blank=True, null=True)
     brand = models. CharField(max_length=50, blank=True, null=True)
     material_code = models. CharField(max_length=50, blank=True, null=True)
     wo_input_qty = models. IntegerField(blank=True, null=True, verbose_name="WO / Input Qty")
     
-        # TOP 3 DEFECTS & REMARKS
+    # TOP 3 DEFECTS & REMARKS
     top3_defects = models. CharField(max_length=200, blank=True, null=True, verbose_name="Top 3 defects")
     remarks = models. TextField(blank=True, null=True, verbose_name="Remarks")
     

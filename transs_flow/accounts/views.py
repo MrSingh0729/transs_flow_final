@@ -18,12 +18,12 @@ def login_view(request):
 
             # 🔹 Role-based redirection
             if user.is_superuser or getattr(user, 'role', '').lower() == "admin" or getattr(user, 'role', '').upper() == "PQE":
-                return redirect('dashboard')
+                return redirect('home_redirect')
             elif getattr(user, 'role', '').upper() == "IPQC":
                 return redirect('ipqc_home')
             else:
                 # Default redirect (if no role matches)
-                return redirect('dashboard')
+                return redirect('home_redirect')
 
         else:
             return render(request, "accounts/login.html", {"error": "Invalid credentials"})
@@ -35,6 +35,15 @@ def logout_view(request):
     return redirect('login')
 
 # ----------------- Dashboard -----------------
+
+@login_required
+def home_redirect(request):
+    # Try to route based on role
+    user = request.user
+    if user.is_superuser or getattr(user, "role", None) == "admin":
+        return redirect("dashboard")
+    return redirect("ipqc_home")
+
 @login_required
 def dashboard(request):
     # Check if user is superuser or has role 'admin'

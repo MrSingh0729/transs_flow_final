@@ -239,49 +239,7 @@
     background: rgba(100, 116, 139, 0.05);
 }
 
-/* Remark field */
-.remark-container {
-    margin-top: 10px;
-    width: 100%;
-}
 
-.remark-toggle {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 500;
-    max-width: 100%;
-}
-
-.remark-toggle:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-.remark-field {
-    margin-top: 8px;
-    padding: 12px;
-    background: var(--bg-secondary);
-    border: 1px dashed var(--border);
-    border-radius: 8px;
-    display: none;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.remark-field.show {
-    display: block;
-    animation: slideDown 0.2s ease;
-}
 
 @keyframes slideDown {
     from {
@@ -594,9 +552,7 @@
         min-height: 44px;
     }
     
-    .remark-toggle {
-        min-height: 44px;
-    }
+    
     
     .form-group input,
     .form-group select,
@@ -638,27 +594,27 @@ main {
             </div>
             <div class="step-item" onclick="goToStep(2)">
                 <div class="step-circle" id="step2">2</div>
-                <div class="step-label">Manual</div>
+                <div class="step-label">Machine</div>
             </div>
             <div class="step-item" onclick="goToStep(3)">
                 <div class="step-circle" id="step3">3</div>
-                <div class="step-label">Machine</div>
+                <div class="step-label">Material</div>
             </div>
             <div class="step-item" onclick="goToStep(4)">
                 <div class="step-circle" id="step4">4</div>
-                <div class="step-label">Material</div>
+                <div class="step-label">Method</div>
             </div>
             <div class="step-item" onclick="goToStep(5)">
                 <div class="step-circle" id="step5">5</div>
-                <div class="step-label">Method</div>
+                <div class="step-label">Environment</div>
             </div>
             <div class="step-item" onclick="goToStep(6)">
                 <div class="step-circle" id="step6">6</div>
-                <div class="step-label">Environment</div>
+                <div class="step-label">Monitor</div>
             </div>
             <div class="step-item" onclick="goToStep(7)">
                 <div class="step-circle" id="step7">7</div>
-                <div class="step-label">Monitor</div>
+                <div class="step-label">Remark</div>
             </div>
         </div>
         <div class="progress-text">Step <span id="currentStep">1</span> of 7</div>
@@ -683,68 +639,54 @@ main {
             <div class="form-grid">
                 <div class="form-group">
                     <label for="date">Date</label>
-                    <input type="date" name="date" id="date" readonly>
+                    <input type="text" name="date" id="date" value="{{ form.date.value|default:'--' }}" readonly>
                 </div>
                 
                 <div class="form-group">
                     <label for="shift">Shift</label>
-                    <input type="text" name="shift" id="shift" readonly>
+                    <input type="text" name="shift" id="shift" value="{{ form.shift.value|default:'--' }}" readonly>
                 </div>
                 
+                <div class="form-group">
+                    <label for="emp_id">ID</label>
+                    <input type="text" name="emp_id" id="emp_id" value="{{ form.emp_id.value|default:'--' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="emp_id">Name</label>
+                    <input type="text" name="name" id="name" value="{{ form.name.value|default:'--' }}" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="model">Section</label>
+                    <input type="text" name="section" id="section" value="{{ form.section.value|default:'--' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">Line</label>
+                    <input type="text" name="line" id="line" value="{{ form.line.value|default:'--' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">Group</label>
+                    <input type="text" name="group" id="group" value="{{ form.group.value|default:'--' }}" readonly>
+                </div>
+
                 <div class="form-group">
                     <label for="model">Model</label>
                     <input type="text" name="model" id="model" value="{{ form.model.value|default:'--' }}" readonly>
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="emp_id">Employee ID</label>
-                    <input type="text" name="emp_id" id="emp_id" readonly>
+                    <label for="model">Color</label>
+                    <input type="text" name="color" id="color" value="{{ form.color.value|default:'--' }}" readonly>
                 </div>
             </div>
         </div>
         
-        <!-- Step 2: Manual -->
-        <div class="form-section" id="step2-content" style="display: none;">
-            <div class="section-header">
-                <h2 class="section-title">
-                    <div class="section-icon bg-green-100">
-                        <i class="fas fa-user-tie text-green-600"></i>
-                    </div>
-                    MAN (Manual)
-                </h2>
-                <div class="step-circle">2</div>
-            </div>
-            
-            <div class="form-grid">
-                {% for field, remark_field in man_fields %}
-                    <div class="form-group">
-                        <label>{{ field.label }}</label>
-                        <select name="{{ field.html_name }}" class="status-select">
-                            <option value="">Select</option>
-                            <option value="OK" {% if field.value == 'OK' %}selected{% endif %}>OK</option>
-                            <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
-                            <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
-                        </select>
-                        
-                        <div class="remark-container">
-                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
-                                    class="remark-toggle">
-                                <i class="fas fa-comment-alt"></i>
-                                Add Remark
-                            </button>
-                            
-                            <div class="remark-field" id="remark_{{ field.html_name }}">
-                                <textarea name="remark_{{ field.html_name }}" rows="3"
-                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
         
-        <!-- Step 3: Machine -->
-        <div class="form-section" id="step3-content" style="display: none;">
+        <!-- Step 2: Machine -->
+        <div class="form-section" id="step2-content" style="display: none;">
             <div class="section-header">
                 <h2 class="section-title">
                     <div class="section-icon bg-orange-100">
@@ -756,7 +698,7 @@ main {
             </div>
             
             <div class="form-grid">
-                {% for field, remark_field in machine_fields %}
+                {% for field in machine_fields %}
                     <div class="form-group">
                         <label>{{ field.label }}</label>
                         <select name="{{ field.html_name }}" class="status-select">
@@ -765,26 +707,13 @@ main {
                             <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
                             <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
                         </select>
-                        
-                        <div class="remark-container">
-                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
-                                    class="remark-toggle">
-                                <i class="fas fa-comment-alt"></i>
-                                Add Remark
-                            </button>
-                            
-                            <div class="remark-field" id="remark_{{ field.html_name }}">
-                                <textarea name="remark_{{ field.html_name }}" rows="3"
-                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
-                            </div>
-                        </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
         
-        <!-- Step 4: Material -->
-        <div class="form-section" id="step4-content" style="display: none;">
+        <!-- Step 3: Material -->
+        <div class="form-section" id="step3-content" style="display: none;">
             <div class="section-header">
                 <h2 class="section-title">
                     <div class="section-icon bg-pink-100">
@@ -796,7 +725,7 @@ main {
             </div>
             
             <div class="form-grid">
-                {% for field, remark_field in material_fields %}
+                {% for field in material_fields %}
                     <div class="form-group">
                         <label>{{ field.label }}</label>
                         <select name="{{ field.html_name }}" class="status-select">
@@ -805,26 +734,13 @@ main {
                             <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
                             <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
                         </select>
-                        
-                        <div class="remark-container">
-                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
-                                    class="remark-toggle">
-                                <i class="fas fa-comment-alt"></i>
-                                Add Remark
-                            </button>
-                            
-                            <div class="remark-field" id="remark_{{ field.html_name }}">
-                                <textarea name="remark_{{ field.html_name }}" rows="3"
-                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
-                            </div>
-                        </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
         
-        <!-- Step 5: Method -->
-        <div class="form-section" id="step5-content" style="display: none;">
+        <!-- Step 4: Method -->
+        <div class="form-section" id="step4-content" style="display: none;">
             <div class="section-header">
                 <h2 class="section-title">
                     <div class="section-icon bg-yellow-100">
@@ -836,7 +752,7 @@ main {
             </div>
             
             <div class="form-grid">
-                {% for field, remark_field in method_fields %}
+                {% for field in method_fields %}
                     <div class="form-group">
                         <label>{{ field.label }}</label>
                         <select name="{{ field.html_name }}" class="status-select">
@@ -845,26 +761,13 @@ main {
                             <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
                             <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
                         </select>
-                        
-                        <div class="remark-container">
-                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
-                                    class="remark-toggle">
-                                <i class="fas fa-comment-alt"></i>
-                                Add Remark
-                            </button>
-                            
-                            <div class="remark-field" id="remark_{{ field.html_name }}">
-                                <textarea name="remark_{{ field.html_name }}" rows="3"
-                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
-                            </div>
-                        </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
         
-        <!-- Step 6: Environment -->
-        <div class="form-section" id="step6-content" style="display: none;">
+        <!-- Step 5: Environment -->
+        <div class="form-section" id="step5-content" style="display: none;">
             <div class="section-header">
                 <h2 class="section-title">
                     <div class="section-icon bg-blue-100">
@@ -876,7 +779,7 @@ main {
             </div>
             
             <div class="form-grid">
-                {% for field, remark_field in environment_fields %}
+                {% for field in environment_fields %}
                     <div class="form-group">
                         <label>{{ field.label }}</label>
                         <select name="{{ field.html_name }}" class="status-select">
@@ -885,26 +788,13 @@ main {
                             <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
                             <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
                         </select>
-                        
-                        <div class="remark-container">
-                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
-                                    class="remark-toggle">
-                                <i class="fas fa-comment-alt"></i>
-                                Add Remark
-                            </button>
-                            
-                            <div class="remark-field" id="remark_{{ field.html_name }}">
-                                <textarea name="remark_{{ field.html_name }}" rows="3"
-                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
-                            </div>
-                        </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
         
-        <!-- Step 7: TRC/FAI/DEFECT MONITOR -->
-        <div class="form-section" id="step7-content" style="display: none;">
+        <!-- Step 6: TRC/FAI/DEFECT MONITOR -->
+        <div class="form-section" id="step6-content" style="display: none;">
             <div class="section-header">
                 <h2 class="section-title">
                     <div class="section-icon bg-red-100">
@@ -916,7 +806,7 @@ main {
             </div>
             
             <div class="form-grid">
-                {% for field, remark_field in trc_fields %}
+                {% for field in trc_fields %}
                     <div class="form-group">
                         <label>{{ field.label }}</label>
                         <select name="{{ field.html_name }}" class="status-select">
@@ -925,26 +815,13 @@ main {
                             <option value="NOT_OK" {% if field.value == 'NOT_OK' %}selected{% endif %}>Not OK</option>
                             <option value="NA" {% if field.value == 'NA' %}selected{% endif %}>N/A</option>
                         </select>
-                        
-                        <div class="remark-container">
-                            <button type="button" onclick="toggleRemark('{{ field.html_name }}')" 
-                                    class="remark-toggle">
-                                <i class="fas fa-comment-alt"></i>
-                                Add Remark
-                            </button>
-                            
-                            <div class="remark-field" id="remark_{{ field.html_name }}">
-                                <textarea name="remark_{{ field.html_name }}" rows="3"
-                                          placeholder="Enter remarks...">{{ remark_field.value|default:'' }}</textarea>
-                            </div>
-                        </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
         
-        <!-- General Remarks -->
-        <div class="form-section" id="general-content" style="display: none;">
+        <!-- Step 7: General Remarks -->
+        <div class="form-section" id="step7-content" style="display: none;">
             <div class="section-header">
                 <h2 class="section-title">
                     <div class="section-icon bg-purple-100">
@@ -1092,13 +969,6 @@ function updateStepIndicator() {
         }
     }
     
-    // Show general remarks on last step
-    const generalContent = document.getElementById('general-content');
-    if (currentStep === totalSteps) {
-        generalContent.style.display = 'block';
-    } else {
-        generalContent.style.display = 'none';
-    }
     
     // Update navigation buttons
     document.getElementById('prev-btn').disabled = currentStep === 1;
@@ -1140,20 +1010,7 @@ function previousStep() {
     }
 }
 
-// Toggle remark field
-function toggleRemark(fieldName) {
-    const remarkField = document.getElementById(`remark_${fieldName}`);
-    const toggleBtn = remarkField.previousElementSibling;
-    
-    if (remarkField.classList.contains('show')) {
-        remarkField.classList.remove('show');
-        toggleBtn.innerHTML = '<i class="fas fa-comment-alt"></i> Add Remark';
-    } else {
-        remarkField.classList.add('show');
-        toggleBtn.innerHTML = '<i class="fas fa-comment-times"></i> Hide Remark';
-        remarkField.querySelector('textarea').focus();
-    }
-}
+
 
 // Form validation
 function validateStep(step) {
