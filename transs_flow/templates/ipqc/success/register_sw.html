@@ -1,0 +1,67 @@
+	<!DOCTYPE html>
+	<html>
+	<head>
+	    <title>Service Worker Registration</title>
+	    <script>
+	        // Register service worker
+	        if ('serviceWorker' in navigator) {
+	            window.addEventListener('load', () => {
+	                navigator.serviceWorker.register('/static/service-worker.js')
+	                    .then(registration => {
+	                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+	                        // Check if page is being loaded from cache
+	                        if (navigator.serviceWorker.controller) {
+	                            console.log('Service worker is already controlling this page');
+	                        } else {
+	                            console.log('Service worker is not yet controlling this page');
+	                        }
+	                    })
+	                    .catch(error => {
+	                        console.log('ServiceWorker registration failed: ', error);
+	                    });
+	            });
+	        }
+	        // Check for PWA support
+	        function checkPWAFeatures() {
+	            const features = {
+	                'Service Worker': 'serviceWorker' in navigator,
+	                'IndexedDB': 'indexedDB' in window,
+	                'Cache API': 'caches' in window,
+	                'Web App Manifest': 'manifest' in document.querySelector('link[rel="manifest"]')
+	            };
+	            let supported = true;
+	            let featureList = '<ul>';
+	            for (const [feature, supported] of Object.entries(features)) {
+	                featureList += `<li>${feature}: ${supported ? '✅' : '❌'}</li>`;
+	                if (!supported) supported = false;
+	            }
+	            featureList += '</ul>';
+	            if (supported) {
+	                document.body.innerHTML = `
+	                    <div style="text-align: center; padding: 50px;">
+	                        <h1>🎉 PWA Features Supported!</h1>
+	                        <p>Your browser supports all PWA features.</p>
+	                        ${featureList}
+	                    </div>
+	                `;
+	            } else {
+	                document.body.innerHTML = `
+	                    <div style="text-align: center; padding: 50px;">
+	                        <h1>⚠️ PWA Features Not Fully Supported</h1>
+	                        <p>Your browser may not support all PWA features.</p>
+	                        ${featureList}
+	                    </div>
+	                `;
+	            }
+	        }
+	        // Check features when page loads
+	        checkPWAFeatures();
+	    </script>
+	</head>
+	<body>
+	    <div style="text-align: center; padding: 50px;">
+	        <h1>🔄 Registering Service Worker...</h1>
+	        <p>Please wait while we register the service worker for PWA functionality.</p>
+	    </div>
+	</body>
+	</html>

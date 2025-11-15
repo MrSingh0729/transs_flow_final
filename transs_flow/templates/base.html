@@ -10,9 +10,18 @@
 
     <!-- PWA / Mobile meta -->
     <meta name="theme-color" content="#0ea5e9" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#0ea5e9">
+    <meta name="msapplication-config" content="{% static 'browserconfig.xml' %}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'icons/icon-192.png' %}" sizes="192x192">
+    <link rel="icon" type="image/png" href="{% static 'icons/icon-512.png' %}" sizes="512x512">
 
     <!-- Tailwind (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -49,7 +58,8 @@
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
         }
 
@@ -62,7 +72,44 @@
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            padding-bottom: env(safe-area-inset-bottom); /* safe area for iOS */
+            padding-bottom: env(safe-area-inset-bottom);
+            /* safe area for iOS */
+        }
+
+        /* ====== PWA Loading Screen ====== */
+        .pwa-loading {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+
+        .pwa-loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pwa-logo {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
 
         /* ====== Header ====== */
@@ -327,7 +374,7 @@
         .metric-card:hover {
             box-shadow: 0 10px 30px rgba(2, 132, 199, 0.06);
             transform: translateY(-4px);
-            border-color: rgba(14,165,233,0.2);
+            border-color: rgba(14, 165, 233, 0.2);
         }
 
         .metric-value {
@@ -589,7 +636,7 @@
         a:focus,
         input:focus,
         select:focus {
-            outline: 3px solid rgba(14,165,233,0.2);
+            outline: 3px solid rgba(14, 165, 233, 0.2);
             outline-offset: 2px;
         }
 
@@ -649,7 +696,7 @@
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             border: 1px solid #cbd5e1;
             color: #1e293b;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
         }
 
         /* Floating bottom nav safe area padding for iOS */
@@ -663,10 +710,143 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
+        /* ====== PWA Notification Styles ====== */
+        .pwa-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 16px 24px;
+            max-width: 400px;
+            width: 90%;
+            z-index: 9999;
+            transition: transform 0.3s ease;
+        }
+
+        .pwa-notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .pwa-notification-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .pwa-notification-title {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .pwa-notification-body {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .pwa-notification-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .pwa-notification-button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pwa-notification-button.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .pwa-notification-button.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .pwa-notification-button.secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .pwa-notification-button.secondary:hover {
+            background: var(--bg-primary);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* ====== Offline Mode Indicator ====== */
+        .offline-indicator {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            right: 0;
+            background: #dc2626;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 70;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .offline-indicator.show {
+            transform: translateY(0);
+        }
+
+        /* ====== Update Progress Indicator ====== */
+        .update-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(14, 165, 233, 0.1);
+            z-index: 9999;
+        }
+
+        .update-progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0;
+            transition: width 0.3s ease;
+        }
     </style>
 </head>
 
 <body>
+    <!-- PWA Loading Screen -->
+    <div class="pwa-loading" id="pwaLoading">
+        <div class="pwa-logo">
+            <i class="fas fa-industry text-white text-3xl"></i>
+        </div>
+        <div class="text-xl font-bold text-gray-800">Transs Flow</div>
+        <div class="text-sm text-gray-600 mt-2">Loading...</div>
+    </div>
+
+    <!-- Offline Indicator -->
+    <div class="offline-indicator" id="offlineIndicator">
+        <i class="fas fa-wifi-slash mr-2"></i>
+        You're currently offline. Some features may be limited.
+    </div>
+
+    <!-- Update Progress Indicator -->
+    <div class="update-progress" id="updateProgress" style="display: none;">
+        <div class="update-progress-bar" id="updateProgressBar"></div>
+    </div>
+
     <!-- Header -->
     <header class="header bg-white shadow no-print">
         <div class="px-4 py-3 flex items-center justify-between relative max-w-[1300px] mx-auto">
@@ -703,7 +883,8 @@
 
             <!-- Center: Page Title -->
             <div class="absolute left-1/2 transform -translate-x-1/2 text-center px-2">
-                <div class="text-gray-900 font-semibold text-base sm:text-lg md:text-xl truncate max-w-[70vw] sm:max-w-[50vw] text-truncate">
+                <div
+                    class="text-gray-900 font-semibold text-base sm:text-lg md:text-xl truncate max-w-[70vw] sm:max-w-[50vw] text-truncate">
                     {% block title %}{% endblock %}
                 </div>
             </div>
@@ -713,9 +894,11 @@
                 <div class="user-dropdown relative" id="userDropdown">
                     <div class="user-dropdown-toggle" onclick="toggleUserDropdown()" role="button" aria-haspopup="true"
                         aria-expanded="false" title="User menu">
-                        <img src="https://picsum.photos/seed/user/32/32" alt="User" class="w-8 h-8 rounded-full border-2 border-gray-200 object-cover">
+                        <img src="https://picsum.photos/seed/user/32/32" alt="User"
+                            class="w-8 h-8 rounded-full border-2 border-gray-200 object-cover">
                         <div class="hidden md:block">
-                            <div class="text-sm font-bold text-gray-900 truncate max-w-[120px]">{{ user.full_name|default:'' }}</div>
+                            <div class="text-sm font-bold text-gray-900 truncate max-w-[120px]">{{
+                                user.full_name|default:'' }}</div>
                             <div class="text-xs text-gray-600 font-medium truncate max-w-[120px]">
                                 {% if user.is_superuser %}
                                 Superuser
@@ -726,13 +909,15 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <i class="fas fa-chevron-down text-xs text-gray-500 transition-transform" id="dropdownArrow"></i>
+                        <i class="fas fa-chevron-down text-xs text-gray-500 transition-transform"
+                            id="dropdownArrow"></i>
                     </div>
 
                     <div class="user-dropdown-menu" role="menu" aria-hidden="true">
                         <div class="user-dropdown-header">
                             <div class="flex items-center gap-3">
-                                <img src="https://picsum.photos/seed/user/40/40" alt="User" class="w-10 h-10 rounded-full object-cover">
+                                <img src="https://picsum.photos/seed/user/40/40" alt="User"
+                                    class="w-10 h-10 rounded-full object-cover">
                                 <div>
                                     <div class="font-semibold text-gray-900">{{ user.full_name|default:'' }}</div>
                                     <div class="text-xs text-gray-600">{{ user.employee_id|default:'' }}</div>
@@ -742,13 +927,16 @@
 
                         <a href="#" class="user-dropdown-item"><i class="fas fa-user"></i><span>My Profile</span></a>
                         <a href="#" class="user-dropdown-item"><i class="fas fa-cog"></i><span>Settings</span></a>
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-key"></i><span>Change Password</span></a>
+                        <a href="#" class="user-dropdown-item"><i class="fas fa-key"></i><span>Change
+                                Password</span></a>
                         <a href="#" class="user-dropdown-item"><i class="fas fa-bell"></i><span>Notifications</span></a>
 
                         <div class="user-dropdown-divider"></div>
 
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-question-circle"></i><span>Help & Support</span></a>
-                        <a class="user-dropdown-item logout" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+                        <a href="#" class="user-dropdown-item"><i class="fas fa-question-circle"></i><span>Help &
+                                Support</span></a>
+                        <a class="user-dropdown-item logout" href="{% url 'logout' %}"><i
+                                class="fas fa-sign-out-alt"></i><span>Logout</span></a>
                     </div>
                 </div>
             </div>
@@ -803,7 +991,8 @@
                         </a>
 
                         <div class="py-2">
-                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Quality Control
+                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Quality
+                                Control
                             </div>
                         </div>
 
@@ -853,7 +1042,8 @@
                         </a>
 
                         <div class="py-2">
-                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Operations</div>
+                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Operations
+                            </div>
                         </div>
 
                         <a href="{% url 'ipqc_disassemble_add' %}"
@@ -886,11 +1076,12 @@
                         {% endif %}
 
                         <div class="py-2">
-                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Communication
+                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Communication
                             </div>
                         </div>
 
-                        
+
                     </nav>
 
                     <!-- User section -->
@@ -923,7 +1114,8 @@
                 {% if messages %}
                 <div class="mb-4 space-y-2">
                     {% for message in messages %}
-                    <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-center gap-2">
+                    <div
+                        class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-center gap-2">
                         <i class="fas fa-info-circle"></i>
                         <span class="font-medium">{{ message }}</span>
                     </div>
@@ -1135,7 +1327,8 @@
         </div>
 
         <!-- Desktop sidebar toggle button -->
-        <button id="desktopToggle" class="desktop-sidebar-toggle no-print" onclick="toggleDesktopSidebar()" aria-label="Toggle sidebar">
+        <button id="desktopToggle" class="desktop-sidebar-toggle no-print" onclick="toggleDesktopSidebar()"
+            aria-label="Toggle sidebar">
             <i class="fas fa-bars"></i>
         </button>
 
@@ -1145,24 +1338,47 @@
         <!-- Floating bottom nav (mobile only) -->
         <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-50 md:hidden mobile-bottom-nav no-print"
             role="navigation" aria-label="Mobile navigation">
-            <a href="{% url 'dashboard' %}" class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Home">
+            <a href="{% url 'dashboard' %}"
+                class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Home">
                 <i class="fas fa-home text-lg"></i>
                 <span class="text-xs mt-1">Home</span>
             </a>
-            <a href="{% url 'ipqc_home' %}" class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="IPQC">
+            <a href="{% url 'ipqc_home' %}"
+                class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="IPQC">
                 <i class="fas fa-chart-line text-lg"></i>
                 <span class="text-xs mt-1">IPQC</span>
             </a>
-            <a href="{% url 'nc_issue_tracking_create' %}" class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Issues">
+            <a href="{% url 'nc_issue_tracking_create' %}"
+                class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Issues">
                 <i class="fas fa-exclamation-triangle text-lg"></i>
                 <span class="text-xs mt-1">Issues</span>
             </a>
-            
-            <a href="{% url 'logout' %}" class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Profile">
+
+            <a href="{% url 'logout' %}"
+                class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Profile">
                 <i class="fas fa-user text-lg"></i>
                 <span class="text-xs mt-1">Profile</span>
             </a>
         </nav>
+    </div>
+
+    <!-- PWA Notification Container -->
+    <div id="pwaNotification" class="pwa-notification">
+        <div class="pwa-notification-header">
+            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+            <div class="pwa-notification-title" id="notificationTitle">Notification</div>
+        </div>
+        <div class="pwa-notification-body" id="notificationBody">
+            This is a notification message.
+        </div>
+        <div class="pwa-notification-actions">
+            <button class="pwa-notification-button primary" id="notificationPrimaryButton">
+                OK
+            </button>
+            <button class="pwa-notification-button secondary" id="notificationSecondaryButton">
+                Cancel
+            </button>
+        </div>
     </div>
 
     <!-- Service worker registration -->
@@ -1171,7 +1387,11 @@
         const appState = {
             sidebarCollapsed: localStorage.getItem('sidebar-collapsed') === 'true',
             isMobile: window.innerWidth < 1024,
-            userDropdownOpen: false
+            userDropdownOpen: false,
+            isOnline: navigator.onLine,
+            deferredPrompt: null,
+            updateAvailable: false,
+            registration: null
         };
 
         // ====== DOM Elements ======
@@ -1182,8 +1402,149 @@
             mainContent: document.querySelector('.main-content'),
             body: document.body,
             userDropdown: document.getElementById('userDropdown'),
-            dropdownArrow: document.getElementById('dropdownArrow')
+            dropdownArrow: document.getElementById('dropdownArrow'),
+            pwaLoading: document.getElementById('pwaLoading'),
+            offlineIndicator: document.getElementById('offlineIndicator'),
+            updateProgress: document.getElementById('updateProgress'),
+            updateProgressBar: document.getElementById('updateProgressBar'),
+            pwaNotification: document.getElementById('pwaNotification'),
+            notificationTitle: document.getElementById('notificationTitle'),
+            notificationBody: document.getElementById('notificationBody'),
+            notificationPrimaryButton: document.getElementById('notificationPrimaryButton'),
+            notificationSecondaryButton: document.getElementById('notificationSecondaryButton')
         };
+
+        // ====== PWA Service Worker Management ======
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register("/serviceworker.js")
+                        .then(registration => {
+                            console.log('ServiceWorker registered: ', registration.scope);
+                            appState.registration = registration;
+
+                            // Check for updates
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        console.log('New version available');
+                                        showUpdateNotification();
+                                    }
+                                });
+                            });
+
+                            setTimeout(() => {
+                                elements.pwaLoading.classList.add('hidden');
+                            }, 1000);
+                        })
+                        .catch(err => {
+                            console.log('ServiceWorker registration failed: ', err);
+                            setTimeout(() => {
+                                elements.pwaLoading.classList.add('hidden');
+                            }, 1000);
+                        });
+                });
+            } else {
+                setTimeout(() => {
+                    elements.pwaLoading.classList.add('hidden');
+                }, 1000);
+            }
+        }
+
+        // ====== Install Prompt Management ======
+        function setupInstallPrompt() {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                appState.deferredPrompt = e;
+                showInstallNotification();
+            });
+            
+            window.addEventListener('appinstalled', () => {
+                console.log('PWA was installed');
+                hideInstallNotification();
+            });
+        }
+
+        function showInstallNotification() {
+            if (appState.deferredPrompt) {
+                showNotification(
+                    'Install TranssFlow',
+                    'Install the app for the best experience!',
+                    'Install',
+                    'Not Now',
+                    () => {
+                        appState.deferredPrompt.prompt();
+                        appState.deferredPrompt.userChoice.then((choiceResult) => {
+                            if (choiceResult.outcome === 'accepted') {
+                                console.log('User accepted the install prompt');
+                            }
+                            appState.deferredPrompt = null;
+                        });
+                        hideNotification();
+                    },
+                    () => {
+                        hideNotification();
+                    }
+                );
+            }
+        }
+
+        function hideInstallNotification() {
+            const installNotification = document.getElementById('pwa-install-notification');
+            if (installNotification) {
+                installNotification.remove();
+            }
+        }
+
+        // ====== Update Management ======
+        function showUpdateNotification() {
+            showNotification(
+                'Update Available',
+                'A new version of TranssFlow is available. Refresh to update.',
+                'Update Now',
+                'Later',
+                () => {
+                    window.location.reload();
+                },
+                () => {
+                    // User chose later, schedule update for next time
+                    localStorage.setItem('update-reminder', Date.now().toString());
+                }
+            );
+        }
+
+        // ====== Offline Detection ======
+        function setupOfflineDetection() {
+            window.addEventListener('online', () => {
+                appState.isOnline = true;
+                elements.offlineIndicator.classList.remove('show');
+                console.log('App is online');
+            });
+
+            window.addEventListener('offline', () => {
+                appState.isOnline = false;
+                elements.offlineIndicator.classList.add('show');
+                console.log('App is offline');
+            });
+        }
+
+        // ====== Notification System ======
+        function showNotification(title, body, primaryText, secondaryText, primaryAction, secondaryAction) {
+            elements.notificationTitle.textContent = title;
+            elements.notificationBody.textContent = body;
+            elements.notificationPrimaryButton.textContent = primaryText;
+            elements.notificationSecondaryButton.textContent = secondaryText;
+            
+            elements.notificationPrimaryButton.onclick = primaryAction;
+            elements.notificationSecondaryButton.onclick = secondaryAction;
+            
+            elements.pwaNotification.classList.add('show');
+        }
+
+        function hideNotification() {
+            elements.pwaNotification.classList.remove('show');
+        }
 
         // ====== Sidebar Functions ======
         function toggleSidebar() {
@@ -1345,7 +1706,17 @@
 
         // ====== Initialize ======
         document.addEventListener('DOMContentLoaded', () => {
+            // Hide loading screen after a short delay in case service worker registration takes time
+            setTimeout(() => {
+                if (!elements.pwaLoading.classList.contains('hidden')) {
+                    elements.pwaLoading.classList.add('hidden');
+                }
+            }, 2000);
+            
             initializeSidebar();
+            registerServiceWorker();
+            setupInstallPrompt();
+            setupOfflineDetection();
             setInterval(updateMetrics, 30000);
         });
 
@@ -1356,18 +1727,27 @@
         window.toggleUserDropdown = toggleUserDropdown;
         window.closeUserDropdown = closeUserDropdown;
 
-        // ====== Register service worker (PWA) ======
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register("{% static 'service-worker.js' %}")
-                    .then(function(reg) {
-                        // registration worked
-                        console.log('ServiceWorker registration successful with scope: ', reg.scope);
-                    }).catch(function(err) {
-                        // registration failed :(
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-            });
+        // ====== Handle service worker messages ======
+        navigator.serviceWorker.addEventListener('message', event => {
+            console.log('Received message from service worker:', event.data);
+            
+            if (event.data && event.data.type === 'SKIP_WAITING') {
+                self.skipWaiting();
+            }
+        });
+
+        // ====== Handle app updates ======
+        // Check if there's a pending update reminder
+        const updateReminder = localStorage.getItem('update-reminder');
+        if (updateReminder) {
+            const reminderTime = parseInt(updateReminder);
+            const hoursSinceReminder = (Date.now() - reminderTime) / (1000 * 60 * 60);
+            
+            // If more than 24 hours have passed, show the update notification again
+            if (hoursSinceReminder > 24) {
+                localStorage.removeItem('update-reminder');
+                showUpdateNotification();
+            }
         }
     </script>
 

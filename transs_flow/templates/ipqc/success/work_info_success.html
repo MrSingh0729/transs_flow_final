@@ -1,0 +1,72 @@
+	{% extends 'ipqc/base.html' %}
+	{% load static %}
+	{% block title %}Work Info Submitted{% endblock %}
+	{% block content %}
+	<div class="container">
+	    <div class="card">
+	        <div class="card-body">
+	            <h2 class="card-title text-success">
+	                <i class="fas fa-check-circle"></i> Work Info Submitted Successfully!
+	            </h2>
+	            <p class="card-text">
+	                Your work information has been saved and synced to the system.
+	            </p>
+	            <div class="alert alert-info" role="alert">
+	                <i class="fas fa-info-circle"></i> 
+	                <strong>PWA Feature:</strong> This data has been saved locally for offline access.
+	            </div>
+	            <div class="mt-4">
+	                <a href="{% url 'ipqc_home' %}" class="btn btn-primary">
+	                    <i class="fas fa-home"></i> Back to Dashboard
+	                </a>
+	                <a href="{% url 'ipqc_work_info' %}" class="btn btn-secondary">
+	                    <i class="fas fa-plus"></i> Add Another Record
+	                </a>
+	            </div>
+	        </div>
+	    </div>
+	</div>
+	<script>
+	// PWA: Save data to IndexedDB
+	if ('indexedDB' in window) {
+	    const offlineData = {{ offline_data|safe }};
+	    const request = indexedDB.open('transsflow-db', 1);
+	    request.onerror = () => {
+	        console.error('IndexedDB error');
+	    };
+	    request.onsuccess = () => {
+	        const db = request.result;
+	        const tx = db.transaction(['queue'], 'readwrite');
+	        const store = tx.objectStore('queue');
+	        store.put({
+	            id: Date.now(),
+	            type: offlineData.type,
+	            data: offlineData.data,
+	            timestamp: Date.now(),
+	            status: 'pending'
+	        });
+	        tx.oncomplete = () => {
+	            console.log('Data saved to IndexedDB for offline sync');
+	        };
+	    };
+	    request.onupgradeneeded = (event) => {
+	        const db = event.target.result;
+	        if (!db.objectStoreNames.contains('queue')) {
+	            db.createObjectStore('queue', { keyPath: 'id', autoIncrement: true });
+	        }
+	    };
+	}
+	// Check if service worker is supported
+	if ('serviceWorker' in navigator) {
+	    window.addEventListener('load', () => {
+	        navigator.serviceWorker.register('{% static 'service-worker.js' %}')
+	            .then(registration => {
+	                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+	            })
+	            .catch(error => {
+	                console.log('ServiceWorker registration failed: ', error);
+	            });
+	    });
+	}
+	</script>
+	{% endblock %}

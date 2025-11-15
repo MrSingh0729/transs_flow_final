@@ -1,0 +1,27 @@
+	{% extends 'base.html' %}
+	{% block title %}Offline{% endblock %}
+	{% block content %}
+	<div class="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+	  <div class="text-center max-w-md">
+	    <div class="text-6xl mb-4">📶</div>
+	    <h1 class="text-3xl font-bold text-gray-800 mb-2">You're Offline</h1>
+	    <p class="text-gray-600 mb-6">Please check your internet connection and try again.</p>
+	    <div class="space-y-3">
+	      <button onclick="window.location.reload()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition w-full">
+	        Retry
+	      </button>
+	      <a href="/" class="block text-blue-600 hover:text-blue-800 transition">
+	        Go to Homepage
+	      </a>
+	    </div>
+	    <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+	      <h3 class="font-semibold text-blue-800 mb-2">Available Offline:</h3>
+	      <ul class="text-sm text-blue-700 space-y-1">
+	        <li>• View cached work info records</li>
+	        <li>• Access previously saved forms</li>
+	        <li>• View saved reports and analytics</li>
+	      </ul>
+	    </div>
+	  </div>
+	</div>
+	{% endblock %}
