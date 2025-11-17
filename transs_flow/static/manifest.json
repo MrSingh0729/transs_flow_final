@@ -1,7 +1,7 @@
   {
-    "name": "Transs Flow IPQC",
-    "short_name": "TranssFlow",
-    "description": "IPQC Quality Control System for Transs Flow",
+    "name": "Transs Flow",
+    "short_name": "TF",
+    "description": "Work Digitalization and Transformation Workflow PWA",
     "id": "/",
     "start_url": "/",
     "display": "standalone",

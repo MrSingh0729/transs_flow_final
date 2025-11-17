@@ -12,16 +12,15 @@
     <meta name="theme-color" content="#0ea5e9" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
     
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileColor" content="#0ea5e9">
     <meta name="msapplication-config" content="{% static 'browserconfig.xml' %}">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% static 'icons/icon-192.png' %}" sizes="192x192">
-    <link rel="icon" type="image/png" href="{% static 'icons/icon-512.png' %}" sizes="512x512">
+    <link rel="icon" type="image/png" href="{% static 'screenshots/favicon.ico' %}">
 
     <!-- Tailwind (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -714,7 +713,7 @@
         /* ====== PWA Notification Styles ====== */
         .pwa-notification {
             position: fixed;
-            bottom: 20px;
+            bottom: 108px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
             background: white;
@@ -860,21 +859,18 @@
 
                 <!-- Logo -->
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-industry text-white text-sm"></i>
-                    </div>
                     {% if request.user.is_superuser or request.user.role == "admin" %}
                     <a href="{% url 'dashboard' %}" class="hidden sm:block">
-                        <div>
-                            <h1 class="font-bold text-gray-900 text-lg leading-tight">Transs Flow</h1>
-                            <p class="text-xs text-gray-600 font-medium -mt-1">Manufacturing Control</p>
-                        </div>
+                        <img src="{% static 'screenshots/logo.png' %}" 
+                            alt="TF Logo" 
+                            class="w-48 h-8 rounded-lg">
                     </a>
-                    {% else %}
+                                        {% else %}
                     <a href="{% url 'ipqc_home' %}" class="hidden sm:block">
                         <div>
-                            <h1 class="font-bold text-gray-900 text-lg leading-tight">Transs Flow</h1>
-                            <p class="text-xs text-gray-600 font-medium -mt-1">Manufacturing Control</p>
+                             <img src="{% static 'screenshots/logo.png' %}" 
+                            alt="TF Logo" 
+                            class="w-48 h-12 rounded-lg">
                         </div>
                     </a>
                     {% endif %}
@@ -897,8 +893,7 @@
                         <img src="https://picsum.photos/seed/user/32/32" alt="User"
                             class="w-8 h-8 rounded-full border-2 border-gray-200 object-cover">
                         <div class="hidden md:block">
-                            <div class="text-sm font-bold text-gray-900 truncate max-w-[120px]">{{
-                                user.full_name|default:'' }}</div>
+                            <div class="text-sm font-bold text-gray-900 truncate max-w-[120px]">{{ user.full_name|default:'' }}</div>
                             <div class="text-xs text-gray-600 font-medium truncate max-w-[120px]">
                                 {% if user.is_superuser %}
                                 Superuser
@@ -1391,7 +1386,8 @@
             isOnline: navigator.onLine,
             deferredPrompt: null,
             updateAvailable: false,
-            registration: null
+            registration: null,
+            installPromptShown: localStorage.getItem('install-prompt-shown') === 'true'
         };
 
         // ====== DOM Elements ======
@@ -1418,7 +1414,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                    navigator.serviceWorker.register("/serviceworker.js")
+                    navigator.serviceWorker.register("{% static 'service_worker.js' %}")
                         .then(registration => {
                             console.log('ServiceWorker registered: ', registration.scope);
                             appState.registration = registration;
@@ -1457,17 +1453,25 @@
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 appState.deferredPrompt = e;
-                showInstallNotification();
+                
+                // Only show install notification if not already shown
+                if (!appState.installPromptShown) {
+                    showInstallNotification();
+                    localStorage.setItem('install-prompt-shown', 'true');
+                    appState.installPromptShown = true;
+                }
             });
             
             window.addEventListener('appinstalled', () => {
                 console.log('PWA was installed');
                 hideInstallNotification();
+                localStorage.setItem('install-prompt-shown', 'true');
+                appState.installPromptShown = true;
             });
         }
 
         function showInstallNotification() {
-            if (appState.deferredPrompt) {
+            if (appState.deferredPrompt && !appState.installPromptShown) {
                 showNotification(
                     'Install TranssFlow',
                     'Install the app for the best experience!',
@@ -1485,6 +1489,9 @@
                     },
                     () => {
                         hideNotification();
+                        // Mark as shown even if user declines
+                        localStorage.setItem('install-prompt-shown', 'true');
+                        appState.installPromptShown = true;
                     }
                 );
             }
@@ -1516,17 +1523,29 @@
 
         // ====== Offline Detection ======
         function setupOfflineDetection() {
+            // Check initial connection status
+            appState.isOnline = navigator.onLine;
+            updateOfflineIndicator();
+            
             window.addEventListener('online', () => {
                 appState.isOnline = true;
-                elements.offlineIndicator.classList.remove('show');
+                updateOfflineIndicator();
                 console.log('App is online');
             });
 
             window.addEventListener('offline', () => {
                 appState.isOnline = false;
-                elements.offlineIndicator.classList.add('show');
+                updateOfflineIndicator();
                 console.log('App is offline');
             });
+        }
+        
+        function updateOfflineIndicator() {
+            if (appState.isOnline) {
+                elements.offlineIndicator.classList.remove('show');
+            } else {
+                elements.offlineIndicator.classList.add('show');
+            }
         }
 
         // ====== Notification System ======
