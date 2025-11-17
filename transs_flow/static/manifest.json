@@ -1,7 +1,7 @@
   {
     "name": "Transs Flow",
     "short_name": "TF",
-    "description": "Work Digitalization and Transformation Workflow PWA",
+    "description": "Digitalization and Transformation Workflow PWA",
     "id": "/",
     "start_url": "/",
     "display": "standalone",

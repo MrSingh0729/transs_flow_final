@@ -20,7 +20,8 @@
     <meta name="msapplication-config" content="{% static 'browserconfig.xml' %}">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% static 'screenshots/favicon.ico' %}">
+    <link rel="icon" type="image/png" href="{% static 'screenshots/favicon.svg' %}">
+    <link rel="icon" type="image/png" href="{% static 'screenshots/favicon-96x96.png' %}">
 
     <!-- Tailwind (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -710,101 +711,6 @@
             white-space: nowrap;
         }
 
-        /* ====== PWA Notification Styles ====== */
-        .pwa-notification {
-            position: fixed;
-            bottom: 108px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            padding: 16px 24px;
-            max-width: 400px;
-            width: 90%;
-            z-index: 9999;
-            transition: transform 0.3s ease;
-        }
-
-        .pwa-notification.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .pwa-notification-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .pwa-notification-title {
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .pwa-notification-body {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-
-        .pwa-notification-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .pwa-notification-button {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .pwa-notification-button.primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .pwa-notification-button.primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .pwa-notification-button.secondary {
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border);
-        }
-
-        .pwa-notification-button.secondary:hover {
-            background: var(--bg-primary);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        /* ====== Offline Mode Indicator ====== */
-        .offline-indicator {
-            position: fixed;
-            top: var(--header-height);
-            left: 0;
-            right: 0;
-            background: #dc2626;
-            color: white;
-            padding: 8px 16px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 14px;
-            z-index: 70;
-            transform: translateY(-100%);
-            transition: transform 0.3s ease;
-        }
-
-        .offline-indicator.show {
-            transform: translateY(0);
-        }
-
         /* ====== Update Progress Indicator ====== */
         .update-progress {
             position: fixed;
@@ -835,20 +741,9 @@
         <div class="text-sm text-gray-600 mt-2">Loading...</div>
     </div>
 
-    <!-- Offline Indicator -->
-    <div class="offline-indicator" id="offlineIndicator">
-        <i class="fas fa-wifi-slash mr-2"></i>
-        You're currently offline. Some features may be limited.
-    </div>
-
-    <!-- Update Progress Indicator -->
-    <div class="update-progress" id="updateProgress" style="display: none;">
-        <div class="update-progress-bar" id="updateProgressBar"></div>
-    </div>
-
     <!-- Header -->
     <header class="header bg-white shadow no-print">
-        <div class="px-4 py-3 flex items-center justify-between relative max-w-[1300px] mx-auto">
+        <div class="px-4 py-2 flex items-center justify-between relative max-w-[1300px] mx-auto">
             <!-- Left: Menu + Logo -->
             <div class="flex items-center gap-4 flex-shrink-0">
                 <!-- Mobile menu toggle -->
@@ -863,14 +758,14 @@
                     <a href="{% url 'dashboard' %}" class="hidden sm:block">
                         <img src="{% static 'screenshots/logo.png' %}" 
                             alt="TF Logo" 
-                            class="w-48 h-8 rounded-lg">
+                            class="w-48 h-16 rounded-lg">
                     </a>
                                         {% else %}
                     <a href="{% url 'ipqc_home' %}" class="hidden sm:block">
                         <div>
                              <img src="{% static 'screenshots/logo.png' %}" 
                             alt="TF Logo" 
-                            class="w-48 h-12 rounded-lg">
+                            class="w-48 h-16 rounded-lg">
                         </div>
                     </a>
                     {% endif %}
@@ -1357,23 +1252,9 @@
         </nav>
     </div>
 
-    <!-- PWA Notification Container -->
-    <div id="pwaNotification" class="pwa-notification">
-        <div class="pwa-notification-header">
-            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
-            <div class="pwa-notification-title" id="notificationTitle">Notification</div>
-        </div>
-        <div class="pwa-notification-body" id="notificationBody">
-            This is a notification message.
-        </div>
-        <div class="pwa-notification-actions">
-            <button class="pwa-notification-button primary" id="notificationPrimaryButton">
-                OK
-            </button>
-            <button class="pwa-notification-button secondary" id="notificationSecondaryButton">
-                Cancel
-            </button>
-        </div>
+    <!-- Update Progress Indicator -->
+    <div class="update-progress" id="updateProgress" style="display: none;">
+        <div class="update-progress-bar" id="updateProgressBar"></div>
     </div>
 
     <!-- Service worker registration -->
@@ -1387,7 +1268,8 @@
             deferredPrompt: null,
             updateAvailable: false,
             registration: null,
-            installPromptShown: localStorage.getItem('install-prompt-shown') === 'true'
+            installPromptShown: localStorage.getItem('install-prompt-shown') === 'true',
+            isFirstVisit: !localStorage.getItem('hasVisited')
         };
 
         // ====== DOM Elements ======
@@ -1400,53 +1282,59 @@
             userDropdown: document.getElementById('userDropdown'),
             dropdownArrow: document.getElementById('dropdownArrow'),
             pwaLoading: document.getElementById('pwaLoading'),
-            offlineIndicator: document.getElementById('offlineIndicator'),
             updateProgress: document.getElementById('updateProgress'),
-            updateProgressBar: document.getElementById('updateProgressBar'),
-            pwaNotification: document.getElementById('pwaNotification'),
-            notificationTitle: document.getElementById('notificationTitle'),
-            notificationBody: document.getElementById('notificationBody'),
-            notificationPrimaryButton: document.getElementById('notificationPrimaryButton'),
-            notificationSecondaryButton: document.getElementById('notificationSecondaryButton')
+            updateProgressBar: document.getElementById('updateProgressBar')
         };
 
         // ====== PWA Service Worker Management ======
         function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register("{% static 'service_worker.js' %}")
-                        .then(registration => {
-                            console.log('ServiceWorker registered: ', registration.scope);
-                            appState.registration = registration;
+    // Always mark as visited and hide loading screen after a reasonable time
+    localStorage.setItem('hasVisited', 'true');
+    
+    // Set a timeout to hide loading screen regardless of service worker status
+    const loadingTimeout = setTimeout(() => {
+        elements.pwaLoading.classList.add('hidden');
+        console.log('Loading screen hidden due to timeout');
+    }, 3000); // 3 second maximum
+    
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register("{% static 'service_worker.js' %}")
+                .then(registration => {
+                    console.log('ServiceWorker registered: ', registration.scope);
+                    appState.registration = registration;
 
-                            // Check for updates
-                            registration.addEventListener('updatefound', () => {
-                                const newWorker = registration.installing;
-                                newWorker.addEventListener('statechange', () => {
-                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('New version available');
-                                        showUpdateNotification();
-                                    }
-                                });
-                            });
-
-                            setTimeout(() => {
-                                elements.pwaLoading.classList.add('hidden');
-                            }, 1000);
-                        })
-                        .catch(err => {
-                            console.log('ServiceWorker registration failed: ', err);
-                            setTimeout(() => {
-                                elements.pwaLoading.classList.add('hidden');
-                            }, 1000);
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('New version available');
+                                showUpdateNotification();
+                            }
                         });
-                });
-            } else {
-                setTimeout(() => {
+                    });
+
+                    // Hide loading screen when service worker is ready
+                    clearTimeout(loadingTimeout);
                     elements.pwaLoading.classList.add('hidden');
-                }, 1000);
-            }
-        }
+                    console.log('Loading screen hidden after service worker registration');
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                    // Still hide loading screen even if registration fails
+                    clearTimeout(loadingTimeout);
+                    elements.pwaLoading.classList.add('hidden');
+                    console.log('Loading screen hidden despite service worker error');
+                });
+        });
+    } else {
+        // No service worker support, hide loading screen anyway
+        clearTimeout(loadingTimeout);
+        elements.pwaLoading.classList.add('hidden');
+        console.log('Loading screen hidden - no service worker support');
+    }
+}
 
         // ====== Install Prompt Management ======
         function setupInstallPrompt() {
@@ -1455,7 +1343,7 @@
                 appState.deferredPrompt = e;
                 
                 // Only show install notification if not already shown
-                if (!appState.installPromptShown) {
+                if (!appState.installPromptShown && appState.isFirstVisit) {
                     showInstallNotification();
                     localStorage.setItem('install-prompt-shown', 'true');
                     appState.installPromptShown = true;
@@ -1464,105 +1352,90 @@
             
             window.addEventListener('appinstalled', () => {
                 console.log('PWA was installed');
-                hideInstallNotification();
                 localStorage.setItem('install-prompt-shown', 'true');
                 appState.installPromptShown = true;
             });
         }
 
         function showInstallNotification() {
-            if (appState.deferredPrompt && !appState.installPromptShown) {
-                showNotification(
-                    'Install TranssFlow',
-                    'Install the app for the best experience!',
-                    'Install',
-                    'Not Now',
-                    () => {
-                        appState.deferredPrompt.prompt();
-                        appState.deferredPrompt.userChoice.then((choiceResult) => {
-                            if (choiceResult.outcome === 'accepted') {
-                                console.log('User accepted the install prompt');
-                            }
-                            appState.deferredPrompt = null;
-                        });
-                        hideNotification();
-                    },
-                    () => {
-                        hideNotification();
-                        // Mark as shown even if user declines
-                        localStorage.setItem('install-prompt-shown', 'true');
-                        appState.installPromptShown = true;
+            if (appState.deferredPrompt && !appState.installPromptShown && appState.isFirstVisit) {
+                // Create a temporary notification element
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-md';
+                notification.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-lg">Install TranssFlow</h3>
+                            <p class="mt-1">Install the app for the best experience!</p>
+                        </div>
+                        <button class="ml-4 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="mt-3 flex justify-end space-x-2">
+                        <button class="px-3 py-1 bg-white text-blue-500 rounded hover:bg-gray-100" onclick="this.closest('.fixed').remove()">
+                            Not Now
+                        </button>
+                        <button class="px-3 py-1 bg-blue-700 text-white rounded hover:bg-blue-800" onclick="installApp(); this.closest('.fixed').remove();">
+                            Install
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto-hide after 10 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
                     }
-                );
+                }, 10000);
             }
         }
 
-        function hideInstallNotification() {
-            const installNotification = document.getElementById('pwa-install-notification');
-            if (installNotification) {
-                installNotification.remove();
+        function installApp() {
+            if (appState.deferredPrompt) {
+                appState.deferredPrompt.prompt();
+                appState.deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    appState.deferredPrompt = null;
+                });
             }
         }
 
         // ====== Update Management ======
         function showUpdateNotification() {
-            showNotification(
-                'Update Available',
-                'A new version of TranssFlow is available. Refresh to update.',
-                'Update Now',
-                'Later',
-                () => {
-                    window.location.reload();
-                },
-                () => {
-                    // User chose later, schedule update for next time
-                    localStorage.setItem('update-reminder', Date.now().toString());
+            // Create a temporary notification element
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-md';
+            notification.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-lg">Update Available</h3>
+                        <p class="mt-1">A new version of TranssFlow is available. Refresh to update.</p>
+                    </div>
+                    <button class="ml-4 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mt-3 flex justify-end space-x-2">
+                    <button class="px-3 py-1 bg-white text-blue-500 rounded hover:bg-gray-100" onclick="this.closest('.fixed').remove()">
+                        Later
+                    </button>
+                    <button class="px-3 py-1 bg-blue-700 text-white rounded hover:bg-blue-800" onclick="window.location.reload();">
+                        Update Now
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
                 }
-            );
-        }
-
-        // ====== Offline Detection ======
-        function setupOfflineDetection() {
-            // Check initial connection status
-            appState.isOnline = navigator.onLine;
-            updateOfflineIndicator();
-            
-            window.addEventListener('online', () => {
-                appState.isOnline = true;
-                updateOfflineIndicator();
-                console.log('App is online');
-            });
-
-            window.addEventListener('offline', () => {
-                appState.isOnline = false;
-                updateOfflineIndicator();
-                console.log('App is offline');
-            });
-        }
-        
-        function updateOfflineIndicator() {
-            if (appState.isOnline) {
-                elements.offlineIndicator.classList.remove('show');
-            } else {
-                elements.offlineIndicator.classList.add('show');
-            }
-        }
-
-        // ====== Notification System ======
-        function showNotification(title, body, primaryText, secondaryText, primaryAction, secondaryAction) {
-            elements.notificationTitle.textContent = title;
-            elements.notificationBody.textContent = body;
-            elements.notificationPrimaryButton.textContent = primaryText;
-            elements.notificationSecondaryButton.textContent = secondaryText;
-            
-            elements.notificationPrimaryButton.onclick = primaryAction;
-            elements.notificationSecondaryButton.onclick = secondaryAction;
-            
-            elements.pwaNotification.classList.add('show');
-        }
-
-        function hideNotification() {
-            elements.pwaNotification.classList.remove('show');
+            }, 10000);
         }
 
         // ====== Sidebar Functions ======
@@ -1725,17 +1598,19 @@
 
         // ====== Initialize ======
         document.addEventListener('DOMContentLoaded', () => {
-            // Hide loading screen after a short delay in case service worker registration takes time
-            setTimeout(() => {
-                if (!elements.pwaLoading.classList.contains('hidden')) {
-                    elements.pwaLoading.classList.add('hidden');
-                }
-            }, 2000);
+            // Only show loading screen if it's the first visit
+            if (appState.isFirstVisit) {
+                // Hide loading screen after a short delay in case service worker registration takes time
+                setTimeout(() => {
+                    if (!elements.pwaLoading.classList.contains('hidden')) {
+                        elements.pwaLoading.classList.add('hidden');
+                    }
+                }, 2000);
+            }
             
             initializeSidebar();
             registerServiceWorker();
             setupInstallPrompt();
-            setupOfflineDetection();
             setInterval(updateMetrics, 30000);
         });
 
@@ -1745,6 +1620,7 @@
         window.toggleDesktopSidebar = toggleDesktopSidebar;
         window.toggleUserDropdown = toggleUserDropdown;
         window.closeUserDropdown = closeUserDropdown;
+        window.installApp = installApp;
 
         // ====== Handle service worker messages ======
         navigator.serviceWorker.addEventListener('message', event => {
