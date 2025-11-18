@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
-from transs_flow.serviceworker import serviceworker
+from transs_flow.serviceworker import ServiceWorkerView
 
 
 urlpatterns = [
@@ -14,7 +14,7 @@ urlpatterns = [
     path('ipqc/', include('factories.assembly.departments.qa.ipqc.urls')),
     
     path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
-    path('serviceworker.js', serviceworker, name='serviceworker.js'),
+    path("service_worker.js", ServiceWorkerView.as_view(), name="serviceworker"),
 ]
 
 if settings.DEBUG:
