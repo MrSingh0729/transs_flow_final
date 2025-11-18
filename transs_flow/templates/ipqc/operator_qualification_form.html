@@ -16,14 +16,14 @@
         --border: #E5E7EB;
         --bg-secondary: #F9FAFB;
     }
-
+ 
     .audit-form {
         max-width: 1200px;
         margin: 0 auto;
         padding: 16px;
         width: 100%;
     }
-
+ 
     .step-indicator {
         background: white;
         border: 1px solid var(--border);
@@ -32,7 +32,7 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
-
+ 
     .step-progress {
         display: flex;
         justify-content: space-between;
@@ -40,7 +40,7 @@
         margin-bottom: 12px;
         position: relative;
     }
-
+ 
     .step-progress::before {
         content: '';
         position: absolute;
@@ -51,7 +51,7 @@
         background: var(--border);
         z-index: 0;
     }
-
+ 
     .step-progress-line {
         position: absolute;
         top: 50%;
@@ -62,7 +62,7 @@
         transition: width 0.3s ease;
         transform: translateY(-50%);
     }
-
+ 
     .step-item {
         display: flex;
         flex-direction: column;
@@ -72,7 +72,7 @@
         cursor: pointer;
         flex-shrink: 0;
     }
-
+ 
     .step-circle {
         width: 40px;
         height: 40px;
@@ -87,20 +87,20 @@
         color: var(--text-light);
         transition: all 0.3s ease;
     }
-
+ 
     .step-circle.active {
         background: var(--primary);
         color: white;
         border-color: var(--primary);
         box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
     }
-
+ 
     .step-circle.completed {
         background: var(--success);
         color: white;
         border-color: var(--success);
     }
-
+ 
     .step-label {
         font-size: 11px;
         color: var(--text-secondary);
@@ -109,23 +109,23 @@
         font-weight: 500;
         white-space: nowrap;
     }
-
+ 
     @media (max-width: 640px) {
         .step-label {
             display: none;
         }
-
+ 
         .step-circle {
             width: 36px;
             height: 36px;
             font-size: 13px;
         }
-
+ 
         .step-item {
             flex-shrink: 1;
         }
     }
-
+ 
     .form-section {
         background: white;
         border: 1px solid var(--border);
@@ -134,7 +134,7 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
-
+ 
     .section-header {
         display: flex;
         align-items: center;
@@ -143,7 +143,7 @@
         padding-bottom: 12px;
         border-bottom: 1px solid var(--border);
     }
-
+ 
     .section-title {
         font-size: 18px;
         font-weight: 700;
@@ -152,7 +152,7 @@
         align-items: center;
         gap: 10px;
     }
-
+ 
     .section-icon {
         width: 36px;
         height: 36px;
@@ -161,19 +161,19 @@
         align-items: center;
         justify-content: center;
     }
-
+ 
     .form-grid {
         display: grid;
         gap: 16px;
         width: 100%;
     }
-
+ 
     .form-group {
         display: flex;
         flex-direction: column;
         width: 100%;
     }
-
+ 
     .form-group label {
         display: block;
         font-size: 14px;
@@ -181,7 +181,7 @@
         color: var(--text-primary);
         margin-bottom: 6px;
     }
-
+ 
     .form-group input,
     .form-group select,
     .form-group textarea {
@@ -196,7 +196,7 @@
         font-family: inherit;
         box-sizing: border-box;
     }
-
+ 
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
@@ -204,18 +204,18 @@
         border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
     }
-
+ 
     .form-group input[readonly] {
         background: var(--bg-secondary);
         cursor: not-allowed;
         color: var(--text-secondary);
     }
-
+ 
     .form-group .is-invalid {
         border-color: var(--danger) !important;
         box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
     }
-
+ 
     .status-select {
         border-radius: 8px;
         font-weight: 500;
@@ -226,7 +226,7 @@
         padding-right: 44px;
         appearance: none;
     }
-
+ 
     .status-select[value="Have"],
     .status-select[value="Done"],
     .status-select[value="Old"],
@@ -234,7 +234,7 @@
         border-color: var(--success);
         background-color: rgba(34, 197, 94, 0.05);
     }
-
+ 
     .status-select[value="Not Have"],
     .status-select[value="Pending"],
     .status-select[value="New"],
@@ -243,7 +243,7 @@
         border-color: var(--warning);
         background-color: rgba(245, 158, 11, 0.05);
     }
-
+ 
     .status-select[value="NA"],
     .status-select[value="Not Applicable"],
     .status-select[value="Rotating"],
@@ -251,12 +251,12 @@
         border-color: var(--text-light);
         background-color: rgba(100, 116, 139, 0.05);
     }
-
+ 
     .form-group textarea {
         resize: vertical;
         min-height: 80px;
     }
-
+ 
     .bottom-nav {
         position: sticky;
         bottom: 0;
@@ -265,7 +265,7 @@
         padding: 16px;
         box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
     }
-
+ 
     .nav-content {
         max-width: 1200px;
         margin: 0 auto;
@@ -275,19 +275,19 @@
         flex-wrap: wrap;
         gap: 12px;
     }
-
+ 
     .progress-text {
         font-size: 14px;
         color: var(--text-secondary);
         font-weight: 500;
     }
-
+ 
     .nav-buttons {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
     }
-
+ 
     .nav-btn {
         padding: 10px 16px;
         border-radius: 8px;
@@ -302,65 +302,65 @@
         gap: 6px;
         min-width: 80px;
     }
-
+ 
     .nav-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
     }
-
+ 
     .nav-btn-secondary {
         background: white;
         color: var(--text-secondary);
         border: 2px solid var(--border);
     }
-
+ 
     .nav-btn-primary {
         background: var(--primary);
         color: white;
     }
-
+ 
     .nav-btn-success {
         background: var(--success);
         color: white;
     }
-
+ 
     .error-message {
         color: var(--danger);
         font-size: 12px;
         margin-top: 4px;
     }
-
+ 
     .alert {
         padding: 12px 16px;
         margin-bottom: 20px;
         border-radius: 8px;
         border: 1px solid transparent;
     }
-
+ 
     .alert-danger {
         color: #721c24;
         background-color: #f8d7da;
         border-color: #f5c6cb;
     }
-
+ 
     .alert-success {
         color: #155724;
         background-color: #d4edda;
         border-color: #c3e6cb;
     }
-
+ 
     .alert-warning {
         color: #856404;
         background-color: #fff3cd;
         border-color: #ffeaa7;
     }
-
+ 
     .alert-info {
         color: #004085;
         background-color: #cce7ff;
         border-color: #b8daff;
     }
-
+ 
     /* QR Scanner Section */
     #qr-scan-section {
         background: white;
@@ -370,37 +370,37 @@
         margin-bottom: 20px;
         transition: all 0.3s ease;
     }
-
+ 
     #qr-scan-section.hidden {
         display: none;
     }
-
+ 
     #reader {
         width: 100%;
         max-width: 400px;
         margin: 0 auto;
     }
-
+ 
     #feishu-preview {
         margin-top: 16px;
     }
-
+ 
     #feishu-iframe-container {
         margin-top: 16px;
     }
-
+ 
     #feishu-iframe {
         width: 100%;
         height: 400px;
         border: 1px solid var(--border);
         border-radius: 8px;
     }
-
+ 
     .scan-preview {
         position: relative;
         display: inline-block;
     }
-
+ 
     .scan-preview img {
         width: 100%;
         max-width: 200px;
@@ -408,18 +408,18 @@
         border: 2px solid var(--success);
         margin-top: 10px;
     }
-
+ 
     @media (min-width: 768px) {
         .form-grid {
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
-
+ 
         .form-section {
             padding: 24px;
             margin-bottom: 24px;
         }
-
+ 
         .section-title {
             font-size: 20px;
         }
@@ -672,32 +672,6 @@
     let html5QrCode = null;
     let isScanSuccessful = false;
     
-    // Detect environment
-    function getEnvironment() {
-        const isFeishu = typeof lark !== 'undefined' || typeof feishu !== 'undefined';
-        const isMobileApp = /Feishu|Lark/i.test(navigator.userAgent) || 
-                           (window.webkit && window.webkit.messageHandlers);
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                       (window.innerWidth <= 768);
-        
-        return {
-            isFeishu,
-            isMobileApp,
-            isMobile,
-            isDesktop: !isMobile
-        };
-    }
-    
-    // Initialize Feishu SDK
-    function initializeFeishuSDK() {
-        if (typeof lark === 'undefined' && typeof feishu === 'undefined') {
-            const script = document.createElement('script');
-            script.src = 'https://lf1-cdn-tos.bytegoofy.com/goofy/lark/lark-1.0.0.js';
-            script.onload = () => console.log('Feishu SDK loaded');
-            document.head.appendChild(script);
-        }
-    }
-    
     function updateStepIndicator() {
         const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
         document.getElementById('progressLine').style.width = progressPercentage + '%';
@@ -819,7 +793,6 @@
         const qrSection = document.getElementById('qr-scan-section');
         
         console.log('Job card status:', jobCardStatus);
-        console.log('QR section:', qrSection);
         
         if (jobCardStatus === 'Have') {
             console.log('Showing QR section');
@@ -882,11 +855,10 @@
         const scanSnapshot = document.getElementById('scanSnapshot');
         
         // Determine camera based on device
-        const env = getEnvironment();
-        const cameraConfig = env.isMobile ? { facingMode: "environment" } : { facingMode: "user" };
+        const cameraConfig = isMobileDevice() ? { facingMode: "environment" } : { facingMode: "user" };
         
-        // Add environment-specific instructions
-        if (env.isMobile) {
+        // Add mobile-specific instructions
+        if (isMobileDevice()) {
             const alertInfo = document.querySelector('#reader .alert-info');
             if (alertInfo) {
                 alertInfo.innerHTML = 
@@ -895,126 +867,23 @@
         }
         
         function showFeishuLink(url) {
-            const env = getEnvironment();
-            
             // Clear previous content
-            iframeContainer && (iframeContainer.style.display = 'none');
+            iframeContainer && (iframeContainer.style.display = 'block');
             preview && (preview.innerHTML = '');
             
-            if (env.isFeishu || env.isMobileApp) {
-                // Feishu/Lark mini-app environment
-                try {
-                    // Try using Feishu SDK if available
-                    if (typeof lark !== 'undefined' && lark.navigator) {
-                        lark.navigator.open({
-                            url: url,
-                            success: () => {
-                                preview && (preview.innerHTML = `
-                                    <div class="alert alert-success">
-                                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                                        <br>
-                                        <div>Opening in Feishu...</div>
-                                    </div>
-                                `);
-                            },
-                            fail: (error) => {
-                                console.log('Feishu SDK failed, trying alternative method');
-                               preview && (preview.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                        <br>
-                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                            <i class="fas fa-external-link-alt"></i> Open Record
-                        </a>
-                    </div>
-                `);
-                iframeContainer && (iframeContainer.style.display = 'block');
-                iframe && (iframe.src = url);
-                            }
-                        });
-                    } else if (typeof feishu !== 'undefined' && feishu.navigator) {
-                        // Alternative Feishu SDK
-                        feishu.navigator.open({
-                            url: url,
-                            success: () => {
-                                preview && (preview.innerHTML = `
-                                    <div class="alert alert-success">
-                                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                                        <br>
-                                        <div>Opening in Feishu...</div>
-                                    </div>
-                                `);
-                            },
-                            fail: (error) => {
-                                console.log('Feishu SDK failed, trying alternative method');
-                                preview && (preview.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                        <br>
-                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                            <i class="fas fa-external-link-alt"></i> Open Record
-                        </a>
-                    </div>
-                `);
-                iframeContainer && (iframeContainer.style.display = 'block');
-                iframe && (iframe.src = url);
-                            }
-                        });
-                    } else {
-                        console.log('Feishu SDK not available, trying alternative method');
-                        preview && (preview.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                        <br>
-                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                            <i class="fas fa-external-link-alt"></i> Open Record
-                        </a>
-                    </div>
-                `);
-                iframeContainer && (iframeContainer.style.display = 'block');
-                iframe && (iframe.src = url);
-                    }
-                } catch (error) {
-                    console.error('Feishu SDK error:', error);
-                    preview && (preview.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                        <br>
-                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                            <i class="fas fa-external-link-alt"></i> Open Record
-                        </a>
-                    </div>
-                `);
-                iframeContainer && (iframeContainer.style.display = 'block');
-                iframe && (iframe.src = url);
-                }
-            } else if (env.isMobile) {
-                // Mobile browser
-                preview && (preview.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                        <br>
-                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                            <i class="fas fa-external-link-alt"></i> Open Record
-                        </a>
-                    </div>
-                `);
-                iframeContainer && (iframeContainer.style.display = 'block');
-                iframe && (iframe.src = url);
-            } else {
-                // Desktop browser
-                preview && (preview.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                        <br>
-                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                            <i class="fas fa-external-link-alt"></i> Open Record
-                        </a>
-                    </div>
-                `);
-                iframeContainer && (iframeContainer.style.display = 'block');
-                iframe && (iframe.src = url);
-            }
+            // Show iframe and button for all platforms
+            preview && (preview.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                    <br>
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                        <i class="fas fa-external-link-alt"></i> Open Record in New Tab
+                    </a>
+                </div>
+            `);
+            
+            // Set iframe source
+            iframe && (iframe.src = url);
         }
         
         // Generate filename and capture snapshot from video
@@ -1117,24 +986,7 @@
         }
     }
     
-    // Helper function to open in new tab
-    function openInNewTab(url, previewElement) {
-        if (previewElement) {
-            previewElement.innerHTML = `
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> 
-                    Opening in new tab due to platform restrictions
-                    <br>
-                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                        <i class="fas fa-external-link-alt"></i> Open Record
-                    </a>
-                </div>
-            `;
-        }
-    }
-    
     document.addEventListener('DOMContentLoaded', function () {
-        initializeFeishuSDK();
         updateStepIndicator();
         // Add event listener to job card status dropdown
         const jobCardStatusSelect = document.getElementById('id_key_station_job_card_status');
