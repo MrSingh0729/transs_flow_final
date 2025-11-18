@@ -671,17 +671,17 @@
     const totalSteps = 4;
     let html5QrCode = null;
     let isScanSuccessful = false;
-    
+
     function updateStepIndicator() {
         const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
         document.getElementById('progressLine').style.width = progressPercentage + '%';
         document.getElementById('currentStep').textContent = currentStep;
         document.getElementById('currentSection').textContent = currentStep;
-        
+
         for (let i = 1; i <= totalSteps; i++) {
             const stepCircle = document.getElementById(`step${i}`);
             const stepContent = document.getElementById(`step${i}-content`);
-            
+
             if (stepCircle) {
                 stepCircle.classList.remove('active', 'completed');
                 if (i < currentStep) {
@@ -694,47 +694,47 @@
                     stepCircle.innerHTML = i;
                 }
             }
-            
+
             if (stepContent) {
                 stepContent.style.display = i === currentStep ? 'block' : 'none';
             }
         }
-        
+
         document.getElementById('prev-btn').disabled = currentStep === 1;
         document.getElementById('next-btn').disabled = currentStep === totalSteps;
         document.getElementById('submit-btn').disabled = currentStep !== totalSteps;
-        
+
         // Start/stop QR scanner based on current step and job card status
         if (currentStep === 2) {
             checkJobCardStatus();
         } else {
             stopQRScanner();
         }
-        
+
         document.querySelector('.audit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    
+
     function goToStep(step) {
         if (step >= 1 && step <= totalSteps) {
             currentStep = step;
             updateStepIndicator();
         }
     }
-    
+
     function nextStep() {
         if (currentStep < totalSteps) {
             currentStep++;
             updateStepIndicator();
         }
     }
-    
+
     function previousStep() {
         if (currentStep > 1) {
             currentStep--;
             updateStepIndicator();
         }
     }
-    
+
     function validateForm() {
         // Clear previous validation styles and messages
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
@@ -742,39 +742,39 @@
         if (existingErrorDiv) {
             existingErrorDiv.remove();
         }
-        
+
         // Validate required fields, step by step
         for (let step = 1; step <= totalSteps; step++) {
             const currentStepDiv = document.getElementById(`step${step}-content`);
             if (!currentStepDiv) continue;
-            
+
             let stepHasError = false;
             const requiredFields = currentStepDiv.querySelectorAll('input[required], select[required], textarea[required]');
-            
+
             for (const field of requiredFields) {
                 // Skip readonly fields as they are pre-filled
                 if (field.hasAttribute('readonly')) {
                     continue;
                 }
-                
+
                 let isEmpty = false;
                 if (field.type === 'file') {
                     isEmpty = !field.files || field.files.length === 0;
                 } else { // Covers text, number, select, textarea
                     isEmpty = !field.value || field.value.trim() === '';
                 }
-                
+
                 if (isEmpty) {
                     field.classList.add('is-invalid');
                     stepHasError = true;
                 }
             }
-            
+
             // If current step has any errors, jump to it and stop validation
             if (stepHasError) {
                 const stepName = document.querySelector(`#step${step}-content .section-title`).textContent.trim();
                 const errorMessage = `Error in Step ${step}: Please fill in all required fields marked in red.`;
-                
+
                 let errorDiv = document.createElement('div');
                 errorDiv.id = 'form-validation-error';
                 errorDiv.className = 'alert alert-danger';
@@ -783,21 +783,21 @@
                     document.querySelector('.step-indicator')
                 );
                 errorDiv.innerHTML = `<strong>${errorMessage}</strong>`;
-                
+
                 goToStep(step);
                 return false; // Stop form submission
             }
         }
-        
+
         // If all validations pass
         return true;
     }
-    
+
     // Check job card status and show/hide scanner
     function checkJobCardStatus() {
         const jobCardStatus = document.getElementById('id_key_station_job_card_status').value;
         const qrSection = document.getElementById('qr-scan-section');
-        
+
         if (jobCardStatus === 'Have') {
             qrSection.classList.remove('hidden');
             startQRScanner();
@@ -812,17 +812,17 @@
             isScanSuccessful = false;
         }
     }
-    
+
     // Detect device type
     function isMobileDevice() {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
             (window.innerWidth <= 768);
     }
-    
+
     // QR Scanner functions
     function startQRScanner() {
         if (html5QrCode) return;
-        
+
         html5QrCode = new Html5Qrcode("reader");
         const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
         const preview = document.getElementById('feishu-preview');
@@ -830,36 +830,68 @@
         const iframe = document.getElementById('feishu-iframe');
         const scanStatus = document.getElementById('scanStatus');
         const scanSnapshot = document.getElementById('scanSnapshot');
-        
+
         // Determine camera based on device
         const cameraConfig = isMobileDevice() ?
             { facingMode: "environment" } : // Back camera for mobile
             { facingMode: "user" };          // Front camera for desktop
-            
-        function showFeishuLink(url) {
+
+        function showPlatformLink(url) {
+            const preview = document.getElementById('feishu-preview');
+            const iframeContainer = document.getElementById('feishu-iframe-container');
+            const iframe = document.getElementById('feishu-iframe');
+
+            // Create authenticated URL
+            const authenticatedUrl = createAuthenticatedUrl(url);
+
             preview.innerHTML = `
                 <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                    <i class="fas fa-check-circle"></i> ${platform.charAt(0).toUpperCase() + platform.slice(1)} link scanned successfully!
                     <br>
-                    <a href="${url}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                    <a href="${authenticatedUrl}" target="_blank" class="btn btn-sm btn-primary mt-2">
                         <i class="fas fa-external-link-alt"></i> Open Record
                     </a>
                 </div>
             `;
+
             // Show iframe preview
             iframeContainer.style.display = 'block';
-            iframe.src = url;
+            iframe.src = authenticatedUrl;
+
+            // Store the URL in the form field
+            const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
+            barcodeField.value = authenticatedUrl;
         }
-        
+
+        // Update the QR scanner success callback
+        html5QrCode.start(
+            cameraConfig,
+            { fps: 10, qrbox: 250 },
+            decoded => {
+                // Update single form field
+                barcodeField.value = decoded;
+
+                // Capture snapshot before stopping
+                captureSnapshot();
+
+                stopQRScanner();
+                showPlatformLink(decoded);
+                isScanSuccessful = true;
+            },
+            error => {
+                // Ignore scan errors
+            }
+        );
+
         // Generate filename and capture snapshot from video
         function captureSnapshot() {
             const video = document.querySelector('#reader video');
             if (!video) return;
-            
+
             // Get key station name and format it
             const keyStationName = document.getElementById('id_key_station_name').value || 'scan';
             const formattedName = keyStationName.toLowerCase().replace(/\s+/g, '');
-            
+
             // Get current date and time
             const now = new Date();
             const day = String(now.getDate()).padStart(2, '0');
@@ -868,17 +900,17 @@
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
-            
+
             // Format: DDMMYYYYHHMMSS
             const timestamp = `${day}${month}${year}${hours}${minutes}${seconds}`;
             const filename = `${formattedName}${timestamp}.png`;
-            
+
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0);
-            
+
             // Convert to blob with custom filename
             canvas.toBlob(blob => {
                 const file = new File([blob], filename, { type: 'image/png' });
@@ -886,13 +918,13 @@
                 dataTransfer.items.add(file);
                 const fileInput = document.querySelector('[name="scanned_barcode_image"]');
                 fileInput.files = dataTransfer.files;
-                
+
                 // Show preview of captured image
                 scanSnapshot.innerHTML = `
                     <img src="${URL.createObjectURL(blob)}" alt="Scan Snapshot" />
                     <div class="text-sm text-gray-600 mt-2">✓ Scan snapshot captured (${filename})</div>
                 `;
-                
+
                 scanStatus.innerHTML = `
                     <div class="alert alert-success mt-2">
                         <i class="fas fa-camera"></i> Scan snapshot automatically saved as: <strong>${filename}</strong>
@@ -900,17 +932,17 @@
                 `;
             });
         }
-        
+
         html5QrCode.start(
             cameraConfig,
             { fps: 10, qrbox: 250 },
             decoded => {
                 // Update single form field
                 barcodeField.value = decoded;
-                
+
                 // Capture snapshot before stopping
                 captureSnapshot();
-                
+
                 stopQRScanner();
                 showFeishuLink(decoded);
                 isScanSuccessful = true;
@@ -923,7 +955,7 @@
             const readerDiv = document.getElementById('reader');
             readerDiv.innerHTML = `
                 <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> 
+                    <i class="fas fa-exclamation-triangle"></i>
                     Camera access denied or not available. Please enter the URL manually.
                 </div>
             `;
@@ -934,7 +966,7 @@
             `;
         });
     }
-    
+
     function stopQRScanner() {
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().then(() => {
@@ -944,7 +976,7 @@
             });
         }
     }
-    
+
     document.addEventListener('DOMContentLoaded', function () {
         updateStepIndicator();
         // Add event listener to job card status dropdown

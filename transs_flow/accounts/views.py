@@ -1,9 +1,34 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from .forms import EmployeeForm
 from .models import Employee
 from django.http import HttpResponseForbidden
+import requests
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+from django.contrib.auth.models import User
+
+
+@csrf_exempt
+@require_POST
+def receive_platform_token(request):
+    try:
+        data = json.loads(request.body)
+        open_id = data.get('open_id')
+        app_access_token = data.get('app_access_token')
+        tenant_key = data.get('tenant_key')
+        platform = data.get('platform')
+
+        # Store the token in the user's session
+        request.session[f'{platform}_access_token'] = app_access_token
+        request.session[f'{platform}_open_id'] = open_id
+        request.session[f'{platform}_tenant_key'] = tenant_key
+
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 # ----------------- Auth -----------------
 def login_view(request):
@@ -57,7 +82,7 @@ def employee_list(request):
 @login_required
 def employee_create(request):
     title = "Create"  # Add this so template can use {{ title }}
-    
+
     if request.method == "POST":
         form = EmployeeForm(request.POST)
         if form.is_valid():
@@ -76,7 +101,7 @@ def employee_create(request):
             return redirect('employee_list')
     else:
         form = EmployeeForm()
-    
+
     return render(
         request,
         "accounts/employee_create.html",
@@ -105,11 +130,11 @@ def employee_edit(request, pk):
 @login_required
 def employee_delete(request, pk):
     employee = get_object_or_404(Employee, pk=pk)
-    
+
     if request.method == "POST":
         # User confirmed deletion
         employee.delete()
         return redirect('employee_list')
-    
+
     # Render confirmation page
     return render(request, "accounts/employee_delete.html", {"employee": employee})
