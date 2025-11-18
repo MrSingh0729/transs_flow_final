@@ -14,7 +14,7 @@ urlpatterns = [
     path('ipqc/', include('factories.assembly.departments.qa.ipqc.urls')),
     
     path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
-    path("service_worker.js", ServiceWorkerView.as_view(), name="serviceworker"),
+    path("service_worker.js", ServiceWorkerView.as_view(), name="service_worker"),
 ]
 
 if settings.DEBUG:

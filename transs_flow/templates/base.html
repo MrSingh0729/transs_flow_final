@@ -1,4 +1,4 @@
-{% load static %}
+viewport{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1299,7 +1299,7 @@
             
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                    navigator.serviceWorker.register("/service_worker.js")
+                    navigator.serviceWorker.register("{% url 'service_worker' %}")
                         .then(registration => {
                             console.log('ServiceWorker registered: ', registration.scope);
                             appState.registration = registration;
