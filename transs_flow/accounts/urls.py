@@ -11,6 +11,5 @@ urlpatterns = [
     path("employees/create/", views.employee_create, name="employee_create"),
     path("employees/edit/<int:pk>/", views.employee_edit, name="employee_edit"),
     path("employees/delete/<int:pk>/", views.employee_delete, name="employee_delete"),
-
-    path('receive-platform-token/', views.receive_platform_token, name='receive_platform_token'),
+    
 ]
