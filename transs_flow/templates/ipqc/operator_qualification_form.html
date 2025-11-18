@@ -672,6 +672,37 @@
     let html5QrCode = null;
     let isScanSuccessful = false;
     
+    // Detect environment
+    function getEnvironment() {
+        // Check if running in Feishu/Lark
+        const isFeishu = typeof lark !== 'undefined' || typeof feishu !== 'undefined';
+        
+        // Check if running in mobile app
+        const isMobileApp = /Feishu|Lark/i.test(navigator.userAgent) || 
+                           (window.webkit && window.webkit.messageHandlers);
+        
+        // Check if mobile browser
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                       (window.innerWidth <= 768);
+        
+        return {
+            isFeishu,
+            isMobileApp,
+            isMobile,
+            isDesktop: !isMobile
+        };
+    }
+    
+    // Initialize Feishu SDK
+    function initializeFeishuSDK() {
+        if (typeof lark === 'undefined' && typeof feishu === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://lf1-cdn-tos.bytegoofy.com/goofy/lark/lark-1.0.0.js';
+            script.onload = () => console.log('Feishu SDK loaded');
+            document.head.appendChild(script);
+        }
+    }
+    
     function updateStepIndicator() {
         const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
         document.getElementById('progressLine').style.width = progressPercentage + '%';
@@ -832,23 +863,83 @@
         const scanSnapshot = document.getElementById('scanSnapshot');
         
         // Determine camera based on device
-        const cameraConfig = isMobileDevice() ?
-            { facingMode: "environment" } : // Back camera for mobile
-            { facingMode: "user" };          // Front camera for desktop
-            
+        const env = getEnvironment();
+        const cameraConfig = env.isMobile ? { facingMode: "environment" } : { facingMode: "user" };
+        
+        // Add environment-specific instructions
+        if (env.isMobile) {
+            document.querySelector('#reader .alert-info').innerHTML = 
+                '<i class="fas fa-info-circle"></i> Position QR code within the frame to scan automatically. Ensure good lighting.';
+        }
+        
         function showFeishuLink(url) {
-            preview.innerHTML = `
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                    <br>
-                    <a href="${url}" target="_blank" class="btn btn-sm btn-primary mt-2">
-                        <i class="fas fa-external-link-alt"></i> Open Record
-                    </a>
-                </div>
-            `;
-            // Show iframe preview
-            iframeContainer.style.display = 'block';
-            iframe.src = url;
+            const env = getEnvironment();
+            
+            // Clear previous content
+            iframeContainer.style.display = 'none';
+            preview.innerHTML = '';
+            
+            if (env.isFeishu || env.isMobileApp) {
+                // Feishu/Lark mini-app environment
+                try {
+                    // Try using Feishu SDK if available
+                    if (typeof lark !== 'undefined' && lark.navigator) {
+                        lark.navigator.open({
+                            url: url,
+                            success: () => {
+                                preview.innerHTML = `
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                                        <br>
+                                        <div>Opening in Feishu...</div>
+                                    </div>
+                                `;
+                            },
+                            fail: (error) => {
+                                openInNewTab(url, preview);
+                            }
+                        });
+                    } else if (typeof feishu !== 'undefined' && feishu.navigator) {
+                        // Alternative Feishu SDK
+                        feishu.navigator.open({
+                            url: url,
+                            success: () => {
+                                preview.innerHTML = `
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                                        <br>
+                                        <div>Opening in Feishu...</div>
+                                    </div>
+                                `;
+                            },
+                            fail: (error) => {
+                                openInNewTab(url, preview);
+                            }
+                        });
+                    } else {
+                        openInNewTab(url, preview);
+                    }
+                } catch (error) {
+                    console.error('Feishu SDK error:', error);
+                    openInNewTab(url, preview);
+                }
+            } else if (env.isMobile) {
+                // Mobile browser
+                openInNewTab(url, preview);
+            } else {
+                // Desktop browser
+                preview.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                        <br>
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                            <i class="fas fa-external-link-alt"></i> Open Record
+                        </a>
+                    </div>
+                `;
+                iframeContainer.style.display = 'block';
+                iframe.src = url;
+            }
         }
         
         // Generate filename and capture snapshot from video
@@ -945,7 +1036,22 @@
         }
     }
     
+    // Helper function to open in new tab
+    function openInNewTab(url, previewElement) {
+        previewElement.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Opening in new tab due to platform restrictions
+                <br>
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                    <i class="fas fa-external-link-alt"></i> Open Record
+                </a>
+            </div>
+        `;
+    }
+    
     document.addEventListener('DOMContentLoaded', function () {
+        initializeFeishuSDK();
         updateStepIndicator();
         // Add event listener to job card status dropdown
         document.getElementById('id_key_station_job_card_status').addEventListener('change', checkJobCardStatus);
