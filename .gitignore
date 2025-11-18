@@ -2,3 +2,4 @@ env/
 *.pyc
 __pycache__/
 media/
+transs_flow/factories/assembly/departments/qa/ipqc/migrations/0004_alter_operatorqualificationcheck_options_and_more.py

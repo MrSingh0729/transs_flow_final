@@ -1288,53 +1288,53 @@
 
         // ====== PWA Service Worker Management ======
         function registerServiceWorker() {
-    // Always mark as visited and hide loading screen after a reasonable time
-    localStorage.setItem('hasVisited', 'true');
-    
-    // Set a timeout to hide loading screen regardless of service worker status
-    const loadingTimeout = setTimeout(() => {
-        elements.pwaLoading.classList.add('hidden');
-        console.log('Loading screen hidden due to timeout');
-    }, 3000); // 3 second maximum
-    
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register("{% static 'service_worker.js' %}")
-                .then(registration => {
-                    console.log('ServiceWorker registered: ', registration.scope);
-                    appState.registration = registration;
+            // Always mark as visited and hide loading screen after a reasonable time
+            localStorage.setItem('hasVisited', 'true');
+            
+            // Set a timeout to hide loading screen regardless of service worker status
+            const loadingTimeout = setTimeout(() => {
+                elements.pwaLoading.classList.add('hidden');
+                console.log('Loading screen hidden due to timeout');
+            }, 3000); // 3 second maximum
+            
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register("/service_worker.js")
+                        .then(registration => {
+                            console.log('ServiceWorker registered: ', registration.scope);
+                            appState.registration = registration;
 
-                    // Check for updates
-                    registration.addEventListener('updatefound', () => {
-                        const newWorker = registration.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('New version available');
-                                showUpdateNotification();
-                            }
+                            // Check for updates
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        console.log('New version available');
+                                        showUpdateNotification();
+                                    }
+                                });
+                            });
+
+                            // Hide loading screen when service worker is ready
+                            clearTimeout(loadingTimeout);
+                            elements.pwaLoading.classList.add('hidden');
+                            console.log('Loading screen hidden after service worker registration');
+                        })
+                        .catch(err => {
+                            console.log('ServiceWorker registration failed: ', err);
+                            // Still hide loading screen even if registration fails
+                            clearTimeout(loadingTimeout);
+                            elements.pwaLoading.classList.add('hidden');
+                            console.log('Loading screen hidden despite service worker error');
                         });
-                    });
-
-                    // Hide loading screen when service worker is ready
-                    clearTimeout(loadingTimeout);
-                    elements.pwaLoading.classList.add('hidden');
-                    console.log('Loading screen hidden after service worker registration');
-                })
-                .catch(err => {
-                    console.log('ServiceWorker registration failed: ', err);
-                    // Still hide loading screen even if registration fails
-                    clearTimeout(loadingTimeout);
-                    elements.pwaLoading.classList.add('hidden');
-                    console.log('Loading screen hidden despite service worker error');
                 });
-        });
-    } else {
-        // No service worker support, hide loading screen anyway
-        clearTimeout(loadingTimeout);
-        elements.pwaLoading.classList.add('hidden');
-        console.log('Loading screen hidden - no service worker support');
-    }
-}
+            } else {
+                // No service worker support, hide loading screen anyway
+                clearTimeout(loadingTimeout);
+                elements.pwaLoading.classList.add('hidden');
+                console.log('Loading screen hidden - no service worker support');
+            }
+        }
 
         // ====== Install Prompt Management ======
         function setupInstallPrompt() {
