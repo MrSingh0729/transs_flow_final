@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-*dl&t7!4eu%antq@qp!*t$#h4&8#rinibme#@29budotu5zfgu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+<<<<<<< HEAD
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.66.123.155', 'mrsingh29.pythonanywhere.com']
+=======
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.66.123.155', 'https://mrsingh29.pythonanywhere.com']
+>>>>>>> 38b0b1345e390279d1b5775918950f8fcfaf7294
 
 
 # Application definition
@@ -77,7 +81,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                'factories.assembly.departments.qa.ipqc.context_processors.csrf_token',
+                
             ],
         },
     },
