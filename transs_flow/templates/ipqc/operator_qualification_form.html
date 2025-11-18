@@ -919,7 +919,17 @@
                             },
                             fail: (error) => {
                                 console.log('Feishu SDK failed, trying alternative method');
-                                openInNewTab(url, preview);
+                               preview && (preview.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                        <br>
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                            <i class="fas fa-external-link-alt"></i> Open Record
+                        </a>
+                    </div>
+                `);
+                iframeContainer && (iframeContainer.style.display = 'block');
+                iframe && (iframe.src = url);
                             }
                         });
                     } else if (typeof feishu !== 'undefined' && feishu.navigator) {
@@ -937,20 +947,60 @@
                             },
                             fail: (error) => {
                                 console.log('Feishu SDK failed, trying alternative method');
-                                openInNewTab(url, preview);
+                                preview && (preview.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                        <br>
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                            <i class="fas fa-external-link-alt"></i> Open Record
+                        </a>
+                    </div>
+                `);
+                iframeContainer && (iframeContainer.style.display = 'block');
+                iframe && (iframe.src = url);
                             }
                         });
                     } else {
                         console.log('Feishu SDK not available, trying alternative method');
-                        openInNewTab(url, preview);
+                        preview && (preview.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                        <br>
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                            <i class="fas fa-external-link-alt"></i> Open Record
+                        </a>
+                    </div>
+                `);
+                iframeContainer && (iframeContainer.style.display = 'block');
+                iframe && (iframe.src = url);
                     }
                 } catch (error) {
                     console.error('Feishu SDK error:', error);
-                    openInNewTab(url, preview);
+                    preview && (preview.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                        <br>
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                            <i class="fas fa-external-link-alt"></i> Open Record
+                        </a>
+                    </div>
+                `);
+                iframeContainer && (iframeContainer.style.display = 'block');
+                iframe && (iframe.src = url);
                 }
             } else if (env.isMobile) {
                 // Mobile browser
-                openInNewTab(url, preview);
+                preview && (preview.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
+                        <br>
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                            <i class="fas fa-external-link-alt"></i> Open Record
+                        </a>
+                    </div>
+                `);
+                iframeContainer && (iframeContainer.style.display = 'block');
+                iframe && (iframe.src = url);
             } else {
                 // Desktop browser
                 preview && (preview.innerHTML = `

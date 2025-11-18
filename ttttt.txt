@@ -302,3 +302,8 @@ This implementation will:
 - Handle both platforms' URL parameter formats
 
 The solution is backward compatible and will work whether the app is embedded in Lark/Feishu or accessed as a standalone PWA.
+
+
+For desktop: show in iframe and a button to open in new tab
+For mobile: show in iframe and a button to open in new tab
+For APK installed app version: same as mobile (show in iframe and a button to open in new tab)
