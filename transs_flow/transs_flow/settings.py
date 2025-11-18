@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-*dl&t7!4eu%antq@qp!*t$#h4&8#rinibme#@29budotu5zfgu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.66.123.155']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.66.123.155', 'mrsingh29.pythonanywhere.com']
 
 
 # Application definition
@@ -44,13 +44,13 @@ INSTALLED_APPS = [
     'factories.assembly.departments',
     'factories.assembly',
     'factories',
-    
+
     'widget_tweaks',
-    
+
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    
+
 ]
 
 MIDDLEWARE = [
@@ -89,14 +89,14 @@ WSGI_APPLICATION = 'transs_flow.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # ---------------------- MYSQL (Aiven) ----------------------
-MYSQL_HOST = "mysql-rty-rty.d.aivencloud.com"
-MYSQL_PORT = 16775
-MYSQL_USER = "avnadmin"
-MYSQL_PASSWORD = "AVNS_COcv7nfPnntH_BeZ84u"
-MYSQL_DB = "transs_flow_final"
-MYSQL_DB_MODEL = "defaultdb"
-MYSQL_DB_CHAT = "chatdb"
-MYSQL_CA = os.path.join(BASE_DIR, "certs", "aiven-ca.pem")
+MYSQL_HOST = "mrsingh29.mysql.pythonanywhere-services.com"
+MYSQL_PORT = "3306"
+MYSQL_USER = "mrsingh29"
+MYSQL_PASSWORD = "Vikram@0729"
+
+MYSQL_DB = "mrsingh29$transs_flow_final"
+MYSQL_DB_MODEL = "mrsingh29$defaultdb"
+MYSQL_DB_CHAT = "mrsingh29$chatdb"
 
 DATABASES = {
     'default': {
@@ -106,13 +106,9 @@ DATABASES = {
         'PASSWORD': MYSQL_PASSWORD,
         'HOST': MYSQL_HOST,
         'PORT': MYSQL_PORT,
-        'OPTIONS': {
-            'ssl': {
-                'ca': MYSQL_CA,
-            },
-        },
+        'OPTIONS': {},
     },
-    
+
     'defaultdb': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': MYSQL_DB_MODEL,
@@ -120,12 +116,9 @@ DATABASES = {
         'PASSWORD': MYSQL_PASSWORD,
         'HOST': MYSQL_HOST,
         'PORT': MYSQL_PORT,
-        'OPTIONS': {
-            'ssl': {
-                'ca': MYSQL_CA,
-            },
-        },
+        'OPTIONS': {},
     },
+
     'chatdb': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': MYSQL_DB_CHAT,
@@ -133,13 +126,10 @@ DATABASES = {
         'PASSWORD': MYSQL_PASSWORD,
         'HOST': MYSQL_HOST,
         'PORT': MYSQL_PORT,
-        'OPTIONS': {
-            'ssl': {
-                'ca': MYSQL_CA,
-            },
-        },
+        'OPTIONS': {},
     },
 }
+
 
 
 # Password validation
@@ -252,13 +242,13 @@ CORS_ALLOW_CREDENTIALS = True
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
- 
+
 # Ensure static files are collected
 if not DEBUG:
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 else:
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
- 
+
 # Add PWA headers
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
