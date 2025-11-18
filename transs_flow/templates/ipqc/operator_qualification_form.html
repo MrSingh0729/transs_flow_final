@@ -918,6 +918,7 @@
                                 `);
                             },
                             fail: (error) => {
+                                console.log('Feishu SDK failed, trying alternative method');
                                 openInNewTab(url, preview);
                             }
                         });
@@ -935,10 +936,12 @@
                                 `);
                             },
                             fail: (error) => {
+                                console.log('Feishu SDK failed, trying alternative method');
                                 openInNewTab(url, preview);
                             }
                         });
                     } else {
+                        console.log('Feishu SDK not available, trying alternative method');
                         openInNewTab(url, preview);
                     }
                 } catch (error) {
@@ -1066,16 +1069,18 @@
     
     // Helper function to open in new tab
     function openInNewTab(url, previewElement) {
-        previewElement && (previewElement.innerHTML = `
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> 
-                Opening in new tab due to platform restrictions
-                <br>
-                <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                    <i class="fas fa-external-link-alt"></i> Open Record
-                </a>
-            </div>
-        `);
+        if (previewElement) {
+            previewElement.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Opening in new tab due to platform restrictions
+                    <br>
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
+                        <i class="fas fa-external-link-alt"></i> Open Record
+                    </a>
+                </div>
+            `;
+        }
     }
     
     document.addEventListener('DOMContentLoaded', function () {
