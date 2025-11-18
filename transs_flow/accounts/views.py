@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from .forms import EmployeeForm
 from .models import Employee
 from django.http import HttpResponseForbidden
+<<<<<<< HEAD
 import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -30,6 +31,8 @@ def receive_platform_token(request):
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+=======
+>>>>>>> 04477622334d2723e9772c0505f780bc04478920
 
 
 def login_view(request):
@@ -63,7 +66,12 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
+<<<<<<< HEAD
 
+=======
+    # Check if user is superuser or has role 'admin'
+    
+>>>>>>> 04477622334d2723e9772c0505f780bc04478920
     if not (request.user.is_superuser or getattr(request.user, 'role', '').lower() == 'admin' or getattr(request.user, 'role', '').upper() == 'PQE'):
         return HttpResponseForbidden("You are not authorized to view this page.")
 
@@ -82,8 +90,13 @@ def employee_list(request):
 
 @login_required
 def employee_create(request):
+<<<<<<< HEAD
     title = "Create"
 
+=======
+    title = "Create"  # Add this so template can use {{ title }}
+    
+>>>>>>> 04477622334d2723e9772c0505f780bc04478920
     if request.method == "POST":
         form = EmployeeForm(request.POST)
         if form.is_valid():
@@ -102,7 +115,7 @@ def employee_create(request):
             return redirect('employee_list')
     else:
         form = EmployeeForm()
-
+    
     return render(
         request,
         "accounts/employee_create.html",
@@ -132,11 +145,16 @@ def employee_edit(request, pk):
 @login_required
 def employee_delete(request, pk):
     employee = get_object_or_404(Employee, pk=pk)
-
+    
     if request.method == "POST":
 
         employee.delete()
         return redirect('employee_list')
+<<<<<<< HEAD
 
 
+=======
+    
+    # Render confirmation page
+>>>>>>> 04477622334d2723e9772c0505f780bc04478920
     return render(request, "accounts/employee_delete.html", {"employee": employee})

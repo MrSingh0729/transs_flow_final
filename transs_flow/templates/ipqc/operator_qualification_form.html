@@ -580,12 +580,8 @@
             <div id="feishu-preview" class="mt-4"></div>
             <div id="feishu-iframe-container" style="display:none;">
                 <h5>🔗 Job Card Record Preview</h5>
-                <iframe 
-                    id="feishu-iframe" 
-                    src=""
-                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
-                    style="width:100%; height:400px; border:1px solid var(--border); border-radius:8px;"
-                    ></iframe>
+                <iframe id="feishu-iframe" src=""
+                    style="width:100%; height:400px; border:1px solid var(--border); border-radius:8px;"></iframe>
             </div>
         </div>
         <!-- STEP 3: Verification -->
@@ -844,10 +840,10 @@
             const preview = document.getElementById('feishu-preview');
             const iframeContainer = document.getElementById('feishu-iframe-container');
             const iframe = document.getElementById('feishu-iframe');
-            
+
             // Create authenticated URL
             const authenticatedUrl = createAuthenticatedUrl(url);
-            
+
             preview.innerHTML = `
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i> ${platform.charAt(0).toUpperCase() + platform.slice(1)} link scanned successfully!
@@ -857,14 +853,11 @@
                     </a>
                 </div>
             `;
-            
-            // Show iframe preview with proxy
+
+            // Show iframe preview
             iframeContainer.style.display = 'block';
-            
-            // Use proxy to bypass CORS
-            const proxyUrl = `/proxy/${encodeURIComponent(authenticatedUrl)}?platform=${platform}`;
-            iframe.src = proxyUrl;
-            
+            iframe.src = authenticatedUrl;
+
             // Store the URL in the form field
             const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
             barcodeField.value = authenticatedUrl;

@@ -12,26 +12,20 @@
     <meta name="theme-color" content="#0ea5e9" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/static/manifest.json">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
     <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
-
-    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' https://*.lark.cn https://*.feishu.cn;">
-    <meta http-equiv="X-Frame-Options" content="ALLOW-FROM https://*.lark.cn https://*.feishu.cn">
-
+    
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileColor" content="#0ea5e9">
     <meta name="msapplication-config" content="{% static 'browserconfig.xml' %}">
-
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'screenshots/favicon.svg' %}">
     <link rel="icon" type="image/png" href="{% static 'screenshots/favicon-96x96.png' %}">
 
     <!-- Tailwind (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="text/javascript" src="https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.26.js"></script>
-    <script src="https://sf3-feishu-cn.com/feishu/op/h5-js-sdk.js"></script>
-    <script src="https://lf-scm-cn.feishucdn.com/lark/op/h5-js-sdk-1.5.44.js"></script>
-    <script src="https://lf-scm-cn.feishucdn.com/lark/op/h5-js-sdk-latest.js"></script>
+
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -762,15 +756,15 @@
                 <div class="flex items-center gap-2">
                     {% if request.user.is_superuser or request.user.role == "admin" %}
                     <a href="{% url 'dashboard' %}" class="hidden sm:block">
-                        <img src="{% static 'screenshots/logo.png' %}"
-                            alt="TF Logo"
+                        <img src="{% static 'screenshots/logo.png' %}" 
+                            alt="TF Logo" 
                             class="w-48 h-16 rounded-lg">
                     </a>
                                         {% else %}
                     <a href="{% url 'ipqc_home' %}" class="hidden sm:block">
                         <div>
-                             <img src="{% static 'screenshots/logo.png' %}"
-                            alt="TF Logo"
+                             <img src="{% static 'screenshots/logo.png' %}" 
+                            alt="TF Logo" 
                             class="w-48 h-16 rounded-lg">
                         </div>
                     </a>
@@ -1265,83 +1259,6 @@
 
     <!-- Service worker registration -->
     <script>
-
-        let platform = null;
-        let sdk = null;
-
-        // Detect environment and initialize the appropriate SDK
-        if (window.lark) {
-            platform = "lark";
-            sdk = lark;
-        } else if (window.feishu) {
-            platform = "feishu";
-            sdk = feishu;
-        }
-
-        function sendTokenToBackend(context) {
-            const open_id = context.user.open_id;
-            const app_access_token = context.app_access_token;
-            const tenant_key = context.tenant.key;
-
-            fetch('/receive-platform-token/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    open_id,
-                    app_access_token,
-                    tenant_key,
-                    platform
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                console.log('Backend login response:', data);
-                // Store token in localStorage for iframe use
-                localStorage.setItem(`${platform}_access_token`, app_access_token);
-            })
-            .catch(err => console.error('Error sending token:', err));
-        }
-
-        // Initialize SDK based on platform
-        if (platform && sdk) {
-            sdk.ready(() => {
-                sdk.getContext().then(sendTokenToBackend)
-                  .catch(err => console.error(`${platform} getContext error:`, err));
-            });
-        } else {
-            console.log("Not in Lark/Feishu mini app environment.");
-        }
-
-        // Add function to get access token
-        function getAccessToken() {
-            return localStorage.getItem(`${platform}_access_token`) || null;
-        }
-
-        // Add function to create authenticated URLs
-        function createAuthenticatedUrl(baseUrl) {
-            const token = getAccessToken();
-            if (!token) return baseUrl;
-
-            // Add token to URL based on platform
-            if (platform === 'lark') {
-                const separator = baseUrl.includes('?') ? '&' : '?';
-                return `${baseUrl}${separator}access_token=${token}`;
-            } else if (platform === 'feishu') {
-                const separator = baseUrl.includes('?') ? '&' : '?';
-                return `${baseUrl}${separator}app_access_token=${token}`;
-            }
-
-            return baseUrl;
-        }
-
-        // Expose functions globally
-        window.getPlatform = () => platform;
-        window.getAccessToken = getAccessToken;
-        window.createAuthenticatedUrl = createAuthenticatedUrl;
-
         // ====== State Management ======
         const appState = {
             sidebarCollapsed: localStorage.getItem('sidebar-collapsed') === 'true',
@@ -1373,13 +1290,13 @@
         function registerServiceWorker() {
             // Always mark as visited and hide loading screen after a reasonable time
             localStorage.setItem('hasVisited', 'true');
-
+            
             // Set a timeout to hide loading screen regardless of service worker status
             const loadingTimeout = setTimeout(() => {
                 elements.pwaLoading.classList.add('hidden');
                 console.log('Loading screen hidden due to timeout');
             }, 3000); // 3 second maximum
-
+            
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register("{% url 'service_worker' %}")
@@ -1424,7 +1341,7 @@
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 appState.deferredPrompt = e;
-
+                
                 // Only show install notification if not already shown
                 if (!appState.installPromptShown && appState.isFirstVisit) {
                     showInstallNotification();
@@ -1432,7 +1349,7 @@
                     appState.installPromptShown = true;
                 }
             });
-
+            
             window.addEventListener('appinstalled', () => {
                 console.log('PWA was installed');
                 localStorage.setItem('install-prompt-shown', 'true');
@@ -1465,7 +1382,7 @@
                     </div>
                 `;
                 document.body.appendChild(notification);
-
+                
                 // Auto-hide after 10 seconds
                 setTimeout(() => {
                     if (notification.parentElement) {
@@ -1512,7 +1429,7 @@
                 </div>
             `;
             document.body.appendChild(notification);
-
+            
             // Auto-hide after 10 seconds
             setTimeout(() => {
                 if (notification.parentElement) {
@@ -1690,7 +1607,7 @@
                     }
                 }, 2000);
             }
-
+            
             initializeSidebar();
             registerServiceWorker();
             setupInstallPrompt();
@@ -1708,7 +1625,7 @@
         // ====== Handle service worker messages ======
         navigator.serviceWorker.addEventListener('message', event => {
             console.log('Received message from service worker:', event.data);
-
+            
             if (event.data && event.data.type === 'SKIP_WAITING') {
                 self.skipWaiting();
             }
@@ -1720,7 +1637,7 @@
         if (updateReminder) {
             const reminderTime = parseInt(updateReminder);
             const hoursSinceReminder = (Date.now() - reminderTime) / (1000 * 60 * 60);
-
+            
             // If more than 24 hours have passed, show the update notification again
             if (hoursSinceReminder > 24) {
                 localStorage.removeItem('update-reminder');
