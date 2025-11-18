@@ -1,1776 +1,304 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <!-- Viewport + safe-area for notches -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Transs Flow - Manufacturing Control</title>
-
-    <!-- PWA / Mobile meta -->
-    <meta name="theme-color" content="#0ea5e9" />
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="{% static 'manifest.json' %}">
-    <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
-    
-    <!-- Microsoft Tiles -->
-    <meta name="msapplication-TileColor" content="#0ea5e9">
-    <meta name="msapplication-config" content="{% static 'browserconfig.xml' %}">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% static 'screenshots/favicon.ico' %}">
-
-    <!-- Tailwind (CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        /* ====== CSS Variables ====== */
-        :root {
-            --primary: #0ea5e9;
-            --primary-dark: #0284c7;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --dark: #1e293b;
-            --darker: #0f172a;
-            --text-primary: #1e293b;
-            --text-secondary: #475569;
-            --text-light: #64748b;
-            --light: #f8fafc;
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --border: #cbd5e1;
-            --sidebar-width: 280px;
-            --header-height: 73px;
-            --transition-speed: 0.3s;
-        }
-
-        /* ====== Base Styles ====== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            height: 100%;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            overflow-x: hidden;
-            font-size: 15px;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            padding-bottom: env(safe-area-inset-bottom);
-            /* safe area for iOS */
-        }
-
-        /* ====== PWA Loading Screen ====== */
-        .pwa-loading {
-            position: fixed;
-            inset: 0;
-            background: var(--bg-primary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.3s ease;
-        }
-
-        .pwa-loading.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .pwa-logo {
-            width: 80px;
-            height: 80px;
-            background: var(--primary);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        /* ====== Header ====== */
-        .header {
-            background: var(--bg-primary);
-            border-bottom: 2px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 60;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            height: var(--header-height);
-        }
-
-        /* App shell: full height column layout */
-        .app-shell {
-            min-height: calc(100vh - var(--header-height));
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* ====== Layout Structure ====== */
-        .app-container {
-            display: flex;
-            flex: 1;
-            min-height: calc(100vh - var(--header-height));
-        }
-
-        .sidebar {
-            background: var(--bg-primary);
-            border-right: 1px solid var(--border);
-            width: var(--sidebar-width);
-            flex-shrink: 0;
-            transition: transform var(--transition-speed) ease, opacity var(--transition-speed) ease;
-            overflow-y: auto;
-            z-index: 50;
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 1rem;
-            transition: margin-left var(--transition-speed) ease;
-            overflow-x: hidden;
-        }
-
-        /* ====== Mobile Sidebar ====== */
-        @media (max-width: 1023px) {
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: var(--header-height);
-                height: calc(100vh - var(--header-height));
-                transform: translateX(-100%);
-                opacity: 0;
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            }
-
-            .sidebar.active {
-                transform: translateX(0);
-                opacity: 1;
-            }
-
-            .main-content {
-                margin-left: 0 !important;
-            }
-
-            /* When sidebar is open, keep main hidden to mimic native app behavior */
-            .sidebar.active~.main-content {
-                display: none;
-            }
-        }
-
-        /* ====== Desktop Sidebar Toggle ====== */
-        @media (min-width: 1024px) {
-            .sidebar.collapsed {
-                transform: translateX(-100%);
-                margin-right: calc(-1 * var(--sidebar-width));
-            }
-
-            .sidebar.collapsed~.main-content {
-                margin-left: 0;
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-        }
-
-        .sidebar-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 45;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity var(--transition-speed) ease;
-        }
-
-        .sidebar-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        /* ====== User Dropdown ====== */
-        .user-dropdown {
-            position: relative;
-        }
-
-        .user-dropdown-toggle {
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-radius: 8px;
-            padding: 6px 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .user-dropdown-toggle:hover {
-            background: var(--bg-secondary);
-        }
-
-        .user-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
-            min-width: 220px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.18s ease;
-            z-index: 100;
-        }
-
-        .user-dropdown.active .user-dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .user-dropdown-header {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            background: #f8fafc;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .user-dropdown-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: all 0.16s ease;
-            font-weight: 600;
-        }
-
-        .user-dropdown-item:hover {
-            background: var(--bg-secondary);
-            color: var(--primary);
-        }
-
-        .user-dropdown-item i {
-            width: 18px;
-            text-align: center;
-            font-size: 14px;
-        }
-
-        .user-dropdown-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 4px 0;
-        }
-
-        .user-dropdown-item.logout {
-            color: var(--danger);
-        }
-
-        .user-dropdown-item.logout:hover {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        /* ====== Navigation Items ====== */
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 14px 18px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            border-left: 4px solid transparent;
-            transition: all 0.16s ease;
-            font-weight: 600;
-            position: relative;
-            gap: 12px;
-        }
-
-        .nav-item:hover {
-            background: var(--bg-secondary);
-            color: var(--primary);
-            border-left-color: var(--primary);
-        }
-
-        .nav-item.active {
-            background: #eff6ff;
-            color: var(--primary-dark);
-            border-left-color: var(--primary);
-            font-weight: 700;
-        }
-
-        .nav-item i {
-            width: 22px;
-            margin-right: 6px;
-            font-size: 16px;
-        }
-
-        /* ====== Status Badges ====== */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-running {
-            background: #dcfce7;
-            color: #15803d;
-            border: 1px solid #86efac;
-        }
-
-        .status-idle {
-            background: #fef3c7;
-            color: #a16207;
-            border: 1px solid #fcd34d;
-        }
-
-        .status-stop {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fca5a5;
-        }
-
-        /* ====== Metric Cards ====== */
-        .metric-card {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid var(--border);
-            transition: all 0.18s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-            min-height: 96px;
-        }
-
-        .metric-card:hover {
-            box-shadow: 0 10px 30px rgba(2, 132, 199, 0.06);
-            transform: translateY(-4px);
-            border-color: rgba(14, 165, 233, 0.2);
-        }
-
-        .metric-value {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--text-primary);
-            line-height: 1;
-            margin-bottom: 6px;
-        }
-
-        .metric-label {
-            color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-        }
-
-        .metric-change {
-            display: inline-flex;
-            align-items: center;
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 10px;
-            padding: 6px 10px;
-            border-radius: 999px;
-        }
-
-        .metric-change.positive {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .metric-change.negative {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        /* ====== Quick Actions ====== */
-        .quick-action {
-            background: var(--bg-primary);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.18s ease;
-            text-decoration: none;
-            color: var(--text-primary);
-            font-weight: 700;
-            min-height: 88px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .quick-action:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 30px rgba(14, 165, 233, 0.2);
-        }
-
-        .quick-action i {
-            font-size: 22px;
-        }
-
-        .quick-action .label {
-            font-weight: 800;
-            font-size: 14px;
-        }
-
-        .quick-action .desc {
-            font-size: 12px;
-            opacity: 0.85;
-        }
-
-        /* ====== Production Table ====== */
-        .production-table {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            box-shadow: 0 1px 4px rgba(2, 6, 23, 0.03);
-        }
-
-        .table-row {
-            display: flex;
-            padding: 14px;
-            border-bottom: 1px solid #f1f5f9;
-            align-items: center;
-            transition: background 0.12s ease;
-        }
-
-        .table-row:hover {
-            background: var(--bg-secondary);
-        }
-
-        .table-header {
-            background: #f1f5f9;
-            font-weight: 800;
-            color: var(--text-secondary);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            padding: 12px 16px;
-        }
-
-        .table-cell {
-            flex: 1;
-            min-width: 0;
-            font-weight: 700;
-        }
-
-        .table-cell.w-20 {
-            flex: 0 0 20%;
-        }
-
-        .table-cell.w-15 {
-            flex: 0 0 15%;
-        }
-
-        /* ====== Buttons ====== */
-        .btn {
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 13px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.14s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            min-height: 44px;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.16);
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: var(--bg-primary);
-            color: var(--text-secondary);
-            border: 2px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-secondary);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        /* ====== Mobile Toggle Button ====== */
-        .mobile-sidebar-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-primary);
-            border: 2px solid var(--border);
-            color: var(--text-secondary);
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.12s ease;
-        }
-
-        .mobile-sidebar-toggle:hover {
-            background: var(--bg-secondary);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        /* Show mobile toggle only on mobile/tablet */
-        @media (min-width: 1024px) {
-            .mobile-sidebar-toggle {
-                display: none;
-            }
-        }
-
-        /* ====== Desktop Toggle Button ====== */
-        .desktop-sidebar-toggle {
-            position: fixed;
-            left: 20px;
-            bottom: 20px;
-            z-index: 55;
-            background: var(--primary);
-            color: white;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 6px 18px rgba(14, 165, 233, 0.18);
-            transition: all 0.18s ease;
-        }
-
-        .desktop-sidebar-toggle:hover {
-            transform: scale(1.06);
-            background: var(--primary-dark);
-        }
-
-        @media (min-width: 1024px) {
-            .desktop-sidebar-toggle {
-                display: flex;
-            }
-
-            .sidebar:not(.collapsed)~.main-content+.desktop-sidebar-toggle {
-                left: calc(var(--sidebar-width) + 20px);
-            }
-        }
-
-        /* ====== Responsive ====== */
-        @media (max-width: 768px) {
-            .metric-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .table-row {
-                flex-wrap: wrap;
-                padding: 12px;
-            }
-
-            .table-cell {
-                flex: 0 0 50%;
-                margin-bottom: 8px;
-            }
-
-            .hide-mobile {
-                display: none;
-            }
-
-            .header .text-truncate {
-                max-width: 55vw;
-            }
-        }
-
-        /* ====== Accessibility ====== */
-        .touch-target {
-            min-height: 48px;
-            min-width: 48px;
-        }
-
-        button:focus,
-        a:focus,
-        input:focus,
-        select:focus {
-            outline: 3px solid rgba(14, 165, 233, 0.2);
-            outline-offset: 2px;
-        }
-
-        /* ====== Print Styles ====== */
-        @media print {
-
-            .header,
-            .sidebar,
-            .btn,
-            .no-print,
-            .desktop-sidebar-toggle,
-            .sidebar-overlay {
-                display: none !important;
-            }
-
-            body {
-                background: white !important;
-                color: black !important;
-            }
-
-            .main-content {
-                margin-left: 0 !important;
-            }
-        }
-
-        /* ====== Reduced Motion ====== */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-
-        /* ====== Cyber Button Styles ====== */
-        .cyber-button {
-            padding: 10px 18px;
-            border-radius: 12px;
-            font-weight: 800;
-            color: white;
-            transition: all 0.25s ease;
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            box-shadow: 0 10px 30px rgba(14, 165, 233, 0.12);
-        }
-
-        .cyber-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 18px 50px rgba(14, 165, 233, 0.16);
-        }
-
-        .cyber-button-secondary {
-            padding: 10px 18px;
-            border-radius: 12px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border: 1px solid #cbd5e1;
-            color: #1e293b;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
-        }
-
-        /* Floating bottom nav safe area padding for iOS */
-        .mobile-bottom-nav {
-            padding-bottom: calc(12px + env(safe-area-inset-bottom));
-        }
-
-        /* small helper to truncate text nicely */
-        .text-truncate {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* ====== PWA Notification Styles ====== */
-        .pwa-notification {
-            position: fixed;
-            bottom: 108px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            padding: 16px 24px;
-            max-width: 400px;
-            width: 90%;
-            z-index: 9999;
-            transition: transform 0.3s ease;
-        }
-
-        .pwa-notification.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .pwa-notification-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .pwa-notification-title {
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .pwa-notification-body {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-
-        .pwa-notification-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .pwa-notification-button {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .pwa-notification-button.primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .pwa-notification-button.primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .pwa-notification-button.secondary {
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border);
-        }
-
-        .pwa-notification-button.secondary:hover {
-            background: var(--bg-primary);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        /* ====== Offline Mode Indicator ====== */
-        .offline-indicator {
-            position: fixed;
-            top: var(--header-height);
-            left: 0;
-            right: 0;
-            background: #dc2626;
-            color: white;
-            padding: 8px 16px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 14px;
-            z-index: 70;
-            transform: translateY(-100%);
-            transition: transform 0.3s ease;
-        }
-
-        .offline-indicator.show {
-            transform: translateY(0);
-        }
-
-        /* ====== Update Progress Indicator ====== */
-        .update-progress {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: rgba(14, 165, 233, 0.1);
-            z-index: 9999;
-        }
-
-        .update-progress-bar {
-            height: 100%;
-            background: var(--primary);
-            width: 0;
-            transition: width 0.3s ease;
-        }
-    </style>
-</head>
-
-<body>
-    <!-- PWA Loading Screen -->
-    <div class="pwa-loading" id="pwaLoading">
-        <div class="pwa-logo">
-            <i class="fas fa-industry text-white text-3xl"></i>
-        </div>
-        <div class="text-xl font-bold text-gray-800">Transs Flow</div>
-        <div class="text-sm text-gray-600 mt-2">Loading...</div>
-    </div>
-
-    <!-- Offline Indicator -->
-    <div class="offline-indicator" id="offlineIndicator">
-        <i class="fas fa-wifi-slash mr-2"></i>
-        You're currently offline. Some features may be limited.
-    </div>
-
-    <!-- Update Progress Indicator -->
-    <div class="update-progress" id="updateProgress" style="display: none;">
-        <div class="update-progress-bar" id="updateProgressBar"></div>
-    </div>
-
-    <!-- Header -->
-    <header class="header bg-white shadow no-print">
-        <div class="px-4 py-3 flex items-center justify-between relative max-w-[1300px] mx-auto">
-            <!-- Left: Menu + Logo -->
-            <div class="flex items-center gap-4 flex-shrink-0">
-                <!-- Mobile menu toggle -->
-                <button onclick="toggleSidebar()" aria-label="Open menu"
-                    class="mobile-sidebar-toggle touch-target md:hidden" title="Open menu">
-                    <i class="fas fa-bars text-gray-700 text-lg"></i>
-                </button>
-
-                <!-- Logo -->
-                <div class="flex items-center gap-2">
-                    {% if request.user.is_superuser or request.user.role == "admin" %}
-                    <a href="{% url 'dashboard' %}" class="hidden sm:block">
-                        <img src="{% static 'screenshots/logo.png' %}" 
-                            alt="TF Logo" 
-                            class="w-48 h-8 rounded-lg">
-                    </a>
-                                        {% else %}
-                    <a href="{% url 'ipqc_home' %}" class="hidden sm:block">
-                        <div>
-                             <img src="{% static 'screenshots/logo.png' %}" 
-                            alt="TF Logo" 
-                            class="w-48 h-12 rounded-lg">
-                        </div>
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Center: Page Title -->
-            <div class="absolute left-1/2 transform -translate-x-1/2 text-center px-2">
-                <div
-                    class="text-gray-900 font-semibold text-base sm:text-lg md:text-xl truncate max-w-[70vw] sm:max-w-[50vw] text-truncate">
-                    {% block title %}{% endblock %}
-                </div>
-            </div>
-
-            <!-- Right: User Dropdown -->
-            <div class="flex items-center gap-3 flex-shrink-0">
-                <div class="user-dropdown relative" id="userDropdown">
-                    <div class="user-dropdown-toggle" onclick="toggleUserDropdown()" role="button" aria-haspopup="true"
-                        aria-expanded="false" title="User menu">
-                        <img src="https://picsum.photos/seed/user/32/32" alt="User"
-                            class="w-8 h-8 rounded-full border-2 border-gray-200 object-cover">
-                        <div class="hidden md:block">
-                            <div class="text-sm font-bold text-gray-900 truncate max-w-[120px]">{{ user.full_name|default:'' }}</div>
-                            <div class="text-xs text-gray-600 font-medium truncate max-w-[120px]">
-                                {% if user.is_superuser %}
-                                Superuser
-                                {% elif user.is_staff %}
-                                Admin
-                                {% else %}
-                                {{ user.role|default:'User' }}
-                                {% endif %}
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-down text-xs text-gray-500 transition-transform"
-                            id="dropdownArrow"></i>
-                    </div>
-
-                    <div class="user-dropdown-menu" role="menu" aria-hidden="true">
-                        <div class="user-dropdown-header">
-                            <div class="flex items-center gap-3">
-                                <img src="https://picsum.photos/seed/user/40/40" alt="User"
-                                    class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <div class="font-semibold text-gray-900">{{ user.full_name|default:'' }}</div>
-                                    <div class="text-xs text-gray-600">{{ user.employee_id|default:'' }}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-user"></i><span>My Profile</span></a>
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-cog"></i><span>Settings</span></a>
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-key"></i><span>Change
-                                Password</span></a>
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-bell"></i><span>Notifications</span></a>
-
-                        <div class="user-dropdown-divider"></div>
-
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-question-circle"></i><span>Help &
-                                Support</span></a>
-                        <a class="user-dropdown-item logout" href="{% url 'logout' %}"><i
-                                class="fas fa-sign-out-alt"></i><span>Logout</span></a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- App Shell -->
-    <div class="app-shell">
-        <!-- Main App Container -->
-        <div class="app-container max-w-[1300px] mx-auto w-full">
-            <!-- Sidebar -->
-            <aside id="sidebar" class="sidebar no-print" aria-hidden="false">
-                <div class="p-4">
-                    <nav class="space-y-1" aria-label="Primary">
-                        {% if request.user.is_superuser or request.user.role == "admin" %}
-                        <a href="{% url 'dashboard' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                            <i class="fas fa-home"></i>
-                            <span>Home</span>
-                            {% if request.resolver_match.url_name == 'dashboard' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-
-                        <a href="{% url 'ipqc_home' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'ipqc_home' %}active{% endif %}">
-                            <i class="fas fa-chart-line"></i>
-                            <span>IPQC Dashboard</span>
-                            {% if request.resolver_match.url_name == 'ipqc_home' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-                        {% else %}
-                        <a href="{% url 'ipqc_home' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'ipqc_home' %}active{% endif %}">
-                            <i class="fas fa-chart-line"></i>
-                            <span>IPQC Dashboard</span>
-                            {% if request.resolver_match.url_name == 'ipqc_home' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-                        {% endif %}
-
-                        {% if request.user.is_superuser or request.user.role == "IPQC" %}
-                        <a href="{% url 'ipqc_work_info' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'ipqc_work_info' %}active{% endif %}">
-                            <i class="fas fa-clipboard-list"></i>
-                            <span>Work Info</span>
-                            {% if request.resolver_match.url_name == 'ipqc_work_info' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-
-                        <div class="py-2">
-                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Quality
-                                Control
-                            </div>
-                        </div>
-
-                        <a href="{% url 'operator_qualification_create' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'operator_qualification_create' %}active{% endif %}">
-                            <i class="fas fa-search"></i>
-                            <span>MP Audit</span>
-                            {% if request.resolver_match.url_name == 'operator_qualification_create' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-
-                        <a href="{% url 'ipqc_assembly_audit_create' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'ipqc_assembly_audit_create' %}active{% endif %}">
-                            <i class="fas fa-search"></i>
-                            <span>Assembly Audit</span>
-                            {% if request.resolver_match.url_name == 'ipqc_assembly_audit_create' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-
-                        <a href="{% url 'btb_checksheet_create' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'btb_checksheet_create' %}active{% endif %}">
-                            <i class="fas fa-clipboard-check"></i>
-                            <span>BTB Checksheet</span>
-                            {% if request.resolver_match.url_name == 'btb_checksheet_create' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-
-                        <a href="{% url 'ass_dummy_test_create' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'ass_dummy_test_create' %}active{% endif %}">
-                            <i class="fas fa-vial"></i>
-                            <span>Dummy Test</span>
-                            {% if request.resolver_match.url_name == 'ass_dummy_test_create' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-
-                        <a href="{% url 'esd_compliance_checklist_add' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'esd_compliance_checklist_add' %}active{% endif %}">
-                            <i class="fas fa-shield-alt"></i>
-                            <span>ESD Compliance</span>
-                            {% if request.resolver_match.url_name == 'esd_compliance_checklist_add' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-
-                        <div class="py-2">
-                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Operations
-                            </div>
-                        </div>
-
-                        <a href="{% url 'ipqc_disassemble_add' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'ipqc_disassemble_add' %}active{% endif %}">
-                            <i class="fas fa-tools"></i>
-                            <span>Disassemble</span>
-                            {% if request.resolver_match.url_name == 'ipqc_disassemble_add' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-
-                        <a href="{% url 'nc_issue_tracking_create' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'nc_issue_tracking_create' %}active{% endif %}">
-                            <i class="fas fa-exclamation-triangle text-red-500"></i>
-                            <span>NC Issues</span>
-                            {% if request.resolver_match.url_name == 'nc_issue_tracking_create' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                            <span class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">2</span>
-                        </a>
-
-                        <a href="{% url 'dust_count_checklist_add' %}"
-                            class="nav-item {% if request.resolver_match.url_name == 'dust_count_checklist_add' %}active{% endif %}">
-                            <i class="fas fa-cloud"></i>
-                            <span>Dust Count</span>
-                            {% if request.resolver_match.url_name == 'dust_count_checklist_add' %}
-                            <span class="ml-auto bg-green-500 w-2 h-2 rounded-full"></span>
-                            {% endif %}
-                        </a>
-                        {% endif %}
-
-                        <div class="py-2">
-                            <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Communication
-                            </div>
-                        </div>
-
-
-                    </nav>
-
-                    <!-- User section -->
-                    <div class="mt-8 pt-4 border-t">
-                        <div class="flex items-center gap-3 mb-4">
-                            <img src="https://picsum.photos/seed/user/40/40" alt="User" class="w-10 h-10 rounded-full">
-                            <div class="hidden md:block">
-                                <div class="text-sm font-bold text-gray-900">{{ user.full_name|default:'' }}</div>
-                                <div class="text-xs text-gray-600 font-medium">
-                                    {% if user.is_superuser %}
-                                    Superuser
-                                    {% elif user.is_staff %}
-                                    Admin
-                                    {% else %}
-                                    {{ user.role|default:'User' }}
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <a href="{% url 'logout' %}" class="nav-item text-red-600">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </a>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main Content -->
-            <main class="main-content" role="main" aria-live="polite">
-                {% if messages %}
-                <div class="mb-4 space-y-2">
-                    {% for message in messages %}
-                    <div
-                        class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-center gap-2">
-                        <i class="fas fa-info-circle"></i>
-                        <span class="font-medium">{{ message }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                {% block content %}
-                <!-- Key Metrics -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 metric-grid">
-                    <div class="metric-card">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <div class="metric-value">1,248</div>
-                                <div class="metric-label">Units/Hour</div>
-                                <div class="metric-change positive">
-                                    <i class="fas fa-arrow-up mr-1"></i>12.5%
-                                </div>
-                            </div>
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-chart-line text-blue-600"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <div class="metric-value">96.8%</div>
-                                <div class="metric-label">Efficiency</div>
-                                <div class="metric-change positive">
-                                    <i class="fas fa-arrow-up mr-1"></i>2.3%
-                                </div>
-                            </div>
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-tachometer-alt text-green-600"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <div class="metric-value">99.2%</div>
-                                <div class="metric-label">Quality</div>
-                                <div class="metric-change positive">
-                                    <i class="fas fa-arrow-up mr-1"></i>0.5%
-                                </div>
-                            </div>
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-award text-purple-600"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <div class="metric-value">24/28</div>
-                                <div class="metric-label">Active Lines</div>
-                                <div class="metric-change negative">
-                                    <i class="fas fa-arrow-down mr-1"></i>4 idle
-                                </div>
-                            </div>
-                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-industry text-yellow-600"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <a href="{% url 'ipqc_assembly_audit_create' %}" class="quick-action touch-target">
-                        <i class="fas fa-plus-circle text-blue-500"></i>
-                        <div class="label">New Audit</div>
-                        <div class="desc">Start inspection</div>
-                    </a>
-                    <a href="{% url 'nc_issue_tracking_create' %}" class="quick-action touch-target">
-                        <i class="fas fa-exclamation-triangle text-red-500"></i>
-                        <div class="label">Report Issue</div>
-                        <div class="desc">File NC report</div>
-                    </a>
-                    <a href="#" class="quick-action touch-target">
-                        <i class="fas fa-download text-green-500"></i>
-                        <div class="label">Export Data</div>
-                        <div class="desc">Download reports</div>
-                    </a>
-                    <a href="#" class="quick-action touch-target">
-                        <i class="fas fa-cog text-gray-500"></i>
-                        <div class="label">Settings</div>
-                        <div class="desc">System config</div>
-                    </a>
-                </div>
-
-                <!-- Production Lines Status -->
-                <div class="production-table">
-                    <div class="table-row table-header">
-                        <div class="table-cell w-20">Line ID</div>
-                        <div class="table-cell">Product</div>
-                        <div class="table-cell w-15">Status</div>
-                        <div class="table-cell w-15 hide-mobile">Output</div>
-                        <div class="table-cell w-15 hide-mobile">Quality</div>
-                        <div class="table-cell w-15">Action</div>
-                    </div>
-
-                    <div class="table-row" role="row">
-                        <div class="table-cell w-20">
-                            <div class="font-mono font-bold text-gray-900">PL-001</div>
-                        </div>
-                        <div class="table-cell">
-                            <div class="font-semibold text-gray-900">Component A</div>
-                        </div>
-                        <div class="table-cell w-15">
-                            <span class="status-badge status-running">
-                                <i class="fas fa-circle text-xs mr-1"></i>Running
-                            </span>
-                        </div>
-                        <div class="table-cell w-15 hide-mobile">
-                            <div class="font-bold text-gray-900">1,250/h</div>
-                        </div>
-                        <div class="table-cell w-15 hide-mobile">
-                            <div class="text-green-700 font-bold">99.5%</div>
-                        </div>
-                        <div class="table-cell w-15">
-                            <button class="btn btn-secondary text-sm touch-target" aria-label="View PL-001">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-row" role="row">
-                        <div class="table-cell w-20">
-                            <div class="font-mono font-bold text-gray-900">PL-002</div>
-                        </div>
-                        <div class="table-cell">
-                            <div class="font-semibold text-gray-900">Component B</div>
-                        </div>
-                        <div class="table-cell w-15">
-                            <span class="status-badge status-running">
-                                <i class="fas fa-circle text-xs mr-1"></i>Running
-                            </span>
-                        </div>
-                        <div class="table-cell w-15 hide-mobile">
-                            <div class="font-bold text-gray-900">980/h</div>
-                        </div>
-                        <div class="table-cell w-15 hide-mobile">
-                            <div class="text-green-700 font-bold">98.7%</div>
-                        </div>
-                        <div class="table-cell w-15">
-                            <button class="btn btn-secondary text-sm touch-target" aria-label="View PL-002">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-row" role="row">
-                        <div class="table-cell w-20">
-                            <div class="font-mono font-bold text-gray-900">PL-003</div>
-                        </div>
-                        <div class="table-cell">
-                            <div class="font-semibold text-gray-900">Component C</div>
-                        </div>
-                        <div class="table-cell w-15">
-                            <span class="status-badge status-idle">
-                                <i class="fas fa-pause text-xs mr-1"></i>Maintenance
-                            </span>
-                        </div>
-                        <div class="table-cell w-15 hide-mobile">
-                            <div class="text-gray-500 font-semibold">-</div>
-                        </div>
-                        <div class="table-cell w-15 hide-mobile">
-                            <div class="text-gray-500 font-semibold">-</div>
-                        </div>
-                        <div class="table-cell w-15">
-                            <button class="btn btn-secondary text-sm touch-target" aria-label="PL-003 actions">
-                                <i class="fas fa-tools"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-row" role="row">
-                        <div class="table-cell w-20">
-                            <div class="font-mono font-bold text-gray-900">PL-004</div>
-                        </div>
-                        <div class="table-cell">
-                            <div class="font-semibold text-gray-900">Component D</div>
-                        </div>
-                        <div class="table-cell w-15">
-                            <span class="status-badge status-stop">
-                                <i class="fas fa-stop text-xs mr-1"></i>Stopped
-                            </span>
-                        </div>
-                        <div class="table-cell w-15 hide-mobile">
-                            <div class="text-gray-500 font-semibold">-</div>
-                        </div>
-                        <div class="table-cell w-15 hide-mobile">
-                            <div class="text-gray-500 font-semibold">-</div>
-                        </div>
-                        <div class="table-cell w-15">
-                            <button class="btn btn-primary text-sm touch-target" aria-label="Start PL-004">
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                {% endblock %}
-            </main>
-        </div>
-
-        <!-- Desktop sidebar toggle button -->
-        <button id="desktopToggle" class="desktop-sidebar-toggle no-print" onclick="toggleDesktopSidebar()"
-            aria-label="Toggle sidebar">
-            <i class="fas fa-bars"></i>
-        </button>
-
-        <!-- Sidebar overlay for mobile -->
-        <div class="sidebar-overlay" onclick="closeSidebar()"></div>
-
-        <!-- Floating bottom nav (mobile only) -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-50 md:hidden mobile-bottom-nav no-print"
-            role="navigation" aria-label="Mobile navigation">
-            <a href="{% url 'dashboard' %}"
-                class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Home">
-                <i class="fas fa-home text-lg"></i>
-                <span class="text-xs mt-1">Home</span>
-            </a>
-            <a href="{% url 'ipqc_home' %}"
-                class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="IPQC">
-                <i class="fas fa-chart-line text-lg"></i>
-                <span class="text-xs mt-1">IPQC</span>
-            </a>
-            <a href="{% url 'nc_issue_tracking_create' %}"
-                class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Issues">
-                <i class="fas fa-exclamation-triangle text-lg"></i>
-                <span class="text-xs mt-1">Issues</span>
-            </a>
-
-            <a href="{% url 'logout' %}"
-                class="flex flex-col items-center text-gray-600 hover:text-sky-600 touch-target" aria-label="Profile">
-                <i class="fas fa-user text-lg"></i>
-                <span class="text-xs mt-1">Profile</span>
-            </a>
-        </nav>
-    </div>
-
-    <!-- PWA Notification Container -->
-    <div id="pwaNotification" class="pwa-notification">
-        <div class="pwa-notification-header">
-            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
-            <div class="pwa-notification-title" id="notificationTitle">Notification</div>
-        </div>
-        <div class="pwa-notification-body" id="notificationBody">
-            This is a notification message.
-        </div>
-        <div class="pwa-notification-actions">
-            <button class="pwa-notification-button primary" id="notificationPrimaryButton">
-                OK
-            </button>
-            <button class="pwa-notification-button secondary" id="notificationSecondaryButton">
-                Cancel
-            </button>
-        </div>
-    </div>
-
-    <!-- Service worker registration -->
-    <script>
-        // ====== State Management ======
-        const appState = {
-            sidebarCollapsed: localStorage.getItem('sidebar-collapsed') === 'true',
-            isMobile: window.innerWidth < 1024,
-            userDropdownOpen: false,
-            isOnline: navigator.onLine,
-            deferredPrompt: null,
-            updateAvailable: false,
-            registration: null,
-            installPromptShown: localStorage.getItem('install-prompt-shown') === 'true'
-        };
-
-        // ====== DOM Elements ======
-        const elements = {
-            sidebar: document.getElementById('sidebar'),
-            overlay: document.querySelector('.sidebar-overlay'),
-            toggleBtn: document.getElementById('desktopToggle'),
-            mainContent: document.querySelector('.main-content'),
-            body: document.body,
-            userDropdown: document.getElementById('userDropdown'),
-            dropdownArrow: document.getElementById('dropdownArrow'),
-            pwaLoading: document.getElementById('pwaLoading'),
-            offlineIndicator: document.getElementById('offlineIndicator'),
-            updateProgress: document.getElementById('updateProgress'),
-            updateProgressBar: document.getElementById('updateProgressBar'),
-            pwaNotification: document.getElementById('pwaNotification'),
-            notificationTitle: document.getElementById('notificationTitle'),
-            notificationBody: document.getElementById('notificationBody'),
-            notificationPrimaryButton: document.getElementById('notificationPrimaryButton'),
-            notificationSecondaryButton: document.getElementById('notificationSecondaryButton')
-        };
-
-        // ====== PWA Service Worker Management ======
-        function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register("{% static 'service_worker.js' %}")
-                        .then(registration => {
-                            console.log('ServiceWorker registered: ', registration.scope);
-                            appState.registration = registration;
-
-                            // Check for updates
-                            registration.addEventListener('updatefound', () => {
-                                const newWorker = registration.installing;
-                                newWorker.addEventListener('statechange', () => {
-                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('New version available');
-                                        showUpdateNotification();
-                                    }
-                                });
-                            });
-
-                            setTimeout(() => {
-                                elements.pwaLoading.classList.add('hidden');
-                            }, 1000);
-                        })
-                        .catch(err => {
-                            console.log('ServiceWorker registration failed: ', err);
-                            setTimeout(() => {
-                                elements.pwaLoading.classList.add('hidden');
-                            }, 1000);
-                        });
-                });
-            } else {
-                setTimeout(() => {
-                    elements.pwaLoading.classList.add('hidden');
-                }, 1000);
-            }
-        }
-
-        // ====== Install Prompt Management ======
-        function setupInstallPrompt() {
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                appState.deferredPrompt = e;
-                
-                // Only show install notification if not already shown
-                if (!appState.installPromptShown) {
-                    showInstallNotification();
-                    localStorage.setItem('install-prompt-shown', 'true');
-                    appState.installPromptShown = true;
-                }
-            });
-            
-            window.addEventListener('appinstalled', () => {
-                console.log('PWA was installed');
-                hideInstallNotification();
-                localStorage.setItem('install-prompt-shown', 'true');
-                appState.installPromptShown = true;
-            });
-        }
-
-        function showInstallNotification() {
-            if (appState.deferredPrompt && !appState.installPromptShown) {
-                showNotification(
-                    'Install TranssFlow',
-                    'Install the app for the best experience!',
-                    'Install',
-                    'Not Now',
-                    () => {
-                        appState.deferredPrompt.prompt();
-                        appState.deferredPrompt.userChoice.then((choiceResult) => {
-                            if (choiceResult.outcome === 'accepted') {
-                                console.log('User accepted the install prompt');
-                            }
-                            appState.deferredPrompt = null;
-                        });
-                        hideNotification();
-                    },
-                    () => {
-                        hideNotification();
-                        // Mark as shown even if user declines
-                        localStorage.setItem('install-prompt-shown', 'true');
-                        appState.installPromptShown = true;
-                    }
-                );
-            }
-        }
-
-        function hideInstallNotification() {
-            const installNotification = document.getElementById('pwa-install-notification');
-            if (installNotification) {
-                installNotification.remove();
-            }
-        }
-
-        // ====== Update Management ======
-        function showUpdateNotification() {
-            showNotification(
-                'Update Available',
-                'A new version of TranssFlow is available. Refresh to update.',
-                'Update Now',
-                'Later',
-                () => {
-                    window.location.reload();
-                },
-                () => {
-                    // User chose later, schedule update for next time
-                    localStorage.setItem('update-reminder', Date.now().toString());
-                }
-            );
-        }
-
-        // ====== Offline Detection ======
-        function setupOfflineDetection() {
-            // Check initial connection status
-            appState.isOnline = navigator.onLine;
-            updateOfflineIndicator();
-            
-            window.addEventListener('online', () => {
-                appState.isOnline = true;
-                updateOfflineIndicator();
-                console.log('App is online');
-            });
-
-            window.addEventListener('offline', () => {
-                appState.isOnline = false;
-                updateOfflineIndicator();
-                console.log('App is offline');
-            });
-        }
+# Integrating Lark and Feishu Access Token Handling in Your Django PWA
+
+Based on your code, I can see you've already set up the foundation for Lark/Feishu integration. Here's how to complete the implementation for handling both platforms' access tokens and URLs:
+
+## 1. Update Your Django View to Handle Access Tokens
+
+First, modify your `view.py` to handle the access token:
+
+```python
+# Add this import at the top
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+# Add this view to handle receiving the access token
+@csrf_exempt
+@require_POST
+def receive_platform_token(request):
+    try:
+        data = json.loads(request.body)
+        open_id = data.get('open_id')
+        app_access_token = data.get('app_access_token')
+        tenant_key = data.get('tenant_key')
+        platform = data.get('platform')
         
-        function updateOfflineIndicator() {
-            if (appState.isOnline) {
-                elements.offlineIndicator.classList.remove('show');
-            } else {
-                elements.offlineIndicator.classList.add('show');
+        # Store the token in the user's session
+        request.session[f'{platform}_access_token'] = app_access_token
+        request.session[f'{platform}_open_id'] = open_id
+        request.session[f'{platform}_tenant_key'] = tenant_key
+        
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+# Update your form_valid method to handle iframe URLs with tokens
+def form_valid(self, form):
+    scanned_url = self.request.POST.get("scanned_result")
+    if scanned_url:
+        form.instance.scanned_barcode_text = scanned_url
+        messages.success(self.request, "✅ QR/Barcode scanned and saved successfully.")
+    else:
+        messages.warning(self.request, "⚠️ No QR/Barcode scanned.")
+        
+    # Get the platform and access token
+    platform = 'lark' if 'window.lark' in str(self.request.META.get('HTTP_USER_AGENT', '')) else 'feishu'
+    access_token = self.request.session.get(f'{platform}_access_token')
+    
+    # Add data to context for frontend to save to IndexedDB
+    context = {
+        'offline_data': {
+            'type': 'operator_qualification',
+            'id': str(form.instance.id),
+            'data': {
+                'date': str(form.instance.date),
+                'shift': form.instance.shift,
+                'emp_id': form.instance.emp_id,
+                'name': form.instance.name,
+                'section': form.instance.section,
+                'line': form.instance.line,
+                'group': form.instance.group,
+                'model': form.instance.model,
+                'color': form.instance.color,
             }
-        }
+        },
+        'scanned_url': scanned_url,
+        'platform': platform,
+        'access_token': access_token
+    }
+    
+    return render(self.request, 'ipqc/operator_qualification_success.html', context)
+```
 
-        // ====== Notification System ======
-        function showNotification(title, body, primaryText, secondaryText, primaryAction, secondaryAction) {
-            elements.notificationTitle.textContent = title;
-            elements.notificationBody.textContent = body;
-            elements.notificationPrimaryButton.textContent = primaryText;
-            elements.notificationSecondaryButton.textContent = secondaryText;
-            
-            elements.notificationPrimaryButton.onclick = primaryAction;
-            elements.notificationSecondaryButton.onclick = secondaryAction;
-            
-            elements.pwaNotification.classList.add('show');
-        }
+## 2. Add URL Routing
 
-        function hideNotification() {
-            elements.pwaNotification.classList.remove('show');
-        }
+In your `urls.py`, add the new endpoint:
 
-        // ====== Sidebar Functions ======
-        function toggleSidebar() {
-            if (appState.isMobile) {
-                elements.sidebar.classList.toggle('active');
-                elements.overlay.classList.toggle('active');
-                // lock scroll behind overlay to mimic app modal
-                elements.body.style.overflow = elements.sidebar.classList.contains('active') ? 'hidden' : '';
-                // set aria states
-                elements.sidebar.setAttribute('aria-hidden', elements.sidebar.classList.contains('active') ? 'false' : 'true');
-            }
-        }
+```python
+from django.urls import path
+from .views import OperatorQualificationCheckCreateView, receive_platform_token
 
-        function closeSidebar() {
-            if (appState.isMobile) {
-                elements.sidebar.classList.remove('active');
-                elements.overlay.classList.remove('active');
-                elements.body.style.overflow = '';
-                elements.sidebar.setAttribute('aria-hidden', 'true');
-            }
-        }
+urlpatterns = [
+    # ... your existing URLs
+    path('receive-platform-token/', receive_platform_token, name='receive_platform_token'),
+]
+```
 
-        function toggleDesktopSidebar() {
-            elements.sidebar.classList.toggle('collapsed');
-            updateToggleButton();
-            saveSidebarState();
-        }
+## 3. Update Your Base Template
 
-        function updateToggleButton() {
-            const icon = elements.toggleBtn.querySelector('i');
-            if (elements.sidebar.classList.contains('collapsed')) {
-                icon.className = 'fas fa-bars';
-            } else {
-                icon.className = 'fas fa-times';
-            }
-        }
+Modify the JavaScript in `base.html` to properly handle both platforms:
 
-        function saveSidebarState() {
-            appState.sidebarCollapsed = elements.sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebar-collapsed', appState.sidebarCollapsed);
-        }
+```javascript
+// Replace the existing platform detection code with this:
+let platform = null;
+let sdk = null;
 
-        function initializeSidebar() {
-            if (!appState.isMobile && appState.sidebarCollapsed) {
-                elements.sidebar.classList.add('collapsed');
-            }
-            updateToggleButton();
-        }
+// Detect environment and initialize the appropriate SDK
+if (window.lark) {
+    platform = "lark";
+    sdk = lark;
+} else if (window.feishu) {
+    platform = "feishu";
+    sdk = feishu;
+}
 
-        // ====== User Dropdown Functions ======
-        function toggleUserDropdown() {
-            appState.userDropdownOpen = !appState.userDropdownOpen;
+function sendTokenToBackend(context) {
+    const open_id = context.user.open_id;
+    const app_access_token = context.app_access_token;
+    const tenant_key = context.tenant.key;
 
-            if (appState.userDropdownOpen) {
-                elements.userDropdown.classList.add('active');
-                elements.dropdownArrow.style.transform = 'rotate(180deg)';
-                elements.userDropdown.setAttribute('aria-expanded', 'true');
-                // Close dropdown when clicking outside
-                setTimeout(() => {
-                    document.addEventListener('click', closeUserDropdownOutside);
-                }, 100);
-            } else {
-                elements.userDropdown.classList.remove('active');
-                elements.dropdownArrow.style.transform = 'rotate(0deg)';
-                elements.userDropdown.setAttribute('aria-expanded', 'false');
-                document.removeEventListener('click', closeUserDropdownOutside);
-            }
-        }
+    fetch('/receive-platform-token/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            open_id,
+            app_access_token,
+            tenant_key,
+            platform
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('Backend login response:', data);
+        // Store token in localStorage for iframe use
+        localStorage.setItem(`${platform}_access_token`, app_access_token);
+    })
+    .catch(err => console.error('Error sending token:', err));
+}
 
-        function closeUserDropdown() {
-            appState.userDropdownOpen = false;
-            elements.userDropdown.classList.remove('active');
-            elements.dropdownArrow.style.transform = 'rotate(0deg)';
-            elements.userDropdown.setAttribute('aria-expanded', 'false');
-            document.removeEventListener('click', closeUserDropdownOutside);
-        }
+// Initialize SDK based on platform
+if (platform && sdk) {
+    sdk.ready(() => {
+        sdk.getContext().then(sendTokenToBackend)
+          .catch(err => console.error(`${platform} getContext error:`, err));
+    });
+} else {
+    console.log("Not in Lark/Feishu mini app environment.");
+}
 
-        function closeUserDropdownOutside(event) {
-            if (!elements.userDropdown.contains(event.target)) {
-                closeUserDropdown();
-            }
-        }
+// Add function to get access token
+function getAccessToken() {
+    return localStorage.getItem(`${platform}_access_token`) || null;
+}
 
-        // ====== Utility Functions ======
-        function updateMetrics() {
-            const metricElements = document.querySelectorAll('.metric-value');
-            metricElements.forEach(el => {
-                // read value but preserve suffix like %
-                const text = el.textContent.trim();
-                const isPercent = text.includes('%');
-                const numeric = parseFloat(text.replace(/[^0-9.]/g, ''));
-                if (!isNaN(numeric)) {
-                    const change = (Math.random() - 0.5) * numeric * 0.05;
-                    let newValue = numeric + change;
-                    if (isPercent) {
-                        newValue = Math.max(0, Math.min(100, newValue));
-                        el.textContent = newValue.toFixed(1) + '%';
-                    } else {
-                        newValue = Math.max(0, newValue);
-                        el.textContent = Math.round(newValue).toLocaleString();
-                    }
-                }
-            });
-        }
+// Add function to create authenticated URLs
+function createAuthenticatedUrl(baseUrl) {
+    const token = getAccessToken();
+    if (!token) return baseUrl;
+    
+    // Add token to URL based on platform
+    if (platform === 'lark') {
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        return `${baseUrl}${separator}access_token=${token}`;
+    } else if (platform === 'feishu') {
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        return `${baseUrl}${separator}app_access_token=${token}`;
+    }
+    
+    return baseUrl;
+}
 
-        function handleResize() {
-            const wasMobile = appState.isMobile;
-            appState.isMobile = window.innerWidth < 1024;
+// Expose functions globally
+window.getPlatform = () => platform;
+window.getAccessToken = getAccessToken;
+window.createAuthenticatedUrl = createAuthenticatedUrl;
+```
 
-            // Reset states when crossing breakpoint
-            if (wasMobile !== appState.isMobile) {
-                closeSidebar();
-                closeUserDropdown();
+## 4. Update Your Form Template
 
-                if (!appState.isMobile) {
-                    elements.sidebar.classList.remove('active');
-                    initializeSidebar();
-                } else {
-                    elements.sidebar.classList.remove('collapsed');
-                }
-            }
-        }
+Modify the `operator_qualification_form.html` to properly handle both platforms:
 
-        // ====== Event Listeners ======
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (appState.userDropdownOpen) {
-                    closeUserDropdown();
-                } else if (appState.isMobile && elements.sidebar.classList.contains('active')) {
-                    closeSidebar();
-                }
-            }
-        });
+```javascript
+// Update the showFeishuLink function to handle both platforms
+function showPlatformLink(url) {
+    const preview = document.getElementById('feishu-preview');
+    const iframeContainer = document.getElementById('feishu-iframe-container');
+    const iframe = document.getElementById('feishu-iframe');
+    
+    // Create authenticated URL
+    const authenticatedUrl = createAuthenticatedUrl(url);
+    
+    preview.innerHTML = `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> ${platform.charAt(0).toUpperCase() + platform.slice(1)} link scanned successfully!
+            <br>
+            <a href="${authenticatedUrl}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                <i class="fas fa-external-link-alt"></i> Open Record
+            </a>
+        </div>
+    `;
+    
+    // Show iframe preview
+    iframeContainer.style.display = 'block';
+    iframe.src = authenticatedUrl;
+    
+    // Store the URL in the form field
+    const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
+    barcodeField.value = authenticatedUrl;
+}
 
-        // Prevent dropdown from closing when clicking inside it
-        if (elements.userDropdown) {
-            elements.userDropdown.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-        }
+// Update the QR scanner success callback
+html5QrCode.start(
+    cameraConfig,
+    { fps: 10, qrbox: 250 },
+    decoded => {
+        // Update single form field
+        barcodeField.value = decoded;
+        
+        // Capture snapshot before stopping
+        captureSnapshot();
+        
+        stopQRScanner();
+        showPlatformLink(decoded);
+        isScanSuccessful = true;
+    },
+    error => {
+        // Ignore scan errors
+    }
+);
+```
 
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(handleResize, 200);
-        });
+## 5. Add CSRF Protection for Token Endpoint
 
-        // Close all submenus when clicking outside
-        document.addEventListener('click', function (event) {
-            if (!event.target.closest('.sidebar-item')) {
-                document.querySelectorAll('[id$="-submenu"]').forEach(submenu => {
-                    submenu.classList.add('hidden');
-                });
-                document.querySelectorAll('[id$="-chevron"]').forEach(chevron => {
-                    chevron.style.transform = 'rotate(0deg)';
-                });
-            }
-        });
+Create a context processor to ensure CSRF token is available in all templates:
 
-        // ====== Initialize ======
-        document.addEventListener('DOMContentLoaded', () => {
-            // Hide loading screen after a short delay in case service worker registration takes time
-            setTimeout(() => {
-                if (!elements.pwaLoading.classList.contains('hidden')) {
-                    elements.pwaLoading.classList.add('hidden');
-                }
-            }, 2000);
-            
-            initializeSidebar();
-            registerServiceWorker();
-            setupInstallPrompt();
-            setupOfflineDetection();
-            setInterval(updateMetrics, 30000);
-        });
+```python
+# In context_processors.py
+def csrf_token(request):
+    return {'csrf_token': str(request.META.get('CSRF_COOKIE', ''))}
+```
 
-        // ====== Expose functions globally ======
-        window.toggleSidebar = toggleSidebar;
-        window.closeSidebar = closeSidebar;
-        window.toggleDesktopSidebar = toggleDesktopSidebar;
-        window.toggleUserDropdown = toggleUserDropdown;
-        window.closeUserDropdown = closeUserDropdown;
+And add it to your settings:
 
-        // ====== Handle service worker messages ======
-        navigator.serviceWorker.addEventListener('message', event => {
-            console.log('Received message from service worker:', event.data);
-            
-            if (event.data && event.data.type === 'SKIP_WAITING') {
-                self.skipWaiting();
-            }
-        });
+```python
+# In settings.py
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'your_app.context_processors.csrf_token',
+            ],
+        },
+    },
+]
+```
 
-        // ====== Handle app updates ======
-        // Check if there's a pending update reminder
-        const updateReminder = localStorage.getItem('update-reminder');
-        if (updateReminder) {
-            const reminderTime = parseInt(updateReminder);
-            const hoursSinceReminder = (Date.now() - reminderTime) / (1000 * 60 * 60);
-            
-            // If more than 24 hours have passed, show the update notification again
-            if (hoursSinceReminder > 24) {
-                localStorage.removeItem('update-reminder');
-                showUpdateNotification();
-            }
-        }
-    </script>
+## 6. Create a Utility Function for URL Handling
 
-    {% block extra_js %}{% endblock %}
-</body>
+Create a utility module to help with URL handling:
 
-</html>
+```python
+# In utils.py
+import json
+from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+
+def add_token_to_url(url, platform, access_token):
+    """
+    Add platform-specific token to URL
+    """
+    if not access_token:
+        return url
+    
+    parsed_url = list(urlparse(url))
+    
+    if platform == 'lark':
+        # Add access_token as query parameter
+        query_params = parse_qs(parsed_url[4])
+        query_params['access_token'] = [access_token]
+        parsed_url[4] = urlencode(query_params, doseq=True)
+    elif platform == 'feishu':
+        # Add app_access_token as query parameter
+        query_params = parse_qs(parsed_url[4])
+        query_params['app_access_token'] = [access_token]
+        parsed_url[4] = urlencode(query_params, doseq=True)
+    
+    return urlunparse(parsed_url)
+```
+
+## Summary of Changes:
+
+1. **Django View**: Added endpoint to receive and store platform tokens
+2. **URL Routing**: Added route for the token endpoint
+3. **Base Template**: Enhanced platform detection and token handling
+4. **Form Template**: Updated QR scanner to use authenticated URLs
+5. **Security**: Added CSRF protection for the token endpoint
+6. **Utilities**: Created helper function for URL token handling
+
+This implementation will:
+- Detect whether your app is running in Lark or Feishu
+- Get the access token from the platform
+- Store the token in both session and localStorage
+- Use the token to create authenticated URLs for iframes
+- Handle both platforms' URL parameter formats
+
+The solution is backward compatible and will work whether the app is embedded in Lark/Feishu or accessed as a standalone PWA.

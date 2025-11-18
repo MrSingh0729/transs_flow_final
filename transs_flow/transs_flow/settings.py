@@ -77,6 +77,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                'factories.assembly.departments.qa.ipqc.context_processors.csrf_token',
             ],
         },
     },

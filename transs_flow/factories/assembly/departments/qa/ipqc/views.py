@@ -26,17 +26,17 @@ from django.http import HttpResponse
 import os
 from django.urls import reverse
 import requests
- 
+
 # ==============================================================================
 # PWA HELPER FUNCTIONS
 # ==============================================================================
- 
+
 def is_mobile(request):
     """Detect if the request is from a mobile device"""
     user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
     mobile_agents = ['android', 'iphone', 'ipod', 'ipad', 'blackberry', 'windows phone']
     return any(agent in user_agent for agent in mobile_agents)
- 
+
 def get_pwa_context(request):
     """Get PWA context for templates"""
     return {
@@ -46,20 +46,20 @@ def get_pwa_context(request):
         'api_base_url': '/api/',
         'offline_sync_supported': False,  # Will be set in template
     }
- 
+
 # ==============================================================================
 # EXISTING FUNCTION-BASED VIEWS (WITH PWA ENHANCEMENTS)
 # ==============================================================================
- 
+
 # --- Fetch models dynamically from your DB ---
 def ajax_get_models(request):
     q = request.GET.get('q', '').strip()
     try:
         with connections['defaultdb'].cursor() as cursor:
             cursor.execute("""
-                SELECT model_name 
-                FROM model_description 
-                WHERE model_name LIKE %s 
+                SELECT model_name
+                FROM model_description
+                WHERE model_name LIKE %s
                 ORDER BY model_name ASC
                 LIMIT 20;
             """, [f"%{q}%"])
@@ -68,29 +68,29 @@ def ajax_get_models(request):
     except Exception as e:
         data = []
     return JsonResponse(data, safe=False)
- 
- 
+
+
 # --- Static list for lines (L1–L15) ---
 def ajax_get_lines(request):
     q = request.GET.get('q', '').strip().upper()
     lines = [f"L{i}" for i in range(1, 16)]
     filtered = [l for l in lines if q in l]
     return JsonResponse([{'id': l, 'text': l} for l in filtered], safe=False)
- 
- 
+
+
 # --- Static list for groups (A1–A15) ---
 def ajax_get_groups(request):
     q = request.GET.get('q', '').strip().upper()
     groups = [f"A{i}" for i in range(1, 16)]
     filtered = [g for g in groups if q in g]
     return JsonResponse([{'id': g, 'text': g} for g in filtered], safe=False)
- 
+
 @login_required
 @role_required(["IPQC"])
 def work_info_view(request):
     emp_id = getattr(request.user, 'employee_id', None)
     full_name = getattr(request.user, 'full_name', None)
- 
+
     # --- Safety: fallback if missing in user model ---
     if not emp_id or not full_name:
         try:
@@ -100,28 +100,28 @@ def work_info_view(request):
         except Employee.DoesNotExist:
             messages.error(request, "Employee record not found for this user.")
             return redirect('ipqc_home')
- 
+
     today = timezone.localdate()
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
- 
+
     today_records = IPQCWorkInfo.objects.filter(date=today, emp_id=emp_id).count()
     week_records = IPQCWorkInfo.objects.filter(date__range=[start_of_week, end_of_week], emp_id=emp_id).count()
     total_records = IPQCWorkInfo.objects.filter(emp_id=emp_id).count()
     recent_records = IPQCWorkInfo.objects.filter(emp_id=emp_id).order_by('-created_at')[:5]
- 
+
     if request.method == 'POST':
         form = WorkInfoForm(request.POST)
         if form.is_valid():
             work_info = form.save(commit=False)
- 
+
             # Always attach employee info
             work_info.emp_id = emp_id
             work_info.name = full_name
             work_info.created_at = timezone.now()
- 
+
             work_info.save()
- 
+
             # PWA: Add data to context for frontend to save to IndexedDB
             context = {
                 'offline_data': {
@@ -140,20 +140,20 @@ def work_info_view(request):
                     }
                 }
             }
- 
+
             success, message = write_to_bitable(work_info)
             if success:
                 messages.success(request, 'Work info saved and synced to Lark Bitable!')
             else:
                 messages.warning(request, f'Work info saved but failed to sync: {message}')
- 
+
             return render(request, 'ipqc/success/work_info_success.html', context)
     else:
         form = WorkInfoForm()
- 
+
     line_list = [f"L{i}" for i in range(1, 16)]
     group_list = [f"A{i}" for i in range(1, 16)]
- 
+
     context = {
         'first_name': full_name.split()[0] if full_name else "",
         'designation': getattr(request.user, "role", ""),
@@ -170,54 +170,54 @@ def work_info_view(request):
         'group_list': group_list,
         **get_pwa_context(request)
     }
- 
+
     return render(request, 'ipqc/work_info.html', context)
- 
+
 @csrf_exempt
 def lark_bitable_webhook(request):
     """Webhook endpoint for Lark Bitable automation trigger"""
     if request.method != 'POST':
         return JsonResponse({"error": "Invalid method"}, status=405)
- 
+
     try:
         payload = json.loads(request.body.decode('utf-8'))
         fields = payload.get('fields', {})
-        
+
         emp_id = fields.get('Emp_ID')
         model_name = fields.get('Model')
         date = fields.get('Date')
         status = fields.get('Status')
- 
+
         if not all([emp_id, model_name, date, status]):
             return JsonResponse({"error": "Missing required fields"}, status=400)
- 
+
         # Convert date if it's in timestamp (ms)
         if isinstance(date, int):
             date = datetime.fromtimestamp(date / 1000).date()
- 
+
         # Update corresponding record
         updated = IPQCWorkInfo.objects.filter(emp_id=emp_id, model=model_name, date=date).update(status=status)
- 
+
         if updated:
             return JsonResponse({"message": "Status updated successfully"})
         else:
             return JsonResponse({"error": "Record not found"}, status=404)
- 
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
- 
+
 @login_required
 @role_required(["IPQC"])
 def home_view(request):
     user = request.user
     emp_id = getattr(user, 'employee_id', None)
- 
+
     now = timezone.localtime()
     today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
     today = now.date()
     start_of_week = today - timedelta(days=today.weekday())
     start_of_month = today.replace(day=1)
- 
+
     # Define the time range (8 AM today → 8 AM next day)
     if now < today_8am:
         start_time = today_8am - timedelta(days=1)
@@ -225,104 +225,104 @@ def home_view(request):
     else:
         start_time = today_8am
         end_time = today_8am + timedelta(days=1)
- 
+
     # Check if created_at is within current 8AM–8AM window
     has_filled = IPQCWorkInfo.objects.filter(
         emp_id=emp_id,
         created_at__gte=start_time,
         created_at__lt=end_time
     ).exists()
- 
+
     if not has_filled:
         messages.warning(
             request,
             "⚠️ You haven't filled your Work Info for the current period (8 AM to next day 8 AM). Please fill it before proceeding."
         )
         return redirect('ipqc_work_info')
- 
+
     is_admin = user.is_superuser or getattr(user, 'role', '').lower() == 'admin'
-    
+
     # Set filters for non-admin users
     base_filter = {}
     if not is_admin and emp_id:
         base_filter['inspector_name'] = getattr(user, 'full_name', '') or user.username
- 
+
     # Work Info counts
     work_info_today = IPQCWorkInfo.objects.filter(date=today, emp_id=emp_id).count()
     work_info_week = IPQCWorkInfo.objects.filter(date__range=[start_of_week, today], emp_id=emp_id).count()
     work_info_month = IPQCWorkInfo.objects.filter(date__range=[start_of_month, today], emp_id=emp_id).count()
- 
+
     # Assembly Audit counts
     audit_today = IPQCAssemblyAudit.objects.filter(date=today, emp_id=emp_id).count()
     audit_week = IPQCAssemblyAudit.objects.filter(date__range=[start_of_week, today], emp_id=emp_id).count()
     audit_month = IPQCAssemblyAudit.objects.filter(date__range=[start_of_month, today], emp_id=emp_id).count()
- 
+
     # ESD Compliance counts
     esd_today = ESDComplianceChecklist.objects.filter(date=today, emp_id=emp_id).count()
     esd_week = ESDComplianceChecklist.objects.filter(date__range=[start_of_week, today], emp_id=emp_id).count()
     esd_month = ESDComplianceChecklist.objects.filter(date__range=[start_of_month, today], emp_id=emp_id).count()
- 
+
     # IPQC Disassemble counts
     disassemble_today = IPQCDisassembleCheckList.objects.filter(date=today, emp_id=emp_id).count()
     disassemble_week = IPQCDisassembleCheckList.objects.filter(date__range=[start_of_week, today], emp_id=emp_id).count()
     disassemble_month = IPQCDisassembleCheckList.objects.filter(date__range=[start_of_month, today], emp_id=emp_id).count()
- 
+
     # FAI counts
     fai_today = TestingFirstArticleInspection.objects.filter(date=today, **base_filter).count()
     fai_week = TestingFirstArticleInspection.objects.filter(date__range=[start_of_week, today], **base_filter).count()
     fai_month = TestingFirstArticleInspection.objects.filter(date__range=[start_of_month, today], **base_filter).count()
- 
+
     recent_audits = IPQCAssemblyAudit.objects.filter(emp_id=emp_id).order_by('-created_at')[:5]
     dynamic_forms = DynamicForm.objects.all().order_by('-created_at')
- 
+
     full_name = getattr(user, 'full_name', '') or f"{user.first_name} {user.last_name}".strip()
- 
+
     context = {
         'Full_Name': full_name,
         'designation': getattr(user, "role", ""),
         'is_admin': is_admin,
         'dynamic_forms': dynamic_forms,
-        
+
         # Work Info counts
         'work_info_today': work_info_today,
         'work_info_week': work_info_week,
         'work_info_month': work_info_month,
-        
+
         # Audit counts
         'audit_today': audit_today,
         'audit_week': audit_week,
         'audit_month': audit_month,
-        
+
         # ESD counts
         'esd_today': esd_today,
         'esd_week': esd_week,
         'esd_month': esd_month,
-        
+
         # Disassemble counts
         'disassemble_today': disassemble_today,
         'disassemble_week': disassemble_week,
         'disassemble_month': disassemble_month,
-        
+
         # FAI counts
         'fai_today': fai_today,
         'fai_week': fai_week,
         'fai_month': fai_month,
-        
+
         'recent_audits': recent_audits,
         **get_pwa_context(request)
     }
- 
+
     return render(request, 'ipqc/home.html', context)
- 
+
 @login_required
 @role_required(["IPQC", "QA"])
 def info_dash(request):
     emp_id = request.user.employee_id
- 
+
     today = timezone.localdate()
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
- 
+
     today_records = IPQCWorkInfo.objects. filter(date=today, emp_id=emp_id).count()
     week_records = IPQCWorkInfo.objects. filter(
     date__range=[start_of_week, end_of_week],
@@ -333,7 +333,7 @@ def info_dash(request):
     emp_id=emp_id,
     date__range=[start_of_week, end_of_week]
     ).order_by('-created_at')[:5]
- 
+
     context = {
         'first_name': request.user.full_name.split()[0],
         'designation': request.user.role,
@@ -344,23 +344,23 @@ def info_dash(request):
         **get_pwa_context(request)
     }
     return render(request, 'ipqc/info_dash.html', context)
- 
- 
+
+
 @login_required
 @role_required()
 def fill_dynamic_form(request, form_id):
     form_obj = get_object_or_404(DynamicForm, id=form_id)
     fields = form_obj.fields. all()
- 
+
     work_info_today = IPQCWorkInfo.objects. filter(
         emp_id=request.user.employee_id,
         date=timezone.localdate()
     ).order_by('-created_at').first()
- 
+
     if not work_info_today:
         messages.warning(request, "Please fill your IPQC Work Info for today before submitting dynamic forms.")
         return redirect('ipqc_work_info')
- 
+
     prefill_work_info = {
         'Emp_ID': work_info_today.emp_id,
         'Name': work_info_today.name,
@@ -372,9 +372,9 @@ def fill_dynamic_form(request, form_id):
         'Date': work_info_today.date,
         'Shift': work_info_today.shift
     }
- 
+
     CustomForm = type('CustomForm', (forms. Form,), {})
- 
+
     for key, value in prefill_work_info.items():
         if key == 'Date':
             CustomForm.base_fields[key] = forms. DateField(
@@ -384,7 +384,7 @@ def fill_dynamic_form(request, form_id):
             )
         else:
             CustomForm.base_fields[key] = forms. CharField(initial=value, required=True)
- 
+
     for field in fields:
         if field.field_type == 'text':
             CustomForm.base_fields[field.label] = forms. CharField(required=field.required)
@@ -400,28 +400,28 @@ def fill_dynamic_form(request, form_id):
             CustomForm.base_fields[field.label] = forms. ChoiceField(choices=choices, required=field.required)
         elif field.field_type == 'checkbox':
             CustomForm.base_fields[field.label] = forms. BooleanField(required=field.required)
- 
+
     if request.method == 'POST':
         form = CustomForm(request. POST)
         if form.is_valid():
             cleaned_data = form.cleaned_data
- 
+
             dynamic_data = {k: v for k, v in cleaned_data.items() if k not in prefill_work_info}
             submission = DynamicFormSubmission.objects.create(
                 form=form_obj,
                 submitted_by=request.user,
                 data=dynamic_data
             )
- 
+
             ipqc_data = {k: v for k, v in cleaned_data.items() if k in prefill_work_info}
             for field, value in ipqc_data.items():
                 setattr(work_info_today, field.lower(), value)
             work_info_today.save()
- 
+
             combined_data = {**ipqc_data, **dynamic_data}
             if 'Date' in combined_data and isinstance(combined_data['Date'], (datetime, date)):
                 combined_data['Date'] = date_to_ms(combined_data['Date'])
- 
+
             # PWA: Add data to context for frontend to save to IndexedDB
             context = {
                 'offline_data': {
@@ -431,7 +431,7 @@ def fill_dynamic_form(request, form_id):
                     'data': combined_data
                 }
             }
-            
+
             success, message = write_to_bitable_dynamic(form_obj.lark_bitable_table_id, combined_data)
             messages.success(
                 request,
@@ -440,15 +440,15 @@ def fill_dynamic_form(request, form_id):
             return render(request, 'ipqc/dynamic_form_success.html', context)
     else:
         form = CustomForm()
- 
+
     return render(request, 'ipqc/dynamic_form.html', {
         'form': form,
         'form_obj': form_obj,
         'work_info_today': work_info_today,
         **get_pwa_context(request)
     })
- 
- 
+
+
 @login_required
 @role_required()
 def create_dynamic_form(request):
@@ -457,27 +457,27 @@ def create_dynamic_form(request):
         description = request. POST.get("description")
         lark_bitable_table_id = request. POST.get("lark_bitable_table_id")
         fields_data = request. POST.get("fields_data")
- 
+
         if DynamicForm.objects. filter(title__iexact=title).exists():
             messages.error(request, f"A form with the title '{title}' already exists.")
             return redirect('create_dynamic_form')
- 
+
         if not fields_data:
             messages.error(request, "Please add at least one field.")
             return redirect('create_dynamic_form')
- 
+
         try:
             fields = json.loads(fields_data)
         except:
             messages.error(request, "Invalid field data.")
             return redirect('create_dynamic_form')
- 
+
         dynamic_form = DynamicForm.objects.create(
             title=title,
             description=description,
             lark_bitable_table_id=lark_bitable_table_id
         )
- 
+
         for idx, field in enumerate(fields):
             DynamicFormField.objects.create(
                 form=dynamic_form,
@@ -486,26 +486,26 @@ def create_dynamic_form(request):
                 required=field.get("required", True),
                 order=idx
             )
- 
+
         messages.success(request, "Dynamic form created successfully!")
         return redirect('ipqc_home')
- 
+
     return render(request, "ipqc/create_dynamic_form.html", **get_pwa_context(request))
- 
- 
+
+
 @login_required
 @role_required()
 def dynamic_form_dashboard(request, form_id):
     form_obj = get_object_or_404(DynamicForm, id=form_id)
     submissions = DynamicFormSubmission.objects. filter(form=form_obj)
- 
+
     df = pd. DataFrame([s.data for s in submissions])
     df['submitted_by'] = [s.submitted_by.full_name for s in submissions]
     df['created_at'] = [s.created_at for s in submissions]
- 
+
     total_submissions = len(df)
     latest_submission = df['created_at']. max() if  not df.empty else  None
- 
+
     numeric_summary = {}
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):
@@ -514,7 +514,7 @@ def dynamic_form_dashboard(request, form_id):
                 'max': df[col]. max(),
                 'min': df[col]. min(),
             }
- 
+
     context = {
         "form_obj": form_obj,
         'total_submissions': total_submissions,
@@ -523,14 +523,14 @@ def dynamic_form_dashboard(request, form_id):
         "data_json": df.to_json(orient='records') if not df.empty else '[]',
         **get_pwa_context(request)
     }
- 
+
     return render(request, "ipqc/dynamic_dashboard.html", context)
- 
- 
+
+
 # ==============================================================================
 # IPQC ASSEMBLY AUDIT VIEWS (NEW & UPDATED)
 # ==============================================================================
- 
+
 class UserCanEditAuditMixin(UserPassesTestMixin):
     def test_func(self):
         audit = self.get_object()
@@ -538,62 +538,62 @@ class UserCanEditAuditMixin(UserPassesTestMixin):
         if user.is_superuser or user.role.lower() == 'admin':
             return True
         return audit.emp_id == user.employee_id
- 
+
 class IPQCAssemblyAuditListView(RoleRequiredMixin, LoginRequiredMixin, ListView):
     allowed_roles = ["IPQC"]
     model = IPQCAssemblyAudit
     template_name = 'ipqc/audit_list.html'
     context_object_name = 'audits'
     paginate_by = 10
- 
+
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser or user.role.lower() == 'admin':
             return IPQCAssemblyAudit.objects. all()
         else:
             return IPQCAssemblyAudit.objects. filter(emp_id=user.employee_id)
- 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['is_admin'] = self.request.user.is_superuser or self.request.user.role.lower() == 'admin'
         context.update(get_pwa_context(self.request))
         return context
- 
+
 class IPQCAssemblyAuditCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     allowed_roles = ["IPQC"]
     model = IPQCAssemblyAudit
     form_class = IPQCAssemblyAuditForm
     template_name = 'ipqc/ipqc_assembly_audit_form.html'
     success_url = reverse_lazy('ipqc_audit_list')
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
- 
+
         if emp_id:
             now = timezone.localtime()
             today = now.date()
             today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
             start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
             end_time = start_time + timedelta(days=1)
- 
+
             has_filled = IPQCWorkInfo.objects.filter(
                 emp_id=emp_id,
                 created_at__range=[start_time, end_time]
             ).exists()
- 
+
             if not has_filled:
                 messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
                 return redirect('ipqc_work_info')
- 
+
         return super().dispatch(request, *args, **kwargs)
- 
+
     def get_initial(self):
         initial = super().get_initial()
         emp_id = getattr(self.request.user, 'employee_id', None)
- 
+
         initial['ipqc_sign'] = getattr(self.request.user, 'full_name', self.request.user.employee_id)
- 
+
         if emp_id:
             try:
                 latest_work_info = IPQCWorkInfo.objects. filter(emp_id=emp_id).latest('created_at')
@@ -606,53 +606,53 @@ class IPQCAssemblyAuditCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateV
                 })
             except IPQCWorkInfo.DoesNotExist:
                 messages.warning(self.request, "No Work Information found. Some fields may be empty.")
-        
+
         return initial
- 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         form = context['form']
-        
+
         context['machine_fields'] = [
-            form['mach_epa_check'], form['mach_screw_torque'], form['mach_sholdering_temp'], 
-            form['mach_light'], form['mach_fixture_clean'], form['mach_jig_label'], 
+            form['mach_epa_check'], form['mach_screw_torque'], form['mach_sholdering_temp'],
+            form['mach_light'], form['mach_fixture_clean'], form['mach_jig_label'],
             form['mach_teflon'], form['mach_press_params'], form['mach_glue_params'],
-            form['mach_eq_move_notify'], form['mach_feeler_gauge'], form['mach_hot_cold_press'], 
-            form['mach_ion_fan'], form['mach_cleanroom_eq'], form['mach_rti_check'], 
+            form['mach_eq_move_notify'], form['mach_feeler_gauge'], form['mach_hot_cold_press'],
+            form['mach_ion_fan'], form['mach_cleanroom_eq'], form['mach_rti_check'],
             form['mach_current_test'], form['mach_pal_qr'], form['mach_auto_screw'],
         ]
- 
+
         context['material_fields'] = [
-            form['mat_key_check'], form['mat_special_stop'], form['mat_improved_monitor'], 
-            form['mat_result_check'], form['mat_battery_issue'], form['mat_ipa_check'], 
+            form['mat_key_check'], form['mat_special_stop'], form['mat_improved_monitor'],
+            form['mat_result_check'], form['mat_battery_issue'], form['mat_ipa_check'],
             form['mat_thermal_gel'], form['mat_verification'],
         ]
- 
+
         context['method_fields'] = [
-            form['meth_sop_seq'], form['meth_distance_sensor'], form['meth_rear_camera'], 
-            form['meth_material_handling'], form['meth_guideline_doc'], form['meth_operation_doc'], 
-            form['meth_defective_feedback'], form['meth_line_record'], form['meth_no_self_repair'], 
-            form['meth_battery_fix'], form['meth_line_change'], form['meth_trail_run'], 
+            form['meth_sop_seq'], form['meth_distance_sensor'], form['meth_rear_camera'],
+            form['meth_material_handling'], form['meth_guideline_doc'], form['meth_operation_doc'],
+            form['meth_defective_feedback'], form['meth_line_record'], form['meth_no_self_repair'],
+            form['meth_battery_fix'], form['meth_line_change'], form['meth_trail_run'],
             form['meth_dummy_conduct'],
         ]
- 
+
         context['environment_fields'] = [
             form['env_prod_monitor'], form['env_5s'],
         ]
- 
+
         context['trc_fields'] = [
-            form['trc_flow_chart'], form['fai_check'], form['defect_monitor'], 
+            form['trc_flow_chart'], form['fai_check'], form['defect_monitor'],
             form['spot_check'], form['auto_screw_sample'],
         ]
-        
+
         context.update(get_pwa_context(self.request))
         return context
- 
+
     def form_valid(self, form):
         form.instance.emp_id = self.request.user.employee_id
         form.instance.name = self.request.user.full_name
         form.instance.remarks = self.request.POST.get('remarks', '').strip()
-        
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -671,60 +671,60 @@ class IPQCAssemblyAuditCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateV
                 }
             }
         }
-        
+
         messages.success(self.request, "Audit record created successfully!")
         return render(self.request, 'ipqc/audit_success.html', context)
- 
+
 class IPQCAssemblyAuditUpdateView(RoleRequiredMixin, LoginRequiredMixin, UserCanEditAuditMixin, UpdateView):
     allowed_roles = ["IPQC"]
     model = IPQCAssemblyAudit
     form_class = IPQCAssemblyAuditForm
     template_name = 'ipqc/ipqc_assembly_audit_update_form.html'
     success_url = reverse_lazy('ipqc_audit_list')
- 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['is_update'] = True
         form = context['form']
-        
+
         context['machine_fields'] = [
-            form['mach_epa_check'], form['mach_screw_torque'], form['mach_sholdering_temp'], 
-            form['mach_light'], form['mach_fixture_clean'], form['mach_jig_label'], 
+            form['mach_epa_check'], form['mach_screw_torque'], form['mach_sholdering_temp'],
+            form['mach_light'], form['mach_fixture_clean'], form['mach_jig_label'],
             form['mach_teflon'], form['mach_press_params'], form['mach_glue_params'],
-            form['mach_eq_move_notify'], form['mach_feeler_gauge'], form['mach_hot_cold_press'], 
-            form['mach_ion_fan'], form['mach_cleanroom_eq'], form['mach_rti_check'], 
+            form['mach_eq_move_notify'], form['mach_feeler_gauge'], form['mach_hot_cold_press'],
+            form['mach_ion_fan'], form['mach_cleanroom_eq'], form['mach_rti_check'],
             form['mach_current_test'], form['mach_pal_qr'], form['mach_auto_screw'],
         ]
- 
+
         context['material_fields'] = [
-            form['mat_key_check'], form['mat_special_stop'], form['mat_improved_monitor'], 
-            form['mat_result_check'], form['mat_battery_issue'], form['mat_ipa_check'], 
+            form['mat_key_check'], form['mat_special_stop'], form['mat_improved_monitor'],
+            form['mat_result_check'], form['mat_battery_issue'], form['mat_ipa_check'],
             form['mat_thermal_gel'], form['mat_verification'],
         ]
- 
+
         context['method_fields'] = [
-            form['meth_sop_seq'], form['meth_distance_sensor'], form['meth_rear_camera'], 
-            form['meth_material_handling'], form['meth_guideline_doc'], form['meth_operation_doc'], 
-            form['meth_defective_feedback'], form['meth_line_record'], form['meth_no_self_repair'], 
-            form['meth_battery_fix'], form['meth_line_change'], form['meth_trail_run'], 
+            form['meth_sop_seq'], form['meth_distance_sensor'], form['meth_rear_camera'],
+            form['meth_material_handling'], form['meth_guideline_doc'], form['meth_operation_doc'],
+            form['meth_defective_feedback'], form['meth_line_record'], form['meth_no_self_repair'],
+            form['meth_battery_fix'], form['meth_line_change'], form['meth_trail_run'],
             form['meth_dummy_conduct'],
         ]
- 
+
         context['environment_fields'] = [
             form['env_prod_monitor'], form['env_5s'],
         ]
- 
+
         context['trc_fields'] = [
-            form['trc_flow_chart'], form['fai_check'], form['defect_monitor'], 
+            form['trc_flow_chart'], form['fai_check'], form['defect_monitor'],
             form['spot_check'], form['auto_screw_sample'],
         ]
-        
+
         context.update(get_pwa_context(self.request))
         return context
- 
+
     def form_valid(self, form):
         form.instance.remarks = self.request.POST.get('remarks', '').strip()
-        
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -743,57 +743,57 @@ class IPQCAssemblyAuditUpdateView(RoleRequiredMixin, LoginRequiredMixin, UserCan
                 }
             }
         }
- 
+
         messages.success(self.request, "Audit record updated successfully!")
         return render(self.request, 'ipqc/audit_success.html', context)
- 
+
 class IPQCAssemblyAuditDeleteView(RoleRequiredMixin, LoginRequiredMixin, UserCanEditAuditMixin, DeleteView):
     allowed_roles = ["IPQC"]
     model = IPQCAssemblyAudit
     template_name = 'ipqc/confirm_delete.html'
     success_url = reverse_lazy('ipqc_audit_list')
- 
+
     def delete(self, request, *args, **kwargs):
         messages.success(request, "Audit record deleted successfully.")
         return super().delete(request, *args, **kwargs)
-    
+
 class BTBFitmentChecksheetCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     allowed_roles = ["IPQC"]
     model = BTBFitmentChecksheet
     form_class = BTBFitmentChecksheetForm
     template_name = 'ipqc/btb_checksheet_form.html'
     success_url = reverse_lazy('btb_checksheet_list')
- 
+
     HOURS = ['9','10','11','12','1','2','3','4','5','6']
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
- 
+
         if emp_id:
             now = timezone.localtime()
             today = now.date()
             today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
             start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
             end_time = start_time + timedelta(days=1)
- 
+
             has_filled = IPQCWorkInfo.objects.filter(
                 emp_id=emp_id,
                 created_at__range=[start_time, end_time]
             ).exists()
- 
+
             if not has_filled:
                 messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
                 return redirect('ipqc_work_info')
- 
+
         return super().dispatch(request, *args, **kwargs)
- 
+
     def get_initial(self):
         initial = super().get_initial()
         emp_id = getattr(self.request.user, 'employee_id', None)
- 
+
         initial['pqe_tl_sign'] = getattr(self.request.user, 'full_name', self.request.user.employee_id)
- 
+
         if emp_id:
             try:
                 latest_work_info = IPQCWorkInfo.objects. filter(emp_id=emp_id).latest('created_at')
@@ -806,9 +806,9 @@ class BTBFitmentChecksheetCreateView(RoleRequiredMixin, LoginRequiredMixin, Crea
                 })
             except IPQCWorkInfo.DoesNotExist:
                 messages.warning(self.request, "No Work Information found. Some fields may be empty.")
-        
+
         return initial
- 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         hours = ['9','10','11','12','1','2','3','4','5','6']
@@ -826,12 +826,12 @@ class BTBFitmentChecksheetCreateView(RoleRequiredMixin, LoginRequiredMixin, Crea
         context['hour_fields'] = fields
         context.update(get_pwa_context(self.request))
         return context
- 
+
     def form_valid(self, form):
         if not self.request.user.is_authenticated:
             messages.error(self.request, "You must be logged in to submit this form.")
             return self.form_invalid(form)
- 
+
         try:
             user = self.request.user
             if not user.pk or not user.is_active:
@@ -839,20 +839,20 @@ class BTBFitmentChecksheetCreateView(RoleRequiredMixin, LoginRequiredMixin, Crea
         except Exception:
             messages.error(self.request, "Current user is invalid. Please contact admin.")
             return self.form_invalid(form)
- 
+
         aggregated_data_json = self.request.POST.get('aggregated_data', '{}')
         try:
             aggregated_data = json.loads(aggregated_data_json)
         except json.JSONDecodeError:
             messages.error(self.request, "There was an error processing the form data. Please try again.")
             return self.form_invalid(form)
- 
+
         for key, value in aggregated_data.items():
             if hasattr(form.instance, key):
                 setattr(form.instance, key, value)
- 
+
         form.instance.created_by = user
-        
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -861,75 +861,75 @@ class BTBFitmentChecksheetCreateView(RoleRequiredMixin, LoginRequiredMixin, Crea
                 'data': aggregated_data
             }
         }
- 
+
         messages.success(self.request, "BTB Fitment Checksheet submitted successfully!")
         return render(self.request, 'ipqc/btb_checksheet_success.html', context)
- 
+
 class BTBFitmentChecksheetListView(RoleRequiredMixin, LoginRequiredMixin, ListView):
     allowed_roles = ["IPQC"]
     model = BTBFitmentChecksheet
     template_name = 'ipqc/btb_checksheet_list.html'
     context_object_name = 'checksheets'
     paginate_by = 10
- 
+
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser or user.role.lower() == 'admin':
             return BTBFitmentChecksheet.objects. all()
         else:
             return BTBFitmentChecksheet.objects. filter(created_by=user)
-        
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_pwa_context(self.request))
         return context
-        
+
 class BTBFitmentChecksheetDetailView(RoleRequiredMixin, LoginRequiredMixin, DetailView):
     allowed_roles = ["IPQC"]
     model = BTBFitmentChecksheet
     template_name = 'ipqc/btb_checksheet_detail.html'
     context_object_name = 'sheet'
- 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_pwa_context(self.request))
         return context
-    
+
 class AssyDummyTestCreate(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     allowed_roles = ["IPQC"]
     model = AssDummyTest
     form_class = AssDummyTestForm
     template_name = 'ipqc/ass_dummy_test_form.html'
     success_url = reverse_lazy('ass_dummy_test_list')
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
- 
+
         if emp_id:
             now = timezone.localtime()
             today = now.date()
             today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
             start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
             end_time = start_time + timedelta(days=1)
- 
+
             has_filled = IPQCWorkInfo.objects.filter(
                 emp_id=emp_id,
                 created_at__range=[start_time, end_time]
             ).exists()
- 
+
             if not has_filled:
                 messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
                 return redirect('ipqc_work_info')
- 
+
         return super().dispatch(request, *args, **kwargs)
- 
+
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
- 
+
         initial['pqe_tl_sign'] = getattr(user, 'full_name', getattr(user, 'employee_id', ''))
- 
+
         emp_id = getattr(user, 'employee_id', None)
         if emp_id:
             try:
@@ -948,7 +948,7 @@ class AssyDummyTestCreate(RoleRequiredMixin, LoginRequiredMixin, CreateView):
             except IPQCWorkInfo.DoesNotExist:
                 messages.warning(self.request, "No Work Information found. Some fields may be empty.")
         return initial
- 
+
     def form_valid(self, form):
         user = self.request.user
         aggregated_data_json = self.request.POST.get('aggregated_data', '{}')
@@ -964,7 +964,7 @@ class AssyDummyTestCreate(RoleRequiredMixin, LoginRequiredMixin, CreateView):
                 setattr(form.instance, key, value)
 
         form.instance.created_by = user
-        
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -976,7 +976,7 @@ class AssyDummyTestCreate(RoleRequiredMixin, LoginRequiredMixin, CreateView):
 
         messages.success(self.request, "Assy Dummy Test submitted successfully!")
         return render(self.request, 'ipqc/ass_dummy_test_success.html', context)
-    
+
 class AssDummyTestListView(RoleRequiredMixin, LoginRequiredMixin, ListView):
     allowed_roles = ["IPQC"]
     model = AssDummyTest
@@ -984,19 +984,19 @@ class AssDummyTestListView(RoleRequiredMixin, LoginRequiredMixin, ListView):
     context_object_name = 'tests'
     ordering = ['-date', '-id']
     paginate_by = 25
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_pwa_context(self.request))
         return context
-    
+
 class IPQCDisassembleCheckListCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     allowed_roles = ["IPQC"]
     model = IPQCDisassembleCheckList
     form_class = IPQCDisassembleCheckListForm
     template_name = 'ipqc/ipqc_disassemble_form.html'
     success_url = reverse_lazy('ipqc_disassemble_list')
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
@@ -1047,7 +1047,7 @@ class IPQCDisassembleCheckListCreateView(RoleRequiredMixin, LoginRequiredMixin, 
     def form_valid(self, form):
         if hasattr(form.instance, 'created_by'):
             form.instance.created_by = self.request.user
-            
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -1092,15 +1092,15 @@ class IPQCDisassembleCheckListView(RoleRequiredMixin, LoginRequiredMixin, ListVi
                 Q(color__icontains=query)
             )
         return queryset
-    
+
     def get_overall_status(self):
-        choice_fields = [field.name for field in self._meta.fields 
+        choice_fields = [field.name for field in self._meta.fields
                         if field.choices and field.name not in ['created_by']]
-        
+
         ok_count = 0
         not_ok_count = 0
         total_checked = 0
-        
+
         for field_name in choice_fields:
             value = getattr(self, field_name)
             if value == 'OK':
@@ -1109,7 +1109,7 @@ class IPQCDisassembleCheckListView(RoleRequiredMixin, LoginRequiredMixin, ListVi
             elif value == 'Not OK':
                 not_ok_count += 1
                 total_checked += 1
-        
+
         if total_checked == 0:
             return 'MIXED'
         elif not_ok_count == 0:
@@ -1121,32 +1121,32 @@ class IPQCDisassembleCheckListView(RoleRequiredMixin, LoginRequiredMixin, ListVi
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         today = timezone.now().date()
         week_start = today - datetime.timedelta(days=today.weekday())
-        
+
         all_records = self.model.objects.all()
-        
+
         stats = {
             'today': all_records.filter(created_at__date=today).count(),
             'week': all_records.filter(created_at__date__gte=week_start).count(),
             'total': all_records.count(),
         }
-        
+
         context['ipqc_disassemble_stats'] = stats
         context['total_records'] = stats['total']
         context['recent_submissions'] = self.model.objects.order_by('-created_at')[:5]
         context.update(get_pwa_context(self.request))
-        
+
         return context
-    
+
 class IPQCDisassembleDetailView(DetailView):
     model = IPQCDisassembleCheckList
-    
+
     def get(self, request, *args, **kwargs):
         try:
             record = self.get_object()
-            
+
             data = {
                 'date': record.date.strftime('%Y-%m-%d'),
                 'shift': record.shift,
@@ -1209,7 +1209,7 @@ class IPQCDisassembleDetailView(DetailView):
                 'created_at': record.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                 'photos': []
             }
-            
+
             photo_fields = [
                 ('color_match_photo', 'Color Match Photo'),
                 ('cam_lens_photo', 'Camera Lens Photo'),
@@ -1220,7 +1220,7 @@ class IPQCDisassembleDetailView(DetailView):
                 ('assembly_overview_photo', 'Assembly Overview'),
                 ('defect_photo', 'Defect Photo'),
             ]
-            
+
             for field_name, label in photo_fields:
                 photo = getattr(record, field_name)
                 if photo:
@@ -1228,14 +1228,14 @@ class IPQCDisassembleDetailView(DetailView):
                         'label': label,
                         'url': photo.url
                     })
-            
+
             return JsonResponse(data)
-            
+
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Error loading IPQC Disassemble details: {str(e)}")
-            return JsonResponse({'error': str(e)}, status=500)    
+            return JsonResponse({'error': str(e)}, status=500)
 
 class NCIssueTrackingCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     allowed_roles = ["IPQC"]
@@ -1243,7 +1243,7 @@ class NCIssueTrackingCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateVie
     form_class = NCIssueTrackingForm
     template_name = 'ipqc/nc_issue_tracking_form.html'
     success_url = reverse_lazy('nc_issue_tracking_list')
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
@@ -1306,7 +1306,7 @@ class NCIssueTrackingCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateVie
 
         if hasattr(form.instance, 'created_by'):
             form.instance.created_by = user
-            
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -1318,7 +1318,7 @@ class NCIssueTrackingCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateVie
 
         messages.success(self.request, "✅ NC Issue Tracking submitted successfully!")
         return render(self.request, 'ipqc/nc_issue_success.html', context)
-    
+
 class NCIssueTrackingListView(RoleRequiredMixin, LoginRequiredMixin, ListView):
     allowed_roles = ["IPQC"]
     model = NCIssueTracking
@@ -1337,19 +1337,19 @@ class NCIssueTrackingListView(RoleRequiredMixin, LoginRequiredMixin, ListView):
                 Q(color__icontains=query)
             )
         return queryset
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_pwa_context(self.request))
         return context
-    
+
 class ESDComplianceChecklistCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     allowed_roles = ["IPQC"]
     model = ESDComplianceChecklist
     form_class = ESDComplianceChecklistForm
     template_name = 'ipqc/esd_compliance_checklist_form.html'
     success_url = reverse_lazy('esd_compliance_checklist_list')
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
@@ -1400,7 +1400,7 @@ class ESDComplianceChecklistCreateView(RoleRequiredMixin, LoginRequiredMixin, Cr
     def form_valid(self, form):
         if hasattr(form.instance, 'created_by'):
             form.instance.created_by = self.request.user
-            
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -1419,7 +1419,7 @@ class ESDComplianceChecklistCreateView(RoleRequiredMixin, LoginRequiredMixin, Cr
                 }
             }
         }
-        
+
         response = super().form_valid(form)
         messages.success(self.request, "✅ ESD Compliance Checklist submitted successfully!")
         return render(self.request, 'ipqc/esd_success.html', context)
@@ -1444,14 +1444,14 @@ class ESDComplianceCheckListView(RoleRequiredMixin, LoginRequiredMixin, ListView
             )
 
         return queryset
-    
+
     def get_overall_status(self):
         audit_fields = [f.name for f in self._meta.fields if f.choices]
-        
+
         ok_count = 0
         not_ok_count = 0
         na_count = 0
-        
+
         for field_name in audit_fields:
             value = getattr(self, field_name)
             if value == 'OK':
@@ -1471,26 +1471,26 @@ class ESDComplianceCheckListView(RoleRequiredMixin, LoginRequiredMixin, ListView
 
     def __str__(self):
         return f"{self.date} - {self.line} - {self.name}"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         base_queryset = self.model.objects.all()
         today = timezone.now().date()
-        
+
         context['total_records'] = base_queryset.count()
         context['today_records'] = base_queryset.filter(date=today).count()
-        
+
         start_of_week = today - timedelta(days=today.weekday())
         context['week_records'] = base_queryset.filter(date__gte=start_of_week).count()
-        
+
         context.update(get_pwa_context(self.request))
         return context
 
 @require_GET
 def esd_compliance_checklist_details(request, pk):
     record = get_object_or_404(ESDComplianceChecklist, pk=pk)
-    
+
     def get_verbose_name(field_name):
         try:
             return record._meta.get_field(field_name).verbose_name
@@ -1507,7 +1507,7 @@ def esd_compliance_checklist_details(request, pk):
         'model': {'label': 'Model', 'value': record.model},
         'color': {'label': 'Color', 'value': record.color},
     }
-    
+
     sections = {
         'clothing': {
             'title': 'Clothing Rules', 'icon': 'fa-tshirt',
@@ -1541,7 +1541,7 @@ def esd_compliance_checklist_details(request, pk):
             'fields': ['tools_audit', 'temp_humidity', 'tray_voltage']
         }
     }
-    
+
     compliance_data = {}
     for key, section in sections.items():
         compliance_data[key] = {
@@ -1560,7 +1560,7 @@ def esd_compliance_checklist_details(request, pk):
         'humidity_value': {'label': 'Humidity (%)', 'value': record.humidity_value},
         'tray_voltage_value': {'label': 'Tray Voltage (V)', 'value': record.tray_voltage_value},
     }
-    
+
     photo_fields = {
         'epa_clothes_photo': 'EPA Clothes',
         'hair_cap_photo': 'Hair Cap',
@@ -1592,14 +1592,14 @@ def esd_compliance_checklist_details(request, pk):
         'created_at': record.created_at.strftime('%Y-%m-%d %H:%M:%S'),
     }
     return JsonResponse(data)
-    
+
 class DustCountCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     allowed_roles = ["IPQC"]
     model = DustCountCheck
     form_class = DustCountCheckForm
     template_name = 'ipqc/dust_count_checklist_form.html'
     success_url = reverse_lazy('dust_count_checklist_list')
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
@@ -1647,7 +1647,7 @@ class DustCountCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         if hasattr(form.instance, 'created_by'):
             form.instance.created_by = self.request.user
-            
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -1666,7 +1666,7 @@ class DustCountCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
                 }
             }
         }
-        
+
         response = super().form_valid(form)
         messages.success(self.request, "✅ Dust Count Check submitted successfully!")
         return render(self.request, 'ipqc/dust_count_success.html', context)
@@ -1687,18 +1687,18 @@ class DustCountListView(ListView):
                 Q(line__icontains=search_query)
             )
         return queryset
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_pwa_context(self.request))
         return context
-    
+
 class TestingFirstArticleInspectionCreateView(LoginRequiredMixin, CreateView):
     model = TestingFirstArticleInspection
     form_class = TestingFirstArticleInspectionForm
     template_name = 'ipqc/testing_fai_form.html'
     success_url = reverse_lazy('testing_fai_list')
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
@@ -1720,7 +1720,7 @@ class TestingFirstArticleInspectionCreateView(LoginRequiredMixin, CreateView):
                 return redirect('ipqc_work_info')
 
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
@@ -1739,19 +1739,19 @@ class TestingFirstArticleInspectionCreateView(LoginRequiredMixin, CreateView):
                 messages.warning(self.request, "⚠️ No pre-filled work information found.")
         initial['inspector_name'] = getattr(user, 'full_name', None) or user.username
         return initial
-    
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
-    
+
     def form_valid(self, form):
         response = super().form_valid(form)
         instance = self.object
         public_link = self.request.build_absolute_uri(reverse('testing_fai_public_update', args=[str(instance.public_token)]))
         instance.public_url = public_link
         instance.save(update_fields=['public_url'])
-        
+
         # PWA: Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
@@ -1771,14 +1771,14 @@ class TestingFirstArticleInspectionCreateView(LoginRequiredMixin, CreateView):
                 }
             }
         }
-        
+
         messages.success(self.request, f"✅ Record created! QE link generated.")
         return render(self.request, 'ipqc/fai_success.html', context)
-    
+
     def form_invalid(self, form):
         messages.error(self.request, "❌ Error creating FAI record. Please check the form for errors.")
         return super().form_invalid(form)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'First Article Inspection (FAI)'
@@ -1789,14 +1789,14 @@ class TestingFirstArticleInspectionCreateView(LoginRequiredMixin, CreateView):
         ]
         context.update(get_pwa_context(self.request))
         return context
- 
+
 class TestingFirstArticleInspectionListView(LoginRequiredMixin, ListView):
     model = TestingFirstArticleInspection
     template_name = 'ipqc/testing_fai_list.html'
     context_object_name = 'fai_records'
     paginate_by = 10
     ordering = ['-date', '-created_at']
- 
+
     def get_queryset(self):
         user = self.request.user
         queryset = super().get_queryset()
@@ -1815,15 +1815,15 @@ class TestingFirstArticleInspectionListView(LoginRequiredMixin, ListView):
         else:
             inspector_name = getattr(user, 'full_name', None) or getattr(user, 'name', None) or getattr(user, 'username', None) or str(user)
             return queryset.filter(inspector_name=inspector_name)
- 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         queryset_for_stats = self.get_queryset()
-        
+
         today = timezone.now().date()
         week_start = today - timezone.timedelta(days=today.weekday())
-        
+
         context.update({
             'page_title': 'FAI Records',
             'fai_stats': {
@@ -1832,18 +1832,18 @@ class TestingFirstArticleInspectionListView(LoginRequiredMixin, ListView):
                 'total': queryset_for_stats.count(),
             },
             'breadcrumbs': [
-                {'name': 'Dashboard', 'url': reverse_lazy('ipqc_home')}, 
+                {'name': 'Dashboard', 'url': reverse_lazy('ipqc_home')},
                 {'name': 'FAI List', 'url': '#'}
             ]
         })
         context.update(get_pwa_context(self.request))
         return context
- 
+
 class TestingFirstArticleInspectionDetailView(LoginRequiredMixin, DetailView):
     model = TestingFirstArticleInspection
     template_name = 'ipqc/testing_fai_detail.html'
     context_object_name = 'fai_record'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
@@ -1856,34 +1856,34 @@ class TestingFirstArticleInspectionDetailView(LoginRequiredMixin, DetailView):
         })
         context.update(get_pwa_context(self.request))
         return context
- 
+
 def download_testing_fai_evidence(request, pk, evidence_type):
     fai = get_object_or_404(TestingFirstArticleInspection, pk=pk)
-    if not (request.user.is_superuser or 
+    if not (request.user.is_superuser or
             request.user.groups.filter(name__in=['Admin', 'QA']).exists() or
             fai.inspector_name == (request.user.get_full_name() or request.user.username)):
         raise Http404("Permission denied.")
- 
+
     evidence_fields = {
-        'label_photo': fai.label_check_evidence, 
+        'label_photo': fai.label_check_evidence,
         'label_position_photo': fai.label_position_check_evidence,
-        'logo_photo': fai.logo_check_evidence, 
+        'logo_photo': fai.logo_check_evidence,
         'assembly_photo': fai.assembly_battery_check_evidence,
-        'boot_video': fai.boot_time_test_evidence, 
+        'boot_video': fai.boot_time_test_evidence,
         'cam_front_photo': fai.camera_front_test_evidence,
-        'cam_back_photo': fai.camera_back_test_evidence, 
+        'cam_back_photo': fai.camera_back_test_evidence,
         'cam_dark_photo': fai.camera_dark_test_evidence,
-        'temp_cam_photo': fai.high_temp_camera_test_evidence, 
+        'temp_cam_photo': fai.high_temp_camera_test_evidence,
         'imei_photo': fai.imei_photo,
     }
     file = evidence_fields.get(evidence_type)
     if not file or not file.name:
         raise Http404("Evidence file not found.")
-    
+
     response = HttpResponse(file.read(), content_type='application/octet-stream')
     response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file.name)}"'
     return response
- 
+
 
 def testing_fai_public_qe_update_view(request, public_token):
     fai_record = get_object_or_404(TestingFirstArticleInspection, public_token=public_token)
@@ -1901,10 +1901,10 @@ def testing_fai_public_qe_update_view(request, public_token):
         else:
             messages.error(request, "⚠️ Please fill all required fields.")
     return render(request, "ipqc/testing_fai_public_qe_update.html", {"fai_record": fai_record})
- 
+
 class TestingFAIDetailsJsonView(LoginRequiredMixin, DetailView):
     model = TestingFirstArticleInspection
-    
+
     def render_to_response(self, context, **response_kwargs):
         obj = self.get_object()
         data = {
@@ -1925,11 +1925,11 @@ class TestingFAIDetailsJsonView(LoginRequiredMixin, DetailView):
             'created_at': obj.created_at.strftime('%Y-%m-%d %H:%M'),
             'photos': []
         }
-        
+
         for field in obj._meta.fields:
             if field.name.endswith(('_check', '_test')) and field.choices:
                 data[field.name] = getattr(obj, field.name)
-        
+
         photo_labels = {
             'label_check_evidence': 'Label Check Photo',
             'label_position_check_evidence': 'Label Position Photo',
@@ -1945,7 +1945,7 @@ class TestingFAIDetailsJsonView(LoginRequiredMixin, DetailView):
             file = getattr(obj, field_name)
             if file:
                 data['photos'].append({'url': file.url, 'label': label})
- 
+
         return JsonResponse(data)
 
 class OperatorQualificationCheckCreateView(CreateView):
@@ -1953,7 +1953,7 @@ class OperatorQualificationCheckCreateView(CreateView):
     form_class = OperatorQualificationCheckForm
     template_name = "ipqc/operator_qualification_form.html"
     success_url = reverse_lazy("operator_qualification_list")
-    
+
     def dispatch(self, request, *args, **kwargs):
         user = request.user
         emp_id = getattr(user, 'employee_id', None)
@@ -2001,8 +2001,12 @@ class OperatorQualificationCheckCreateView(CreateView):
             messages.success(self.request, "✅ QR/Barcode scanned and saved successfully.")
         else:
             messages.warning(self.request, "⚠️ No QR/Barcode scanned.")
-            
-        # PWA: Add data to context for frontend to save to IndexedDB
+
+        # Get the platform and access token
+        platform = 'lark' if 'window.lark' in str(self.request.META.get('HTTP_USER_AGENT', '')) else 'feishu'
+        access_token = self.request.session.get(f'{platform}_access_token')
+
+        # Add data to context for frontend to save to IndexedDB
         context = {
             'offline_data': {
                 'type': 'operator_qualification',
@@ -2018,9 +2022,12 @@ class OperatorQualificationCheckCreateView(CreateView):
                     'model': form.instance.model,
                     'color': form.instance.color,
                 }
-            }
+            },
+            'scanned_url': scanned_url,
+            'platform': platform,
+            'access_token': access_token
         }
-        
+
         return render(self.request, 'ipqc/operator_qualification_success.html', context)
 
     def get_context_data(self, **kwargs):
@@ -2053,22 +2060,22 @@ class OperatorQualificationCheckListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         today = timezone.now().date()
         week_ago = today - timedelta(days=7)
-        
+
         context['stats'] = {
             'today': OperatorQualificationCheck.objects.filter(date=today).count(),
             'week': OperatorQualificationCheck.objects.filter(date__gte=week_ago).count(),
             'total': OperatorQualificationCheck.objects.count(),
         }
-        
+
         context.update(get_pwa_context(self.request))
         return context
 
 def operator_qualification_detail(request, pk):
     record = get_object_or_404(OperatorQualificationCheck, pk=pk)
-    
+
     data = {
         'date': record.date.strftime('%Y-%m-%d'),
         'shift': record.shift,
@@ -2089,7 +2096,7 @@ def operator_qualification_detail(request, pk):
         'scanned_barcode_text': record.scanned_barcode_text,
         'created_at': record.created_at.strftime('%Y-%m-%d %H:%M'),
     }
-    
+
     photos = []
     if record.scanned_barcode_image:
         photos.append({
@@ -2102,7 +2109,7 @@ def operator_qualification_detail(request, pk):
             'label': 'Operator Job Card'
         })
     data['photos'] = photos
-    
+
     return JsonResponse(data)
 
 # ==============================================================================
@@ -2114,12 +2121,12 @@ def api_submit_offline_data(request):
     """API endpoint to submit offline-synced data"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid method'}, status=405)
-    
+
     try:
         data = json.loads(request.body)
         queue_type = data.get('type')
         record_data = data.get('data')
-        
+
         # Process based on queue type
         if queue_type == 'workinfo':
             record_id = record_data.pop('id', None)
@@ -2130,7 +2137,7 @@ def api_submit_offline_data(request):
                 record.save()
             else:
                 IPQCWorkInfo.objects.create(**record_data)
-                
+
         elif queue_type == 'assembly_audit':
             record_id = record_data.pop('id', None)
             if record_id:
@@ -2140,7 +2147,7 @@ def api_submit_offline_data(request):
                 record.save()
             else:
                 IPQCAssemblyAudit.objects.create(**record_data)
-                
+
         elif queue_type == 'fai_inspection':
             record_id = record_data.pop('id', None)
             if record_id:
@@ -2150,11 +2157,11 @@ def api_submit_offline_data(request):
                 record.save()
             else:
                 TestingFirstArticleInspection.objects.create(**record_data)
-                
+
         # Add other queue types as needed...
-        
+
         return JsonResponse({'success': True, 'message': 'Data synced successfully'})
-        
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -2163,9 +2170,9 @@ def api_get_form_data(request):
     """API endpoint to get form data for offline forms"""
     if request.method != 'GET':
         return JsonResponse({'error': 'Invalid method'}, status=405)
-    
+
     form_type = request.GET.get('form_type')
-    
+
     try:
         if form_type == 'work_info':
             form_data = {
@@ -2204,63 +2211,63 @@ def api_get_form_data(request):
             }
         else:
             return JsonResponse({'error': 'Invalid form type'}, status=400)
-            
+
         return JsonResponse(form_data)
-        
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-    
-    
-    
-    
-    
+
+
+
+
+
 
 
 
 def work_info_success(request):
     """Success page for work info form submission"""
     return render(request, 'ipqc/success/work_info_success.html')
- 
+
 def dynamic_form_success(request):
     """Success page for dynamic form submission"""
     return render(request, 'ipqc/success/dynamic_form_success.html')
- 
+
 def audit_success(request):
     """Success page for assembly audit submission"""
     return render(request, 'ipqc/success/audit_success.html')
- 
+
 def btb_checksheet_success(request):
     """Success page for BTB fitment checksheet submission"""
     return render(request, 'ipqc/success/btb_checksheet_success.html')
- 
+
 def ass_dummy_test_success(request):
     """Success page for Assy dummy test submission"""
     return render(request, 'ipqc/success/ass_dummy_test_success.html')
- 
+
 def disassemble_success(request):
     """Success page for disassemble checklist submission"""
     return render(request, 'ipqc/success/disassemble_success.html')
- 
+
 def nc_issue_success(request):
     """Success page for NC issue tracking submission"""
     return render(request, 'ipqc/success/nc_issue_success.html')
- 
+
 def esd_success(request):
     """Success page for ESD compliance checklist submission"""
     return render(request, 'ipqc/success/esd_success.html')
- 
+
 def dust_count_success(request):
     """Success page for dust count checklist submission"""
     return render(request, 'ipqc/success/dust_count_success.html')
- 
+
 def fai_success(request):
     """Success page for FAI submission"""
     return render(request, 'ipqc/success/fai_success.html')
- 
+
 def operator_qualification_success(request):
     """Success page for operator qualification submission"""
     return render(request, 'ipqc/success/operator_qualification_success.html')
- 
+
 def register_service_worker(request):
     """Register service worker for PWA"""
     return render(request, 'ipqc/success/register_sw.html')
