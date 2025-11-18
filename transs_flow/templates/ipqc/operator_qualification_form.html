@@ -674,14 +674,9 @@
     
     // Detect environment
     function getEnvironment() {
-        // Check if running in Feishu/Lark
         const isFeishu = typeof lark !== 'undefined' || typeof feishu !== 'undefined';
-        
-        // Check if running in mobile app
         const isMobileApp = /Feishu|Lark/i.test(navigator.userAgent) || 
                            (window.webkit && window.webkit.messageHandlers);
-        
-        // Check if mobile browser
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                        (window.innerWidth <= 768);
         
@@ -767,14 +762,12 @@
     }
     
     function validateForm() {
-        // Clear previous validation styles and messages
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
         const existingErrorDiv = document.getElementById('form-validation-error');
         if (existingErrorDiv) {
             existingErrorDiv.remove();
         }
         
-        // Validate required fields, step by step
         for (let step = 1; step <= totalSteps; step++) {
             const currentStepDiv = document.getElementById(`step${step}-content`);
             if (!currentStepDiv) continue;
@@ -783,7 +776,6 @@
             const requiredFields = currentStepDiv.querySelectorAll('input[required], select[required], textarea[required]');
             
             for (const field of requiredFields) {
-                // Skip readonly fields as they are pre-filled
                 if (field.hasAttribute('readonly')) {
                     continue;
                 }
@@ -791,7 +783,7 @@
                 let isEmpty = false;
                 if (field.type === 'file') {
                     isEmpty = !field.files || field.files.length === 0;
-                } else { // Covers text, number, select, textarea
+                } else {
                     isEmpty = !field.value || field.value.trim() === '';
                 }
                 
@@ -801,9 +793,7 @@
                 }
             }
             
-            // If current step has any errors, jump to it and stop validation
             if (stepHasError) {
-                const stepName = document.querySelector(`#step${step}-content .section-title`).textContent.trim();
                 const errorMessage = `Error in Step ${step}: Please fill in all required fields marked in red.`;
                 
                 let errorDiv = document.createElement('div');
@@ -816,30 +806,49 @@
                 errorDiv.innerHTML = `<strong>${errorMessage}</strong>`;
                 
                 goToStep(step);
-                return false; // Stop form submission
+                return false;
             }
         }
         
-        // If all validations pass
         return true;
     }
     
     // Check job card status and show/hide scanner
     function checkJobCardStatus() {
-        const jobCardStatus = document.getElementById('id_key_station_job_card_status').value;
+        const jobCardStatus = document.getElementById('id_key_station_job_card_status')?.value || '';
         const qrSection = document.getElementById('qr-scan-section');
         
+        console.log('Job card status:', jobCardStatus);
+        console.log('QR section:', qrSection);
+        
         if (jobCardStatus === 'Have') {
-            qrSection.classList.remove('hidden');
-            startQRScanner();
+            console.log('Showing QR section');
+            if (qrSection) {
+                qrSection.classList.remove('hidden');
+                
+                // Small delay to ensure UI is updated and element is visible
+                setTimeout(() => {
+                    if (qrSection.offsetParent !== null) {
+                        console.log('QR section is visible, starting scanner');
+                        startQRScanner();
+                    } else {
+                        console.log('QR section is not visible');
+                    }
+                }, 200);
+            }
         } else {
-            qrSection.classList.add('hidden');
+            console.log('Hiding QR section');
+            if (qrSection) {
+                qrSection.classList.add('hidden');
+            }
             stopQRScanner();
             // Clear scanned data if status changes
             const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-            barcodeField.value = '';
-            document.getElementById('scanStatus').innerHTML = '';
-            document.getElementById('scanSnapshot').innerHTML = '';
+            if (barcodeField) {
+                barcodeField.value = '';
+            }
+            document.getElementById('scanStatus') && (document.getElementById('scanStatus').innerHTML = '');
+            document.getElementById('scanSnapshot') && (document.getElementById('scanSnapshot').innerHTML = '');
             isScanSuccessful = false;
         }
     }
@@ -852,8 +861,18 @@
     
     // QR Scanner functions
     function startQRScanner() {
-        if (html5QrCode) return;
+        // If scanner is already running, stop it first
+        if (html5QrCode) {
+            stopQRScanner();
+        }
         
+        const readerDiv = document.getElementById('reader');
+        if (!readerDiv) {
+            console.error('Reader element not found');
+            return;
+        }
+        
+        console.log('Starting QR scanner');
         html5QrCode = new Html5Qrcode("reader");
         const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
         const preview = document.getElementById('feishu-preview');
@@ -868,16 +887,19 @@
         
         // Add environment-specific instructions
         if (env.isMobile) {
-            document.querySelector('#reader .alert-info').innerHTML = 
-                '<i class="fas fa-info-circle"></i> Position QR code within the frame to scan automatically. Ensure good lighting.';
+            const alertInfo = document.querySelector('#reader .alert-info');
+            if (alertInfo) {
+                alertInfo.innerHTML = 
+                    '<i class="fas fa-info-circle"></i> Position QR code within the frame to scan automatically. Ensure good lighting.';
+            }
         }
         
         function showFeishuLink(url) {
             const env = getEnvironment();
             
             // Clear previous content
-            iframeContainer.style.display = 'none';
-            preview.innerHTML = '';
+            iframeContainer && (iframeContainer.style.display = 'none');
+            preview && (preview.innerHTML = '');
             
             if (env.isFeishu || env.isMobileApp) {
                 // Feishu/Lark mini-app environment
@@ -887,13 +909,13 @@
                         lark.navigator.open({
                             url: url,
                             success: () => {
-                                preview.innerHTML = `
+                                preview && (preview.innerHTML = `
                                     <div class="alert alert-success">
                                         <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
                                         <br>
                                         <div>Opening in Feishu...</div>
                                     </div>
-                                `;
+                                `);
                             },
                             fail: (error) => {
                                 openInNewTab(url, preview);
@@ -904,13 +926,13 @@
                         feishu.navigator.open({
                             url: url,
                             success: () => {
-                                preview.innerHTML = `
+                                preview && (preview.innerHTML = `
                                     <div class="alert alert-success">
                                         <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
                                         <br>
                                         <div>Opening in Feishu...</div>
                                     </div>
-                                `;
+                                `);
                             },
                             fail: (error) => {
                                 openInNewTab(url, preview);
@@ -928,7 +950,7 @@
                 openInNewTab(url, preview);
             } else {
                 // Desktop browser
-                preview.innerHTML = `
+                preview && (preview.innerHTML = `
                     <div class="alert alert-success">
                         <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
                         <br>
@@ -936,19 +958,22 @@
                             <i class="fas fa-external-link-alt"></i> Open Record
                         </a>
                     </div>
-                `;
-                iframeContainer.style.display = 'block';
-                iframe.src = url;
+                `);
+                iframeContainer && (iframeContainer.style.display = 'block');
+                iframe && (iframe.src = url);
             }
         }
         
         // Generate filename and capture snapshot from video
         function captureSnapshot() {
             const video = document.querySelector('#reader video');
-            if (!video) return;
+            if (!video) {
+                console.log('Video element not found for snapshot');
+                return;
+            }
             
             // Get key station name and format it
-            const keyStationName = document.getElementById('id_key_station_name').value || 'scan';
+            const keyStationName = document.getElementById('id_key_station_name')?.value || 'scan';
             const formattedName = keyStationName.toLowerCase().replace(/\s+/g, '');
             
             // Get current date and time
@@ -976,19 +1001,21 @@
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 const fileInput = document.querySelector('[name="scanned_barcode_image"]');
-                fileInput.files = dataTransfer.files;
+                if (fileInput) {
+                    fileInput.files = dataTransfer.files;
+                }
                 
                 // Show preview of captured image
-                scanSnapshot.innerHTML = `
+                scanSnapshot && (scanSnapshot.innerHTML = `
                     <img src="${URL.createObjectURL(blob)}" alt="Scan Snapshot" />
                     <div class="text-sm text-gray-600 mt-2">✓ Scan snapshot captured (${filename})</div>
-                `;
+                `);
                 
-                scanStatus.innerHTML = `
+                scanStatus && (scanStatus.innerHTML = `
                     <div class="alert alert-success mt-2">
                         <i class="fas fa-camera"></i> Scan snapshot automatically saved as: <strong>${filename}</strong>
                     </div>
-                `;
+                `);
             });
         }
         
@@ -996,8 +1023,9 @@
             cameraConfig,
             { fps: 10, qrbox: 250 },
             decoded => {
+                console.log('QR Code scanned:', decoded);
                 // Update single form field
-                barcodeField.value = decoded;
+                barcodeField && (barcodeField.value = decoded);
                 
                 // Capture snapshot before stopping
                 captureSnapshot();
@@ -1007,22 +1035,22 @@
                 isScanSuccessful = true;
             },
             error => {
-                // Ignore scan errors
+                // Ignore scan errors, but log them for debugging
+                console.log('QR scan error:', error);
             }
         ).catch(err => {
             console.error(`Unable to start scanning: ${err}`);
-            const readerDiv = document.getElementById('reader');
             readerDiv.innerHTML = `
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle"></i> 
                     Camera access denied or not available. Please enter the URL manually.
                 </div>
             `;
-            scanStatus.innerHTML = `
+            scanStatus && (scanStatus.innerHTML = `
                 <div class="alert alert-warning mt-2">
                     Camera not available. Please upload the scan image manually if needed.
                 </div>
-            `;
+            `);
         });
     }
     
@@ -1038,7 +1066,7 @@
     
     // Helper function to open in new tab
     function openInNewTab(url, previewElement) {
-        previewElement.innerHTML = `
+        previewElement && (previewElement.innerHTML = `
             <div class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle"></i> 
                 Opening in new tab due to platform restrictions
@@ -1047,14 +1075,19 @@
                     <i class="fas fa-external-link-alt"></i> Open Record
                 </a>
             </div>
-        `;
+        `);
     }
     
     document.addEventListener('DOMContentLoaded', function () {
         initializeFeishuSDK();
         updateStepIndicator();
         // Add event listener to job card status dropdown
-        document.getElementById('id_key_station_job_card_status').addEventListener('change', checkJobCardStatus);
+        const jobCardStatusSelect = document.getElementById('id_key_station_job_card_status');
+        if (jobCardStatusSelect) {
+            jobCardStatusSelect.addEventListener('change', checkJobCardStatus);
+        } else {
+            console.error('Job card status dropdown not found');
+        }
     });
 </script>
 {% endblock content %}
