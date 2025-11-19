@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'factories.assembly.departments',
     'factories.assembly',
     'factories',
-    'lark_integration',
     
     'widget_tweaks',
     

@@ -12,7 +12,6 @@ urlpatterns = [
     
     # IPQC App URLs
     path('ipqc/', include('factories.assembly.departments.qa.ipqc.urls')),
-    path('lark_chat/', include('lark_integration.urls')),
     
     path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
     path("service_worker.js", ServiceWorkerView.as_view(), name="service_worker"),

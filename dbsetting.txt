@@ -1,0 +1,51 @@
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+# ---------------------- MYSQL ----------------------
+MYSQL_HOST = 'mrsingh29.mysql.pythonanywhere-services.com'
+MYSQL_PORT = '3306'
+MYSQL_USER = "mrsingh29"
+MYSQL_PASSWORD = "Vikram@0729"
+MYSQL_DB = 'mrsingh29$transs_flow_final'
+MYSQL_DB_MODEL = "mrsingh29$defaultdb"
+MYSQL_DB_CHAT = "mrsingh29$chatdb"
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': MYSQL_DB,
+        'USER': MYSQL_USER,
+        'PASSWORD': MYSQL_PASSWORD,
+        'HOST': MYSQL_HOST,
+        'PORT': MYSQL_PORT,
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        },
+    },
+
+    'defaultdb': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': MYSQL_DB_MODEL,
+        'USER': MYSQL_USER,
+        'PASSWORD': MYSQL_PASSWORD,
+        'HOST': MYSQL_HOST,
+        'PORT': MYSQL_PORT,
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        },
+    },
+    'chatdb': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': MYSQL_DB_CHAT,
+        'USER': MYSQL_USER,
+        'PASSWORD': MYSQL_PASSWORD,
+        'HOST': MYSQL_HOST,
+        'PORT': MYSQL_PORT,
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        },
+    },
+}
