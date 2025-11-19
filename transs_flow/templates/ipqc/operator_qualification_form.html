@@ -668,39 +668,35 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
 /* ============================================================
-      GLOBALS
+ GLOBALS
 ============================================================ */
 let currentStep = 1;
 const totalSteps = 4;
 let html5QrCode = null;
 
 /* ============================================================
-      STEP NAVIGATION UI
+ STEP UI
 ============================================================ */
 function updateStepIndicator() {
     const percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+
     document.getElementById("progressLine").style.width = percent + "%";
     document.getElementById("currentStep").textContent = currentStep;
     document.getElementById("currentSection").textContent = currentStep;
 
     for (let i = 1; i <= totalSteps; i++) {
-        const circle = document.getElementById(`step${i}`);
-        const block  = document.getElementById(`step${i}-content`);
+        const c = document.getElementById(`step${i}`);
+        const sec = document.getElementById(`step${i}-content`);
 
-        if (circle) {
-            circle.classList.remove("active", "completed");
-            if (i < currentStep) {
-                circle.classList.add("completed");
-                circle.innerHTML = "✓";
-            } else if (i === currentStep) {
-                circle.classList.add("active");
-                circle.innerHTML = i;
-            } else {
-                circle.innerHTML = i;
-            }
+        if (c) {
+            c.classList.remove("active", "completed");
+
+            if (i < currentStep) { c.classList.add("completed"); c.innerHTML = "✓"; }
+            else if (i === currentStep) { c.classList.add("active"); c.innerHTML = i; }
+            else { c.innerHTML = i; }
         }
 
-        if (block) block.style.display = (i === currentStep ? "block" : "none");
+        if (sec) sec.style.display = (i === currentStep ? "block" : "none");
     }
 
     document.getElementById("prev-btn").disabled   = currentStep === 1;
@@ -711,23 +707,18 @@ function updateStepIndicator() {
     else stopQRScanner();
 }
 
-function goToStep(step) {
-    if (step >= 1 && step <= totalSteps) {
-        currentStep = step;
-        updateStepIndicator();
-    }
-}
-function nextStep() { if (currentStep < totalSteps) goToStep(currentStep + 1); }
-function previousStep() { if (currentStep > 1) goToStep(currentStep - 1); }
+function goToStep(step){ currentStep = step; updateStepIndicator(); }
+function nextStep(){ if (currentStep < totalSteps) goToStep(currentStep + 1); }
+function previousStep(){ if (currentStep > 1) goToStep(currentStep - 1); }
 
 /* ============================================================
-      JOB CARD STATUS → SHOW/HIDE QR SCANNER
+ QR SECTION SHOW/HIDE
 ============================================================ */
 function checkJobCardStatus() {
-    const status = document.getElementById("id_key_station_job_card_status")?.value;
+    const val = document.getElementById("id_key_station_job_card_status")?.value;
     const qrSec = document.getElementById("qr-scan-section");
 
-    if (status === "Have") {
+    if (val === "Have") {
         qrSec.classList.remove("hidden");
         setTimeout(() => startQRScanner(), 200);
     } else {
@@ -739,12 +730,12 @@ function checkJobCardStatus() {
     }
 }
 
-function isMobileDevice() {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
+function isMobileDevice(){
+    return /Android|iPhone|iPad|iPod|Opera Mini/i.test(navigator.userAgent);
 }
 
 /* ============================================================
-      FETCH SHAREABLE FEISHU LINK
+ FETCH SHAREABLE FEISHU LINK
 ============================================================ */
 async function fetchFeishuShareableLink(scannedUrl) {
     const preview = document.getElementById("feishu-preview");
@@ -759,17 +750,16 @@ async function fetchFeishuShareableLink(scannedUrl) {
     const data = await resp.json();
 
     if (data.need_oauth) {
-        const returnUrl = encodeURIComponent(window.location.href);
-        window.location.href = data.oauth_url + "&state=" + returnUrl;
+        const backUrl = encodeURIComponent(window.location.href);
+        window.location.href = data.oauth_url + "&state=" + backUrl;
         return null;
     }
 
-    if (!data.ok) {
+    if (!data.ok){
         preview.innerHTML = `
             <div class="alert alert-danger">
-                Failed to load Feishu record.<br>${data.error || ""}
-            </div>
-        `;
+                Failed: ${data.error}
+            </div>`;
         return null;
     }
 
@@ -777,7 +767,7 @@ async function fetchFeishuShareableLink(scannedUrl) {
 }
 
 /* ============================================================
-      QR SCANNER
+ QR SCANNER
 ============================================================ */
 function startQRScanner() {
     if (html5QrCode) stopQRScanner();
@@ -785,11 +775,12 @@ function startQRScanner() {
     html5QrCode = new Html5Qrcode("reader");
 
     const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-    const preview = document.getElementById("feishu-preview");
-    const iframeContainer = document.getElementById("feishu-iframe-container");
     const iframe = document.getElementById("feishu-iframe");
+    const iframeContainer = document.getElementById("feishu-iframe-container");
+    const preview = document.getElementById("feishu-preview");
 
-    async function handleScanned(decoded) {
+    async function onScan(decoded){
+        // Save for after OAuth
         localStorage.setItem("lastScannedURL", decoded);
         localStorage.setItem("savedStep", currentStep);
 
@@ -803,95 +794,60 @@ function startQRScanner() {
 
         preview.innerHTML = `
             <div class="alert alert-success">
-                Record loaded successfully!
-                <br>
-                <button onclick="openInNewTab('${shareUrl}')" class="btn btn-sm btn-primary mt-2">
+                Loaded!
+                <button class="btn btn-sm btn-primary mt-2" onclick="openInNewTab('${shareUrl}')">
                     Open in New Tab
                 </button>
-            </div>
-        `;
-    }
-
-    function saveSnapshot() {
-        const video = document.querySelector("#reader video");
-        if (!video) return;
-
-        const stationName = (document.getElementById("id_key_station_name")?.value || "scan");
-        const name = stationName.toLowerCase().replace(/\s+/g, "");
-
-        const now = new Date();
-        const timestamp = `${now.getDate()}${now.getMonth()+1}${now.getFullYear()}${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
-        const fileName = `${name}${timestamp}.png`;
-
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0);
-
-        canvas.toBlob(blob => {
-            const file = new File([blob], fileName, { type: "image/png" });
-
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            document.querySelector('[name="scanned_barcode_image"]').files = dt.files;
-
-            document.getElementById("scanSnapshot").innerHTML = `
-                <img src="${URL.createObjectURL(blob)}" style="max-width:200px;" />
-                <div>Snapshot saved: <strong>${fileName}</strong></div>
-            `;
-        });
+            </div>`;
     }
 
     html5QrCode.start(
-        isMobileDevice() ? { facingMode: "environment" } : { facingMode: "user" },
+        isMobileDevice() ? {facingMode:"environment"} : {facingMode:"user"},
         { fps: 10, qrbox: 250 },
-        decoded => {
-            stopQRScanner();
-            saveSnapshot();
-            handleScanned(decoded);
-        },
-        err => console.log("SCAN ERROR:", err)
+        decoded => { stopQRScanner(); onScan(decoded); }
     );
 }
 
-function stopQRScanner() {
-    if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => html5QrCode = null);
-    }
+function stopQRScanner(){
+    if (html5QrCode && html5QrCode.isScanning)
+        html5QrCode.stop().then(()=> html5QrCode = null);
 }
 
-function openInNewTab(url) {
-    window.open(url, "_blank", "noopener,noreferrer");
+function openInNewTab(url){
+    window.open(url, "_blank");
 }
 
 /* ============================================================
-      ON PAGE LOAD — Restore OAuth return
+ PAGE LOAD (OAuth return handling)
 ============================================================ */
-document.addEventListener("DOMContentLoaded", async function () {
+document.addEventListener("DOMContentLoaded", async function(){
+
     updateStepIndicator();
 
     document.getElementById("id_key_station_job_card_status")?.addEventListener("change", checkJobCardStatus);
 
     const params = new URLSearchParams(window.location.search);
 
-    if (params.has("code")) {
-        const savedStep = parseInt(localStorage.getItem("savedStep") || "2");
-        const scanned = localStorage.getItem("lastScannedURL");
+    if (params.has("code")){
+
+        const savedStep   = parseInt(localStorage.getItem("savedStep") || "2");
+        const lastScanned = localStorage.getItem("lastScannedURL");
 
         goToStep(savedStep);
 
-        if (scanned) {
-            document.querySelector('[name="scanned_barcode_text"]').value = scanned;
+        if (lastScanned){
+            document.querySelector('[name="scanned_barcode_text"]').value = lastScanned;
 
-            const shareUrl = await fetchFeishuShareableLink(scanned);
-            if (shareUrl) {
+            const shareUrl = await fetchFeishuShareableLink(lastScanned);
+            if (shareUrl){
                 document.getElementById("feishu-iframe-container").style.display = "block";
                 document.getElementById("feishu-iframe").src = shareUrl;
             }
         }
 
-        const clean = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, clean);
+        // Remove ?code=xxx for clean UI
+        const cleanURL = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanURL);
     }
 });
 </script>

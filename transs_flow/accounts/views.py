@@ -124,72 +124,43 @@ def employee_delete(request, pk):
 
 
 
-FEISHU_APP_ID = settings.IFEISHU_APP_ID
-FEISHU_APP_SECRET = settings.IFEISHU_APP_SECRET
-
-def feishu_oauth_callback(request):
-    code = request.GET.get("code")
-    state = request.GET.get("state", "/")
-
-    # Exchange code for token
-    token_url = "https://open.feishu.cn/open-apis/authen/v1/oidc/access_token"
-
-    data = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "client_id": FEISHU_APP_ID,
-        "client_secret": FEISHU_APP_SECRET
-    }
-
-    resp = requests.post(token_url, json=data).json()
-
-    if resp.get("code") != 0:
-        return HttpResponse("OAuth Error: " + str(resp))
-
-    access_token = resp["data"]["access_token"]
-    refresh_token = resp["data"]["refresh_token"]
-    expires_in = resp["data"]["expires_in"]  # 7200 sec = 2 hours
-
-    # Store in Django session
-    request.session["feishu_access_token"] = access_token
-    request.session["feishu_refresh_token"] = refresh_token
-    request.session["feishu_expires_at"] = time.time() + expires_in
-
-    return redirect(state)
+APP_ID = settings.IFEISHU_APP_ID
+APP_SECRET = settings.IFEISHU_APP_SECRET
+REDIRECT_URI = settings.IFEISHU_REDIRECT_URI
 
 
-def get_valid_feishu_token(request):
-    import time
+# ===========================================================
+# Token Refresh Logic
+# ===========================================================
+def get_valid_token(request):
 
     access = request.session.get("feishu_access_token")
     refresh = request.session.get("feishu_refresh_token")
-    expires_at = request.session.get("feishu_expires_at")
+    expires = request.session.get("feishu_expires_at")
 
-    # 1. No token stored → needs OAuth
+    # No token → need OAuth
     if not access or not refresh:
         return None
 
-    # 2. Token is still valid
-    if time.time() < expires_at - 60:
+    # Not expired
+    if time.time() < expires - 60:
         return access
 
-    # 3. Token expired → refresh
-    refresh_url = "https://open.feishu.cn/open-apis/authen/v1/oidc/refresh_access_token"
+    # Expired → refresh
+    url = "https://open.feishu.cn/open-apis/authen/v1/oidc/refresh_access_token"
 
     data = {
         "grant_type": "refresh_token",
         "refresh_token": refresh,
-        "client_id": FEISHU_APP_ID,
-        "client_secret": FEISHU_APP_SECRET
+        "client_id": APP_ID,
+        "client_secret": APP_SECRET
     }
 
-    resp = requests.post(refresh_url, json=data).json()
+    resp = requests.post(url, json=data).json()
 
     if resp.get("code") != 0:
-        # refresh failed → force OAuth again
         return None
 
-    # update session
     request.session["feishu_access_token"] = resp["data"]["access_token"]
     request.session["feishu_refresh_token"] = resp["data"]["refresh_token"]
     request.session["feishu_expires_at"] = time.time() + resp["data"]["expires_in"]
@@ -197,25 +168,55 @@ def get_valid_feishu_token(request):
     return resp["data"]["access_token"]
 
 
-def get_shareable_link(request):
-    import json
-    data = json.loads(request.body)
-    scanned_url = data.get("scanned_url")
+# ===========================================================
+# OAuth Callback
+# ===========================================================
+def feishu_oauth_callback(request):
+    code = request.GET.get("code")
+    state = request.GET.get("state", "/")
 
-    token = get_valid_feishu_token(request)
+    url = "https://open.feishu.cn/open-apis/authen/v1/oidc/access_token"
+    data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "client_id": APP_ID,
+        "client_secret": APP_SECRET
+    }
+
+    resp = requests.post(url, json=data).json()
+
+    if resp.get("code") != 0:
+        return HttpResponse("OAuth failed: " + str(resp))
+
+    request.session["feishu_access_token"] = resp["data"]["access_token"]
+    request.session["feishu_refresh_token"] = resp["data"]["refresh_token"]
+    request.session["feishu_expires_at"] = time.time() + resp["data"]["expires_in"]
+
+    return redirect(state)
+
+
+# ===========================================================
+# Generate shareable Feishu Record Link
+# ===========================================================
+def get_shareable_link(request):
+
+    body = json.loads(request.body)
+    record_url = body.get("scanned_url")
+
+    token = get_valid_token(request)
 
     if not token:
-        # Need OAuth
+        oauth = f"https://open.feishu.cn/open-apis/authen/v1/authorize?client_id={APP_ID}&redirect_uri={REDIRECT_URI}&response_type=code"
         return JsonResponse({
             "need_oauth": True,
-            "oauth_url": f"https://open.feishu.cn/open-apis/authen/v1/authorize?client_id={FEISHU_APP_ID}&redirect_uri={REDIRECT_URL}&response_type=code"
+            "oauth_url": oauth
         })
 
-    # otherwise continue normally
-    headers = {"Authorization": f"Bearer {token}"}
-    # call feishu record API here...
+    # TODO: Replace with your real API logic
+    # For demo, Feishu direct record link works:
+    share_url = record_url
 
     return JsonResponse({
         "ok": True,
-        "share_url": GENERATED_SHARE_URL
+        "share_url": share_url
     })
