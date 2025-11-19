@@ -735,7 +735,7 @@ async function fetchFeishuShareableLink(scannedUrl) {
 
     const csrf = getCookie('csrftoken');              // Django default CSRF cookie name
     if (!csrf) {
-        preview && (preview.innerHTML = `<div class="alert alert-warning">No CSRF token found in cookies. Make sure your template uses {% raw %}{% csrf_token %}{% endraw %} and CSRF cookie is set.</div>`);
+        preview && (preview.innerHTML = `<div class="alert alert-warning">No CSRF token found in cookies. Make sure your template uses {% csrf_token %} and CSRF cookie is set.</div>`);
         return null;
     }
 
