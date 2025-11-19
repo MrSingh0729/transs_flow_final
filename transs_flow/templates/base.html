@@ -729,6 +729,25 @@
             transition: width 0.3s ease;
         }
     </style>
+    <script src="https://lf3-cdn-tos.bytescm.com/obj/static/lark_sdk/js/sdk/v3_6_2.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof h5sdk !== "undefined") {
+        h5sdk.ready(() => {
+            console.log("Lark SDK Loaded!");
+
+            h5sdk.env.getEnv(function(res){
+                window.isLark = res.env === "Feishu" || res.env === "Lark";
+                console.log("Inside Lark:", window.isLark);
+            });
+        });
+    } else {
+        window.isLark = false;
+        console.warn("Not inside Lark environment");
+    }
+});
+</script>
 </head>
 
 <body>
@@ -970,6 +989,11 @@
                                 Communication
                             </div>
                         </div>
+                        <a href="#" onclick="openLarkChat()" class="nav-item">
+                            <i class="fas fa-comments"></i>
+                            <span>Lark Chat</span>
+                        </a>
+
 
 
                     </nav>
@@ -1644,6 +1668,27 @@
                 showUpdateNotification();
             }
         }
+
+        function openLarkChat() {
+    if (!window.isLark) {
+        alert("Please open inside Lark App to use Chat.");
+        return;
+    }
+
+    h5sdk.biz.chat.openChat({
+        chatId: "oc_xxxxxxxxx",  // replace with your group chat_id
+        success(res) {
+            console.log("Chat Opened", res);
+        },
+        fail(err) {
+            console.error("Failed to open chat:", err);
+        }
+    });
+}
+
+if (window.isLark && "{{ request.user.is_authenticated }}" === "False") {
+    window.location.href = "/lark/login/";
+}
     </script>
 
     {% block extra_js %}{% endblock %}

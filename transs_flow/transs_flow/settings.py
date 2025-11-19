@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'factories.assembly.departments',
     'factories.assembly',
     'factories',
+    'lark_integration',
     
     'widget_tweaks',
     
@@ -266,6 +267,6 @@ SECURE_BROWSER_XSS_FILTER = True
 X_CONTENT_TYPE_OPTIONS = 'nosniff'
 
 
-IFEISHU_APP_ID = "cli_a99693af7ff85ed4"
-IFEISHU_APP_SECRET = "9oqJA4pda5klg3D1vGDsxfJmUCnWZUCO"
-IFEISHU_REDIRECT_URI = "https://mrsingh29.pythonanywhere.com/feishu/callback/"
+FEISHU_APP_ID_1 = "cli_a99693af7ff85ed4"
+FEISHU_APP_SECRET_1 = "9oqJA4pda5klg3D1vGDsxfJmUCnWZUCO"
+FEISHU_REDIRECT_URI_1 = "https://mrsingh29.pythonanywhere.com/feishu/callback/"
