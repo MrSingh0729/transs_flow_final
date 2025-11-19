@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Lark Mini App</title>
+<script src="https://lf3-cdn-tos.bytescm.com/obj/static/lark_sdk/js/sdk/v3_6_2.js"></script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+if (typeof h5sdk !== "undefined") {
+h5sdk.ready(() => {
+console.log("Lark SDK Loaded");
+});
+}
+});
+</script>
+</head>
+<body>
+{% block content %}{% endblock %}
+</body>
+</html>
