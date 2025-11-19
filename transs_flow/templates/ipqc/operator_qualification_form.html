@@ -667,60 +667,48 @@
 </div>
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-/*
-  Final combined QR + Feishu OAuth handler
-  - Save scanned URL + step before OAuth
-  - Redirect to Feishu OAuth with state (return URL)
-  - On return (has ?code=...), retry the share fetch and restore the UI
-  - Load iframe on success and show open-in-new-tab button
-*/
-
+/* ============================================================
+      GLOBALS
+============================================================ */
 let currentStep = 1;
 const totalSteps = 4;
 let html5QrCode = null;
 
-/* ---------------------------
-   Step UI & Navigation
-   --------------------------- */
+/* ============================================================
+      STEP NAVIGATION UI
+============================================================ */
 function updateStepIndicator() {
-    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
-    const progressLine = document.getElementById('progressLine');
-    if (progressLine) progressLine.style.width = progressPercentage + '%';
-
-    document.getElementById('currentStep') && (document.getElementById('currentStep').textContent = currentStep);
-    document.getElementById('currentSection') && (document.getElementById('currentSection').textContent = currentStep);
+    const percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById("progressLine").style.width = percent + "%";
+    document.getElementById("currentStep").textContent = currentStep;
+    document.getElementById("currentSection").textContent = currentStep;
 
     for (let i = 1; i <= totalSteps; i++) {
-        const stepCircle = document.getElementById(`step${i}`);
-        const stepContent = document.getElementById(`step${i}-content`);
+        const circle = document.getElementById(`step${i}`);
+        const block  = document.getElementById(`step${i}-content`);
 
-        if (stepCircle) {
-            stepCircle.classList.remove('active', 'completed');
+        if (circle) {
+            circle.classList.remove("active", "completed");
             if (i < currentStep) {
-                stepCircle.classList.add('completed');
-                stepCircle.innerHTML = '✓';
+                circle.classList.add("completed");
+                circle.innerHTML = "✓";
             } else if (i === currentStep) {
-                stepCircle.classList.add('active');
-                stepCircle.innerHTML = i;
+                circle.classList.add("active");
+                circle.innerHTML = i;
             } else {
-                stepCircle.innerHTML = i;
+                circle.innerHTML = i;
             }
         }
 
-        if (stepContent) stepContent.style.display = (i === currentStep ? 'block' : 'none');
+        if (block) block.style.display = (i === currentStep ? "block" : "none");
     }
 
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const submitBtn = document.getElementById('submit-btn');
+    document.getElementById("prev-btn").disabled   = currentStep === 1;
+    document.getElementById("next-btn").disabled   = currentStep === totalSteps;
+    document.getElementById("submit-btn").disabled = currentStep !== totalSteps;
 
-    if (prevBtn) prevBtn.disabled = currentStep === 1;
-    if (nextBtn) nextBtn.disabled = currentStep === totalSteps;
-    if (submitBtn) submitBtn.disabled = currentStep !== totalSteps;
-
-    if (currentStep === 2) checkJobCardStatus(); else stopQRScanner();
-
-    document.querySelector('.audit-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (currentStep === 2) checkJobCardStatus();
+    else stopQRScanner();
 }
 
 function goToStep(step) {
@@ -732,179 +720,125 @@ function goToStep(step) {
 function nextStep() { if (currentStep < totalSteps) goToStep(currentStep + 1); }
 function previousStep() { if (currentStep > 1) goToStep(currentStep - 1); }
 
-/* ---------------------------
-   Form validation (unchanged)
-   --------------------------- */
-function validateForm() {
-    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-    const existing = document.getElementById('form-validation-error');
-    if (existing) existing.remove();
-
-    for (let s = 1; s <= totalSteps; s++) {
-        const section = document.getElementById(`step${s}-content`);
-        if (!section) continue;
-        let hasError = false;
-        const required = section.querySelectorAll('input[required], select[required], textarea[required]');
-        for (const f of required) {
-            if (f.hasAttribute('readonly')) continue;
-            let empty = false;
-            if (f.type === 'file') empty = !f.files || f.files.length === 0;
-            else empty = !f.value || f.value.trim() === '';
-            if (empty) { f.classList.add('is-invalid'); hasError = true; }
-        }
-        if (hasError) {
-            const div = document.createElement('div');
-            div.id = 'form-validation-error';
-            div.className = 'alert alert-danger';
-            div.innerHTML = `<strong>Error in Step ${s}: Please fill all required fields.</strong>`;
-            document.querySelector('.audit-form').insertBefore(div, document.querySelector('.step-indicator'));
-            goToStep(s);
-            return false;
-        }
-    }
-    return true;
-}
-
-/* ---------------------------
-   Job card / QR section control
-   --------------------------- */
+/* ============================================================
+      JOB CARD STATUS → SHOW/HIDE QR SCANNER
+============================================================ */
 function checkJobCardStatus() {
-    const jobCardStatus = document.getElementById('id_key_station_job_card_status')?.value || '';
-    const qrSection = document.getElementById('qr-scan-section');
-    if (jobCardStatus === 'Have') {
-        qrSection && qrSection.classList.remove('hidden');
-        setTimeout(() => { if (qrSection && qrSection.offsetParent !== null) startQRScanner(); }, 200);
+    const status = document.getElementById("id_key_station_job_card_status")?.value;
+    const qrSec = document.getElementById("qr-scan-section");
+
+    if (status === "Have") {
+        qrSec.classList.remove("hidden");
+        setTimeout(() => startQRScanner(), 200);
     } else {
-        qrSection && qrSection.classList.add('hidden');
+        qrSec.classList.add("hidden");
         stopQRScanner();
-        const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-        if (barcodeField) barcodeField.value = '';
-        document.getElementById('scanStatus') && (document.getElementById('scanStatus').innerHTML = '');
-        document.getElementById('scanSnapshot') && (document.getElementById('scanSnapshot').innerHTML = '');
+        document.querySelector('[name="scanned_barcode_text"]').value = "";
+        document.getElementById("scanSnapshot").innerHTML = "";
+        document.getElementById("scanStatus").innerHTML = "";
     }
 }
 
 function isMobileDevice() {
-    return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
 }
 
-/* ---------------------------
-   Fetch shareable link from backend
-   --------------------------- */
+/* ============================================================
+      FETCH SHAREABLE FEISHU LINK
+============================================================ */
 async function fetchFeishuShareableLink(scannedUrl) {
-    const preview = document.getElementById('feishu-preview');
-    preview && (preview.innerHTML = `<div class="alert alert-info">Connecting to Feishu…</div>`);
+    const preview = document.getElementById("feishu-preview");
+    preview.innerHTML = `<div class="alert alert-info">Connecting to Feishu…</div>`;
 
-    let resp;
-    try {
-        resp = await fetch("/feishu/get_shareable_link/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ scanned_url: scannedUrl })
-        });
-    } catch (err) {
-        preview && (preview.innerHTML = `<div class="alert alert-danger">Network error. ${err}</div>`);
-        return null;
-    }
+    const resp = await fetch("/feishu/get_shareable_link/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scanned_url: scannedUrl })
+    });
 
-    let data;
-    try { data = await resp.json(); } catch (e) { preview && (preview.innerHTML = `<div class="alert alert-danger">Invalid response from server.</div>`); return null; }
+    const data = await resp.json();
 
-    if (data.need_oauth && data.oauth_url) {
-        // attach return URL (state) so Feishu sends user back here
+    if (data.need_oauth) {
         const returnUrl = encodeURIComponent(window.location.href);
-        // store scanned info already saved in localStorage (we do this earlier too)
         window.location.href = data.oauth_url + "&state=" + returnUrl;
         return null;
     }
 
     if (!data.ok) {
-        preview && (preview.innerHTML = `
+        preview.innerHTML = `
             <div class="alert alert-danger">
-                Failed to fetch record.<br>${data.error || JSON.stringify(data)}
-            </div>`);
+                Failed to load Feishu record.<br>${data.error || ""}
+            </div>
+        `;
         return null;
     }
 
     return data.share_url;
 }
 
-/* ---------------------------
-   QR scanning functions
-   --------------------------- */
+/* ============================================================
+      QR SCANNER
+============================================================ */
 function startQRScanner() {
     if (html5QrCode) stopQRScanner();
-
-    const readerDiv = document.getElementById('reader');
-    if (!readerDiv) return console.error('reader element not found');
 
     html5QrCode = new Html5Qrcode("reader");
 
     const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-    const preview = document.getElementById('feishu-preview');
-    const iframeContainer = document.getElementById('feishu-iframe-container');
-    const iframe = document.getElementById('feishu-iframe');
+    const preview = document.getElementById("feishu-preview");
+    const iframeContainer = document.getElementById("feishu-iframe-container");
+    const iframe = document.getElementById("feishu-iframe");
 
-    async function handleScannedUrl(decoded) {
-        // Persist scanned URL & step so OAuth round-trip can restore UI
-        try {
-            localStorage.setItem('lastScannedURL', decoded);
-            localStorage.setItem('savedStep', String(currentStep || 2));
-        } catch (e) { /* ignore storage errors */ }
+    async function handleScanned(decoded) {
+        localStorage.setItem("lastScannedURL", decoded);
+        localStorage.setItem("savedStep", currentStep);
 
-        if (barcodeField) barcodeField.value = decoded;
+        barcodeField.value = decoded;
 
-        // Ask backend for shareable link (or OAuth)
         const shareUrl = await fetchFeishuShareableLink(decoded);
         if (!shareUrl) return;
 
-        // Show iframe and preview
-        iframeContainer && (iframeContainer.style.display = 'block');
-        iframe && (iframe.src = shareUrl);
+        iframeContainer.style.display = "block";
+        iframe.src = shareUrl;
 
-        preview && (preview.innerHTML = `
+        preview.innerHTML = `
             <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> Record loaded successfully!<br>
+                Record loaded successfully!
+                <br>
                 <button onclick="openInNewTab('${shareUrl}')" class="btn btn-sm btn-primary mt-2">
-                    <i class="fas fa-external-link-alt"></i> Open in New Tab
+                    Open in New Tab
                 </button>
             </div>
-        `);
+        `;
     }
 
-    function captureSnapshot() {
-        const video = document.querySelector('#reader video');
+    function saveSnapshot() {
+        const video = document.querySelector("#reader video");
         if (!video) return;
 
-        const keyStationName = document.getElementById('id_key_station_name')?.value || 'scan';
-        const formatted = keyStationName.toLowerCase().replace(/\s+/g, '');
-        const now = new Date();
-        const dd = String(now.getDate()).padStart(2, '0');
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const yyyy = now.getFullYear();
-        const hh = String(now.getHours()).padStart(2, '0');
-        const min = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        const filename = `${formatted}${dd}${mm}${yyyy}${hh}${min}${ss}.png`;
+        const stationName = (document.getElementById("id_key_station_name")?.value || "scan");
+        const name = stationName.toLowerCase().replace(/\s+/g, "");
 
-        const canvas = document.createElement('canvas');
+        const now = new Date();
+        const timestamp = `${now.getDate()}${now.getMonth()+1}${now.getFullYear()}${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
+        const fileName = `${name}${timestamp}.png`;
+
+        const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
+        canvas.getContext("2d").drawImage(video, 0, 0);
 
         canvas.toBlob(blob => {
-            if (!blob) return;
-            const file = new File([blob], filename, { type: 'image/png' });
+            const file = new File([blob], fileName, { type: "image/png" });
+
             const dt = new DataTransfer();
             dt.items.add(file);
-            const fileInput = document.querySelector('[name="scanned_barcode_image"]');
-            if (fileInput) fileInput.files = dt.files;
+            document.querySelector('[name="scanned_barcode_image"]').files = dt.files;
 
-            const snapEl = document.getElementById('scanSnapshot');
-            snapEl && (snapEl.innerHTML = `<img src="${URL.createObjectURL(blob)}" style="max-width:200px;" /><div class="text-sm">✓ Snapshot captured (${filename})</div>`);
-            const statusEl = document.getElementById('scanStatus');
-            statusEl && (statusEl.innerHTML = `<div class="alert alert-success mt-2"><i class="fas fa-camera"></i> Snapshot saved: <strong>${filename}</strong></div>`);
+            document.getElementById("scanSnapshot").innerHTML = `
+                <img src="${URL.createObjectURL(blob)}" style="max-width:200px;" />
+                <div>Snapshot saved: <strong>${fileName}</strong></div>
+            `;
         });
     }
 
@@ -912,29 +846,17 @@ function startQRScanner() {
         isMobileDevice() ? { facingMode: "environment" } : { facingMode: "user" },
         { fps: 10, qrbox: 250 },
         decoded => {
-            console.log('QR Code scanned:', decoded);
-            try { captureSnapshot(); } catch(e) { console.warn('snapshot failed', e); }
             stopQRScanner();
-            handleScannedUrl(decoded);
+            saveSnapshot();
+            handleScanned(decoded);
         },
-        error => {
-            // ignore transient scan errors
-            console.log('QR scan error:', error);
-        }
-    ).catch(err => {
-        readerDiv.innerHTML = `
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> Camera access denied or not available. Please enter the URL manually.
-            </div>`;
-        console.error('startQRScanner failed', err);
-    });
+        err => console.log("SCAN ERROR:", err)
+    );
 }
 
 function stopQRScanner() {
     if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => { html5QrCode = null; }).catch(e => console.warn('stop failed', e));
-    } else {
-        html5QrCode = null;
+        html5QrCode.stop().then(() => html5QrCode = null);
     }
 }
 
@@ -942,57 +864,34 @@ function openInNewTab(url) {
     window.open(url, "_blank", "noopener,noreferrer");
 }
 
-/* ---------------------------
-   Auto-retry logic after OAuth return
-   --------------------------- */
-document.addEventListener('DOMContentLoaded', async function () {
+/* ============================================================
+      ON PAGE LOAD — Restore OAuth return
+============================================================ */
+document.addEventListener("DOMContentLoaded", async function () {
     updateStepIndicator();
 
-    const jobCardStatusSelect = document.getElementById('id_key_station_job_card_status');
-    if (jobCardStatusSelect) jobCardStatusSelect.addEventListener('change', checkJobCardStatus);
+    document.getElementById("id_key_station_job_card_status")?.addEventListener("change", checkJobCardStatus);
 
-    // If this page was opened with ?code=... it means OAuth just completed
     const params = new URLSearchParams(window.location.search);
-    if (params.has('code')) {
-        // restore last saved step and scanned URL if present
-        const savedStep = localStorage.getItem('savedStep');
-        const lastScanned = localStorage.getItem('lastScannedURL');
 
-        if (savedStep) {
-            // restore UI step (ensure it triggers scanner/display logic)
-            goToStep(parseInt(savedStep, 10) || 2);
-        } else {
-            // ensure we're on step 2 where QR preview sits
-            goToStep(2);
-        }
+    if (params.has("code")) {
+        const savedStep = parseInt(localStorage.getItem("savedStep") || "2");
+        const scanned = localStorage.getItem("lastScannedURL");
 
-        if (lastScanned) {
-            // refill text field to keep consistent UI
-            const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-            if (barcodeField) barcodeField.value = lastScanned;
+        goToStep(savedStep);
 
-            // Call backend again (now session should have token)
-            const shareUrl = await fetchFeishuShareableLink(lastScanned);
+        if (scanned) {
+            document.querySelector('[name="scanned_barcode_text"]').value = scanned;
+
+            const shareUrl = await fetchFeishuShareableLink(scanned);
             if (shareUrl) {
-                document.getElementById('feishu-iframe-container').style.display = 'block';
-                document.getElementById('feishu-iframe').src = shareUrl;
+                document.getElementById("feishu-iframe-container").style.display = "block";
+                document.getElementById("feishu-iframe").src = shareUrl;
             }
         }
 
-        // remove sensitive query params (code/state) from the visible URL
-        try {
-            const cleanUrl = window.location.origin + window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
-        } catch (e) { /* ignore */ }
-    } else {
-        // if not coming from OAuth, simply update UI; if we have saved state and last scanned (user navigated back), restore a bit
-        const lastScanned = localStorage.getItem('lastScannedURL');
-        const savedStep = localStorage.getItem('savedStep');
-        if (lastScanned && savedStep && parseInt(savedStep, 10) === 2) {
-            // populate scanned field so user sees last scan even without OAuth
-            const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-            if (barcodeField && !barcodeField.value) barcodeField.value = lastScanned;
-        }
+        const clean = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, clean);
     }
 });
 </script>
