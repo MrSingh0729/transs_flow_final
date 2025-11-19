@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Issue Details{% endblock %}
+
+{% block content %}
+<div class="bg-white p-5 rounded-lg shadow max-w-xl mx-auto">
+
+    <h1 class="text-xl font-bold mb-3">{{ issue.issue_name }}</h1>
+
+    <p><strong>Severity:</strong> {{ issue.severity }}</p>
+    <p><strong>Description:</strong> {{ issue.description }}</p>
+    <p><strong>Line Leader:</strong> {{ issue.line_leader }}</p>
+    <p><strong>Operator ID:</strong> {{ issue.operator_id|default:"—" }}</p>
+
+    <h3 class="mt-5 font-bold">Images</h3>
+    {% for img in issue.images.all %}
+        <img src="{{ img.image.url }}" class="w-full rounded mt-2">
+    {% empty %}
+        <p>No images uploaded.</p>
+    {% endfor %}
+
+    <h3 class="mt-6 font-bold">Reminder</h3>
+
+    {% if issue.reminder_count < 3 %}
+        <a href="{% url 'send_reminder' issue.id %}"
+           class="btn btn-primary mt-2">
+            Send Reminder ({{ issue.reminder_count }}/3)
+        </a>
+    {% else %}
+        <button class="btn btn-secondary mt-2" disabled>
+            Reminder Limit Reached (3/3)
+        </button>
+    {% endif %}
+</div>
+{% endblock %}

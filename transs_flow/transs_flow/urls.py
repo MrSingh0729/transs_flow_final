@@ -10,6 +10,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("accounts.urls")),
     
+    path('issues/', include('core.urls')),
+    
     # IPQC App URLs
     path('ipqc/', include('factories.assembly.departments.qa.ipqc.urls')),
     
