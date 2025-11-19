@@ -8,8 +8,8 @@ from django.conf import settings
 import requests
 import time
 from django.http import HttpResponse, JsonResponse
-from django.urls import reverse
-
+import json
+from django.views.decorators.csrf import csrf_exempt
 
 
 # ----------------- Auth -----------------
@@ -171,6 +171,7 @@ def get_valid_token(request):
 # ===========================================================
 # OAuth Callback
 # ===========================================================
+
 def feishu_oauth_callback(request):
     code = request.GET.get("code")
     state = request.GET.get("state", "/")
@@ -198,6 +199,7 @@ def feishu_oauth_callback(request):
 # ===========================================================
 # Generate shareable Feishu Record Link
 # ===========================================================
+@csrf_exempt
 def get_shareable_link(request):
 
     body = json.loads(request.body)
