@@ -1,35 +1,52 @@
 {% extends 'base.html' %}
+{% load form_filters %}
 {% block title %}Report Issue{% endblock %}
 
 {% block content %}
-<div class="bg-white p-5 rounded-lg shadow max-w-xl mx-auto">
+<div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow">
 
-    <h1 class="text-xl font-bold mb-4">Report New Issue</h1>
+    <h1 class="text-2xl font-bold mb-6">Report New Issue</h1>
 
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <label class="font-semibold">Issue Name</label>
-        {{ form.issue_name }}
+        <!-- ISSUE NAME -->
+        <label class="block font-semibold mb-1">Issue Name</label>
+        {{ form.issue_name|add_class:"w-full border p-2 rounded mb-4" }}
 
-        <label class="font-semibold mt-3">Description</label>
-        {{ form.description }}
+        <!-- DESCRIPTION -->
+        <label class="block font-semibold mb-1">Description</label>
+        {{ form.description|add_class:"w-full border p-2 rounded mb-4 h-28" }}
 
-        <label class="font-semibold mt-3">Severity</label>
-        {{ form.severity }}
+        <!-- SEVERITY -->
+        <label class="block font-semibold mb-1">Severity</label>
+        {{ form.severity|add_class:"w-full border p-2 rounded mb-4" }}
 
-        <h3 class="mt-5 font-bold">Responsibility</h3>
+        <h3 class="mt-6 mb-3 font-bold text-lg">Responsibility</h3>
 
-        <label class="font-semibold">Line Leader</label>
-        {{ form.line_leader }}
+        <!-- LINE LEADER + OPERATOR ID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block font-semibold mb-1">Line Leader</label>
+                {{ form.line_leader|add_class:"w-full border p-2 rounded" }}
+            </div>
 
-        <label class="mt-3 font-semibold">Operator ID (optional)</label>
-        {{ form.operator_id }}
+            <div>
+                <label class="block font-semibold mb-1">Operator ID (optional)</label>
+                {{ form.operator_id|add_class:"w-full border p-2 rounded" }}
+            </div>
+        </div>
 
-        <label class="mt-4 font-semibold">Upload Images</label>
-        {{ img_form.images }}
+        <!-- IMAGE UPLOAD -->
+        <label class="block font-semibold mt-6 mb-2">Upload Images</label>
+        <input type="file" name="images" multiple accept="image/*" capture="camera"
+               class="border p-2 rounded w-full">
 
-        <button class="btn btn-primary mt-5 w-full">Submit Issue</button>
+        <!-- SUBMIT BUTTON -->
+        <button class="w-full bg-blue-600 text-white p-3 rounded-lg mt-6 hover:bg-blue-700">
+            Submit Issue
+        </button>
     </form>
+
 </div>
 {% endblock %}
