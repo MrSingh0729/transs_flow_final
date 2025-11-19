@@ -16,14 +16,14 @@
         --border: #E5E7EB;
         --bg-secondary: #F9FAFB;
     }
- 
+
     .audit-form {
         max-width: 1200px;
         margin: 0 auto;
         padding: 16px;
         width: 100%;
     }
- 
+
     .step-indicator {
         background: white;
         border: 1px solid var(--border);
@@ -32,7 +32,7 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
- 
+
     .step-progress {
         display: flex;
         justify-content: space-between;
@@ -40,7 +40,7 @@
         margin-bottom: 12px;
         position: relative;
     }
- 
+
     .step-progress::before {
         content: '';
         position: absolute;
@@ -51,7 +51,7 @@
         background: var(--border);
         z-index: 0;
     }
- 
+
     .step-progress-line {
         position: absolute;
         top: 50%;
@@ -62,7 +62,7 @@
         transition: width 0.3s ease;
         transform: translateY(-50%);
     }
- 
+
     .step-item {
         display: flex;
         flex-direction: column;
@@ -72,7 +72,7 @@
         cursor: pointer;
         flex-shrink: 0;
     }
- 
+
     .step-circle {
         width: 40px;
         height: 40px;
@@ -87,20 +87,20 @@
         color: var(--text-light);
         transition: all 0.3s ease;
     }
- 
+
     .step-circle.active {
         background: var(--primary);
         color: white;
         border-color: var(--primary);
         box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
     }
- 
+
     .step-circle.completed {
         background: var(--success);
         color: white;
         border-color: var(--success);
     }
- 
+
     .step-label {
         font-size: 11px;
         color: var(--text-secondary);
@@ -109,23 +109,23 @@
         font-weight: 500;
         white-space: nowrap;
     }
- 
+
     @media (max-width: 640px) {
         .step-label {
             display: none;
         }
- 
+
         .step-circle {
             width: 36px;
             height: 36px;
             font-size: 13px;
         }
- 
+
         .step-item {
             flex-shrink: 1;
         }
     }
- 
+
     .form-section {
         background: white;
         border: 1px solid var(--border);
@@ -134,7 +134,7 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
- 
+
     .section-header {
         display: flex;
         align-items: center;
@@ -143,7 +143,7 @@
         padding-bottom: 12px;
         border-bottom: 1px solid var(--border);
     }
- 
+
     .section-title {
         font-size: 18px;
         font-weight: 700;
@@ -152,7 +152,7 @@
         align-items: center;
         gap: 10px;
     }
- 
+
     .section-icon {
         width: 36px;
         height: 36px;
@@ -161,19 +161,19 @@
         align-items: center;
         justify-content: center;
     }
- 
+
     .form-grid {
         display: grid;
         gap: 16px;
         width: 100%;
     }
- 
+
     .form-group {
         display: flex;
         flex-direction: column;
         width: 100%;
     }
- 
+
     .form-group label {
         display: block;
         font-size: 14px;
@@ -181,7 +181,7 @@
         color: var(--text-primary);
         margin-bottom: 6px;
     }
- 
+
     .form-group input,
     .form-group select,
     .form-group textarea {
@@ -196,7 +196,7 @@
         font-family: inherit;
         box-sizing: border-box;
     }
- 
+
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
@@ -204,18 +204,18 @@
         border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
     }
- 
+
     .form-group input[readonly] {
         background: var(--bg-secondary);
         cursor: not-allowed;
         color: var(--text-secondary);
     }
- 
+
     .form-group .is-invalid {
         border-color: var(--danger) !important;
         box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
     }
- 
+
     .status-select {
         border-radius: 8px;
         font-weight: 500;
@@ -226,7 +226,7 @@
         padding-right: 44px;
         appearance: none;
     }
- 
+
     .status-select[value="Have"],
     .status-select[value="Done"],
     .status-select[value="Old"],
@@ -234,7 +234,7 @@
         border-color: var(--success);
         background-color: rgba(34, 197, 94, 0.05);
     }
- 
+
     .status-select[value="Not Have"],
     .status-select[value="Pending"],
     .status-select[value="New"],
@@ -243,7 +243,7 @@
         border-color: var(--warning);
         background-color: rgba(245, 158, 11, 0.05);
     }
- 
+
     .status-select[value="NA"],
     .status-select[value="Not Applicable"],
     .status-select[value="Rotating"],
@@ -251,12 +251,12 @@
         border-color: var(--text-light);
         background-color: rgba(100, 116, 139, 0.05);
     }
- 
+
     .form-group textarea {
         resize: vertical;
         min-height: 80px;
     }
- 
+
     .bottom-nav {
         position: sticky;
         bottom: 0;
@@ -265,7 +265,7 @@
         padding: 16px;
         box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
     }
- 
+
     .nav-content {
         max-width: 1200px;
         margin: 0 auto;
@@ -275,19 +275,19 @@
         flex-wrap: wrap;
         gap: 12px;
     }
- 
+
     .progress-text {
         font-size: 14px;
         color: var(--text-secondary);
         font-weight: 500;
     }
- 
+
     .nav-buttons {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
     }
- 
+
     .nav-btn {
         padding: 10px 16px;
         border-radius: 8px;
@@ -302,65 +302,65 @@
         gap: 6px;
         min-width: 80px;
     }
- 
+
     .nav-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
     }
- 
+
     .nav-btn-secondary {
         background: white;
         color: var(--text-secondary);
         border: 2px solid var(--border);
     }
- 
+
     .nav-btn-primary {
         background: var(--primary);
         color: white;
     }
- 
+
     .nav-btn-success {
         background: var(--success);
         color: white;
     }
- 
+
     .error-message {
         color: var(--danger);
         font-size: 12px;
         margin-top: 4px;
     }
- 
+
     .alert {
         padding: 12px 16px;
         margin-bottom: 20px;
         border-radius: 8px;
         border: 1px solid transparent;
     }
- 
+
     .alert-danger {
         color: #721c24;
         background-color: #f8d7da;
         border-color: #f5c6cb;
     }
- 
+
     .alert-success {
         color: #155724;
         background-color: #d4edda;
         border-color: #c3e6cb;
     }
- 
+
     .alert-warning {
         color: #856404;
         background-color: #fff3cd;
         border-color: #ffeaa7;
     }
- 
+
     .alert-info {
         color: #004085;
         background-color: #cce7ff;
         border-color: #b8daff;
     }
- 
+
     /* QR Scanner Section */
     #qr-scan-section {
         background: white;
@@ -370,37 +370,37 @@
         margin-bottom: 20px;
         transition: all 0.3s ease;
     }
- 
+
     #qr-scan-section.hidden {
         display: none;
     }
- 
+
     #reader {
         width: 100%;
         max-width: 400px;
         margin: 0 auto;
     }
- 
+
     #feishu-preview {
         margin-top: 16px;
     }
- 
+
     #feishu-iframe-container {
         margin-top: 16px;
     }
- 
+
     #feishu-iframe {
         width: 100%;
         height: 400px;
         border: 1px solid var(--border);
         border-radius: 8px;
     }
- 
+
     .scan-preview {
         position: relative;
         display: inline-block;
     }
- 
+
     .scan-preview img {
         width: 100%;
         max-width: 200px;
@@ -408,18 +408,18 @@
         border: 2px solid var(--success);
         margin-top: 10px;
     }
- 
+
     @media (min-width: 768px) {
         .form-grid {
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
- 
+
         .form-section {
             padding: 24px;
             margin-bottom: 24px;
         }
- 
+
         .section-title {
             font-size: 20px;
         }
@@ -580,8 +580,7 @@
             <div id="feishu-preview" class="mt-4"></div>
             <div id="feishu-iframe-container" style="display:none;">
                 <h5>🔗 Job Card Record Preview</h5>
-                <iframe id="feishu-iframe" src=""
-                    style="width:100%; height:400px; border:1px solid var(--border); border-radius:8px;"></iframe>
+             
             </div>
         </div>
         <!-- STEP 3: Verification -->
@@ -666,242 +665,204 @@
     </div>
 </div>
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-/* ---------- helper: read cookie (CSRF) ---------- */
-function getCookie(name) {
-    const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-    return v ? decodeURIComponent(v.pop()) : null;
-}
-
-/* ---------- globals ---------- */
 let currentStep = 1;
 const totalSteps = 4;
 let html5QrCode = null;
+let isScanSuccessful = false;
 
-/* ---------- UI helpers (unchanged) ---------- */
+function getEnvironment() {
+    const isFeishu = typeof lark !== 'undefined' || typeof feishu !== 'undefined';
+    const isMobileApp = /Feishu|Lark/i.test(navigator.userAgent) ||
+                        (window.webkit && window.webkit.messageHandlers);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                     || (window.innerWidth <= 768);
+
+    return {
+        isFeishu,
+        isMobileApp,
+        isMobile,
+        isDesktop: !isMobile
+    };
+}
+
+function initializeFeishuSDK() {
+    if (typeof lark === 'undefined' && typeof feishu === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://lf1-cdn-tos.bytegoofy.com/goofy/lark/lark-1.0.0.js';
+        script.onload = () => console.log('Feishu SDK loaded');
+        document.head.appendChild(script);
+    }
+}
+
 function updateStepIndicator() {
-    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
-    const pl = document.getElementById('progressLine');
-    if (pl) pl.style.width = progressPercentage + '%';
-    document.getElementById('currentStep') && (document.getElementById('currentStep').textContent = currentStep);
-    document.getElementById('currentSection') && (document.getElementById('currentSection').textContent = currentStep);
+    document.getElementById('progressLine').style.width =
+        ((currentStep - 1) / (totalSteps - 1)) * 100 + "%";
+
+    document.getElementById('currentStep').textContent = currentStep;
+    document.getElementById('currentSection').textContent = currentStep;
+
     for (let i = 1; i <= totalSteps; i++) {
-        const stepCircle = document.getElementById(`step${i}`);
-        const stepContent = document.getElementById(`step${i}-content`);
-        if (stepCircle) {
-            stepCircle.classList.remove('active', 'completed');
-            if (i < currentStep) { stepCircle.classList.add('completed'); stepCircle.innerHTML = '✓'; }
-            else if (i === currentStep) { stepCircle.classList.add('active'); stepCircle.innerHTML = i; }
-            else stepCircle.innerHTML = i;
+        const circle = document.getElementById(`step${i}`);
+        const section = document.getElementById(`step${i}-content`);
+
+        if (circle) {
+            circle.className = "step-circle";
+            if (i < currentStep) {
+                circle.classList.add("completed");
+                circle.innerHTML = "✓";
+            } else if (i === currentStep) {
+                circle.classList.add("active");
+                circle.textContent = i;
+            } else {
+                circle.textContent = i;
+            }
         }
-        if (stepContent) stepContent.style.display = i === currentStep ? 'block' : 'none';
+
+        if (section) {
+            section.style.display = i === currentStep ? "block" : "none";
+        }
     }
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const submitBtn = document.getElementById('submit-btn');
-    if (prevBtn) prevBtn.disabled = currentStep === 1;
-    if (nextBtn) nextBtn.disabled = currentStep === totalSteps;
-    if (submitBtn) submitBtn.disabled = currentStep !== totalSteps;
-    if (currentStep === 2) checkJobCardStatus(); else stopQRScanner();
-}
 
-/* ---------- navigation ---------- */
-function goToStep(step) { if (step>=1 && step<=totalSteps) { currentStep = step; updateStepIndicator(); } }
-function nextStep(){ if (currentStep<totalSteps) goToStep(currentStep+1); }
-function previousStep(){ if (currentStep>1) goToStep(currentStep-1); }
+    document.getElementById("prev-btn").disabled = currentStep === 1;
+    document.getElementById("next-btn").disabled = currentStep === totalSteps;
+    document.getElementById("submit-btn").disabled = currentStep !== totalSteps;
 
-/* ---------- job card status and device check ---------- */
-function checkJobCardStatus() {
-    const jobCardStatus = document.getElementById('id_key_station_job_card_status')?.value || '';
-    const qrSection = document.getElementById('qr-scan-section');
-    if (jobCardStatus === 'Have') {
-        qrSection && qrSection.classList.remove('hidden');
-        setTimeout(()=> { if (qrSection && qrSection.offsetParent !== null) startQRScanner(); }, 200);
+    if (currentStep === 2) {
+        checkJobCardStatus();
     } else {
-        qrSection && qrSection.classList.add('hidden');
         stopQRScanner();
-        const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-        if (barcodeField) barcodeField.value = '';
-        document.getElementById('scanStatus') && (document.getElementById('scanStatus').innerHTML = '');
-        document.getElementById('scanSnapshot') && (document.getElementById('scanSnapshot').innerHTML = '');
     }
 }
-function isMobileDevice() { return /Android|iPhone|iPad|iPod|webOS|Opera Mini/i.test(navigator.userAgent) || window.innerWidth<=768; }
 
-/* ---------- fetch shareable link (sends CSRF token & cookies) ---------- */
-async function fetchFeishuShareableLink(scannedUrl) {
-    const preview = document.getElementById('feishu-preview');
-    preview && (preview.innerHTML = `<div class="alert alert-info">Connecting to Feishu…</div>`);
-
-    const csrf = getCookie('csrftoken');              // Django default CSRF cookie name
-    if (!csrf) {
-        preview && (preview.innerHTML = `<div class="alert alert-warning">No CSRF token found in cookies. Make sure your template uses {% csrf_token %} and CSRF cookie is set.</div>`);
-        return null;
-    }
-
-    let resp;
-    try {
-        resp = await fetch("/feishu/get_shareable_link/", {
-            method: "POST",
-            credentials: "same-origin",                // IMPORTANT: sends session cookie
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrf                     // Django expects this header
-            },
-            body: JSON.stringify({ scanned_url: scannedUrl })
-        });
-    } catch (err) {
-        preview && (preview.innerHTML = `<div class="alert alert-danger">Network error: ${err.message}</div>`);
-        return null;
-    }
-
-    if (resp.status === 403) {
-        const text = await resp.text().catch(()=> 'Forbidden');
-        preview && (preview.innerHTML = `<div class="alert alert-danger">Forbidden (CSRF) — server denied the request. ${text}</div>`);
-        return null;
-    }
-
-    let data;
-    try { data = await resp.json(); } catch (e) {
-        preview && (preview.innerHTML = `<div class="alert alert-danger">Invalid JSON from server.</div>`);
-        return null;
-    }
-
-    if (data.need_oauth) {
-        // attach current page as state so Feishu returns here
-        const returnUrl = encodeURIComponent(window.location.href);
-        window.location.href = data.oauth_url + "&state=" + returnUrl;
-        return null;
-    }
-
-    if (!data.ok) {
-        preview && (preview.innerHTML = `<div class="alert alert-danger">Failed to fetch record: ${data.error || JSON.stringify(data)}</div>`);
-        return null;
-    }
-
-    // success
-    // clear saved scan (optional)
-    try { localStorage.removeItem('lastScannedURL'); localStorage.removeItem('savedStep'); } catch(e){}
-
-    return data.share_url;
+function goToStep(step) {
+    currentStep = step;
+    updateStepIndicator();
 }
 
-/* ---------- QR scanner ---------- */
+function nextStep() {
+    if (currentStep < totalSteps) {
+        currentStep++;
+        updateStepIndicator();
+    }
+}
+
+function previousStep() {
+    if (currentStep > 1) {
+        currentStep--;
+        updateStepIndicator();
+    }
+}
+
+function validateForm() {
+    return true;
+}
+
+function checkJobCardStatus() {
+    const status = document.getElementById('id_key_station_job_card_status')?.value;
+    const section = document.getElementById("qr-scan-section");
+
+    if (status === "Have") {
+        section.classList.remove("hidden");
+        setTimeout(() => startQRScanner(), 200);
+    } else {
+        section.classList.add("hidden");
+        stopQRScanner();
+        document.querySelector('[name="scanned_barcode_text"]').value = "";
+        document.getElementById("scanSnapshot").innerHTML = "";
+        document.getElementById("scanStatus").innerHTML = "";
+    }
+}
+
 function startQRScanner() {
-    if (html5QrCode) stopQRScanner();
-    const readerDiv = document.getElementById('reader');
-    if (!readerDiv) return console.error('reader element not found');
+    stopQRScanner();
 
     html5QrCode = new Html5Qrcode("reader");
     const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-    const preview = document.getElementById('feishu-preview');
-    const iframeContainer = document.getElementById('feishu-iframe-container');
-    const iframe = document.getElementById('feishu-iframe');
+    const preview = document.getElementById("feishu-preview");
+    const scanStatus = document.getElementById("scanStatus");
+    const scanSnapshot = document.getElementById("scanSnapshot");
 
-    async function handleScannedUrl(decoded) {
-        // Save for OAuth roundtrip
-        try { localStorage.setItem('lastScannedURL', decoded); localStorage.setItem('savedStep', String(currentStep)); } catch(e){}
+    const env = getEnvironment();
+    const cameraConfig = env.isMobile ? { facingMode: "environment" } : { facingMode: "user" };
 
-        if (barcodeField) barcodeField.value = decoded;
-
-        // request server
-        const shareUrl = await fetchFeishuShareableLink(decoded);
-        if (!shareUrl) return;
-
-        iframeContainer && (iframeContainer.style.display = 'block');
-        iframe && (iframe.src = shareUrl);
-
-        preview && (preview.innerHTML = `
+    function showRecordButton(url) {
+        preview.innerHTML = `
             <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> Record loaded successfully!<br>
-                <button onclick="openInNewTab('${shareUrl}')" class="btn btn-sm btn-primary mt-2">
-                    <i class="fas fa-external-link-alt"></i> Open in New Tab
-                </button>
-            </div>
-        `);
+                <i class="fas fa-check-circle"></i> QR Scanned Successfully!<br>
+                <a href="${url}" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-sm btn-primary mt-2">
+                    <i class="fas fa-external-link-alt"></i> Open Record
+                </a>
+            </div>`;
     }
 
     function captureSnapshot() {
-        const video = document.querySelector('#reader video');
+        const video = document.querySelector("#reader video");
         if (!video) return;
-        const stationName = document.getElementById('id_key_station_name')?.value || 'scan';
-        const formatted = stationName.toLowerCase().replace(/\s+/g,'');
+
+        const name = document.getElementById("id_key_station_name")?.value || "scan";
+        const formattedName = name.toLowerCase().replace(/\s+/g, "");
+
         const now = new Date();
-        const timestamp = `${String(now.getDate()).padStart(2,'0')}${String(now.getMonth()+1).padStart(2,'0')}${now.getFullYear()}${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
-        const filename = `${formatted}${timestamp}.png`;
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video,0,0);
+        const timestamp = now.getDate().toString().padStart(2, "0") +
+            (now.getMonth() + 1).toString().padStart(2, "0") +
+            now.getFullYear() +
+            now.getHours().toString().padStart(2, "0") +
+            now.getMinutes().toString().padStart(2, "0") +
+            now.getSeconds().toString().padStart(2, "0");
+
+        const filename = `${formattedName}${timestamp}.png`;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        canvas.getContext("2d").drawImage(video, 0, 0);
+
         canvas.toBlob(blob => {
-            const file = new File([blob], filename, { type: 'image/png' });
-            const dt = new DataTransfer(); dt.items.add(file);
-            const fileInput = document.querySelector('[name="scanned_barcode_image"]');
-            if (fileInput) fileInput.files = dt.files;
-            document.getElementById('scanSnapshot').innerHTML = `<img src="${URL.createObjectURL(blob)}" style="max-width:200px" /><div class="text-sm">Snapshot saved: <strong>${filename}</strong></div>`;
+            const file = new File([blob], filename, { type: "image/png" });
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            document.querySelector('[name="scanned_barcode_image"]').files = dt.files;
+
+            scanSnapshot.innerHTML = `
+                <img src="${URL.createObjectURL(blob)}" width="200">
+                <div class="text-sm mt-1">Saved: <b>${filename}</b></div>`;
         });
     }
 
     html5QrCode.start(
-        isMobileDevice() ? { facingMode: "environment" } : { facingMode: "user" },
+        cameraConfig,
         { fps: 10, qrbox: 250 },
-        decoded => { console.log('SCAN:', decoded); captureSnapshot(); stopQRScanner(); handleScannedUrl(decoded); },
-        err => { console.log('SCAN ERROR:', err); }
-    ).catch(err => {
-        readerDiv.innerHTML = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> Camera access denied or not available. Please enter the URL manually.</div>`;
-        console.error('startQRScanner error', err);
-    });
+        decoded => {
+            barcodeField.value = decoded;
+            captureSnapshot();
+            stopQRScanner();
+            showRecordButton(decoded);
+        },
+        err => console.log("Scan error:", err)
+    );
 }
 
-function stopQRScanner(){
+function stopQRScanner() {
     if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(()=> html5QrCode = null).catch(()=> html5QrCode = null);
-    } else html5QrCode = null;
+        html5QrCode.stop().then(() => (html5QrCode = null));
+    }
 }
 
-function openInNewTab(url) { window.open(url, '_blank', 'noopener,noreferrer'); }
+function openInNewTab(url) {
+    window.open(url, "_blank");
+}
 
-/* ---------- handle OAuth return (code=...) ---------- */
-document.addEventListener('DOMContentLoaded', async function(){
+document.addEventListener("DOMContentLoaded", () => {
+    initializeFeishuSDK();
     updateStepIndicator();
-    const jobCardStatusSelect = document.getElementById('id_key_station_job_card_status');
-    if (jobCardStatusSelect) jobCardStatusSelect.addEventListener('change', checkJobCardStatus);
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('code')) {
-        // restore step + scanned url
-        const savedStep = parseInt(localStorage.getItem('savedStep') || '2', 10);
-        const lastScanned = localStorage.getItem('lastScannedURL');
-
-        if (savedStep) goToStep(savedStep);
-        else goToStep(2);
-
-        if (lastScanned) {
-            const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-            if (barcodeField && !barcodeField.value) barcodeField.value = lastScanned;
-
-            const shareUrl = await fetchFeishuShareableLink(lastScanned);
-            if (shareUrl) {
-                document.getElementById('feishu-iframe-container').style.display = 'block';
-                document.getElementById('feishu-iframe').src = shareUrl;
-            }
-        }
-
-        // remove code param for clean URL
-        try {
-            const clean = window.location.origin + window.location.pathname;
-            window.history.replaceState({}, document.title, clean);
-        } catch(e){}
-    } else {
-        // if page loaded normally, optionally repopulate scanned field
-        const lastScanned = localStorage.getItem('lastScannedURL');
-        const savedStep = localStorage.getItem('savedStep');
-        if (lastScanned && savedStep && parseInt(savedStep,10) === 2) {
-            const bf = document.querySelector('[name="scanned_barcode_text"]');
-            if (bf && !bf.value) bf.value = lastScanned;
-        }
-    }
+    document.getElementById("id_key_station_job_card_status")
+        ?.addEventListener("change", checkJobCardStatus);
 });
 </script>
-
 
 {% endblock content %}
