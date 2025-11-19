@@ -11,8 +11,4 @@ urlpatterns = [
     path("employees/create/", views.employee_create, name="employee_create"),
     path("employees/edit/<int:pk>/", views.employee_edit, name="employee_edit"),
     path("employees/delete/<int:pk>/", views.employee_delete, name="employee_delete"),
-    
-    
-    path("feishu/get_shareable_link/", views.get_shareable_link, name="get_shareable_link"),
-    path("feishu/oauth/callback/", views.feishu_oauth_callback, name="feishu_oauth_callback"),
 ]
