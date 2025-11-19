@@ -28,7 +28,7 @@ def create_issue(request):
         form = IssueReportForm()
         img_form = IssueImageUploadForm()
 
-    return render(request, "ipqc_issue/create_issue.html", {
+    return render(request, "core/create_issue.html", {
         "form": form,
         "img_form": img_form
     })
@@ -36,7 +36,7 @@ def create_issue(request):
 
 def issue_detail(request, issue_id):
     issue = get_object_or_404(IssueReport, id=issue_id)
-    return render(request, "ipqc_issue/issue_detail.html", {"issue": issue})
+    return render(request, "core/issue_detail.html", {"issue": issue})
 
 
 def send_reminder(request, issue_id):
