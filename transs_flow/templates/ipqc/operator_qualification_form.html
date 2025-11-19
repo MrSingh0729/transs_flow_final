@@ -671,17 +671,17 @@
     const totalSteps = 4;
     let html5QrCode = null;
     let isScanSuccessful = false;
-    
+
     function updateStepIndicator() {
         const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
         document.getElementById('progressLine').style.width = progressPercentage + '%';
         document.getElementById('currentStep').textContent = currentStep;
         document.getElementById('currentSection').textContent = currentStep;
-        
+
         for (let i = 1; i <= totalSteps; i++) {
             const stepCircle = document.getElementById(`step${i}`);
             const stepContent = document.getElementById(`step${i}-content`);
-            
+
             if (stepCircle) {
                 stepCircle.classList.remove('active', 'completed');
                 if (i < currentStep) {
@@ -694,307 +694,250 @@
                     stepCircle.innerHTML = i;
                 }
             }
-            
+
             if (stepContent) {
                 stepContent.style.display = i === currentStep ? 'block' : 'none';
             }
         }
-        
+
         document.getElementById('prev-btn').disabled = currentStep === 1;
         document.getElementById('next-btn').disabled = currentStep === totalSteps;
         document.getElementById('submit-btn').disabled = currentStep !== totalSteps;
-        
-        // Start/stop QR scanner based on current step and job card status
+
         if (currentStep === 2) {
             checkJobCardStatus();
         } else {
             stopQRScanner();
         }
-        
+
         document.querySelector('.audit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    
+
     function goToStep(step) {
         if (step >= 1 && step <= totalSteps) {
             currentStep = step;
             updateStepIndicator();
         }
     }
-    
+
     function nextStep() {
         if (currentStep < totalSteps) {
             currentStep++;
             updateStepIndicator();
         }
     }
-    
+
     function previousStep() {
         if (currentStep > 1) {
             currentStep--;
             updateStepIndicator();
         }
     }
-    
+
     function validateForm() {
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
         const existingErrorDiv = document.getElementById('form-validation-error');
-        if (existingErrorDiv) {
-            existingErrorDiv.remove();
-        }
-        
+        if (existingErrorDiv) existingErrorDiv.remove();
+
         for (let step = 1; step <= totalSteps; step++) {
             const currentStepDiv = document.getElementById(`step${step}-content`);
             if (!currentStepDiv) continue;
-            
+
             let stepHasError = false;
             const requiredFields = currentStepDiv.querySelectorAll('input[required], select[required], textarea[required]');
-            
+
             for (const field of requiredFields) {
-                if (field.hasAttribute('readonly')) {
-                    continue;
-                }
-                
+                if (field.hasAttribute('readonly')) continue;
+
                 let isEmpty = false;
-                if (field.type === 'file') {
-                    isEmpty = !field.files || field.files.length === 0;
-                } else {
-                    isEmpty = !field.value || field.value.trim() === '';
-                }
-                
+                if (field.type === 'file') isEmpty = !field.files || field.files.length === 0;
+                else isEmpty = !field.value || field.value.trim() === '';
+
                 if (isEmpty) {
                     field.classList.add('is-invalid');
                     stepHasError = true;
                 }
             }
-            
+
             if (stepHasError) {
-                const errorMessage = `Error in Step ${step}: Please fill in all required fields marked in red.`;
-                
                 let errorDiv = document.createElement('div');
                 errorDiv.id = 'form-validation-error';
                 errorDiv.className = 'alert alert-danger';
-                document.querySelector('.audit-form').insertBefore(
-                    errorDiv,
-                    document.querySelector('.step-indicator')
-                );
-                errorDiv.innerHTML = `<strong>${errorMessage}</strong>`;
-                
+                errorDiv.innerHTML = `<strong>Error in Step ${step}: Please fill all required fields.</strong>`;
+                document.querySelector('.audit-form').insertBefore(errorDiv, document.querySelector('.step-indicator'));
                 goToStep(step);
                 return false;
             }
         }
-        
+
         return true;
     }
-    
-    // Check job card status and show/hide scanner
+
     function checkJobCardStatus() {
         const jobCardStatus = document.getElementById('id_key_station_job_card_status')?.value || '';
         const qrSection = document.getElementById('qr-scan-section');
-        
-        console.log('Job card status:', jobCardStatus);
-        
+
         if (jobCardStatus === 'Have') {
-            console.log('Showing QR section');
-            if (qrSection) {
-                qrSection.classList.remove('hidden');
-                
-                // Small delay to ensure UI is updated and element is visible
-                setTimeout(() => {
-                    if (qrSection.offsetParent !== null) {
-                        console.log('QR section is visible, starting scanner');
-                        startQRScanner();
-                    } else {
-                        console.log('QR section is not visible');
-                    }
-                }, 200);
-            }
+            qrSection.classList.remove('hidden');
+            setTimeout(() => {
+                if (qrSection.offsetParent !== null) startQRScanner();
+            }, 200);
         } else {
-            console.log('Hiding QR section');
-            if (qrSection) {
-                qrSection.classList.add('hidden');
-            }
+            qrSection.classList.add('hidden');
             stopQRScanner();
-            // Clear scanned data if status changes
             const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
-            if (barcodeField) {
-                barcodeField.value = '';
-            }
-            document.getElementById('scanStatus') && (document.getElementById('scanStatus').innerHTML = '');
-            document.getElementById('scanSnapshot') && (document.getElementById('scanSnapshot').innerHTML = '');
-            isScanSuccessful = false;
+            if (barcodeField) barcodeField.value = '';
+            document.getElementById('scanStatus').innerHTML = '';
+            document.getElementById('scanSnapshot').innerHTML = '';
         }
     }
-    
-    // Detect device type
+
     function isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-            (window.innerWidth <= 768);
+        return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
     }
-    
-    // QR Scanner functions
+
+    /* ---------------------------------------------------------
+       ✨ NEW: Fetch shareable Feishu link via Django backend
+       --------------------------------------------------------- */
+
+    async function fetchFeishuShareableLink(scannedUrl) {
+        const preview = document.getElementById('feishu-preview');
+        preview.innerHTML = `<div class="alert alert-info">Connecting to Feishu…</div>`;
+
+        const resp = await fetch("/feishu/get_shareable_link/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ scanned_url: scannedUrl })
+        });
+
+        const data = await resp.json();
+
+        if (data.need_oauth) {
+            window.location.href = data.oauth_url;
+            return null;
+        }
+
+        if (!data.ok) {
+            preview.innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to fetch record.<br>${data.error || JSON.stringify(data)}
+                </div>
+            `;
+            return null;
+        }
+
+        return data.share_url;
+    }
+
+    // QR Scanner
     function startQRScanner() {
-        // If scanner is already running, stop it first
-        if (html5QrCode) {
-            stopQRScanner();
-        }
-        
+        if (html5QrCode) stopQRScanner();
+
         const readerDiv = document.getElementById('reader');
-        if (!readerDiv) {
-            console.error('Reader element not found');
-            return;
-        }
-        
-        console.log('Starting QR scanner');
         html5QrCode = new Html5Qrcode("reader");
         const barcodeField = document.querySelector('[name="scanned_barcode_text"]');
         const preview = document.getElementById('feishu-preview');
         const iframeContainer = document.getElementById('feishu-iframe-container');
         const iframe = document.getElementById('feishu-iframe');
+
         const scanStatus = document.getElementById('scanStatus');
         const scanSnapshot = document.getElementById('scanSnapshot');
-        
-        // Determine camera based on device
-        const cameraConfig = isMobileDevice() ? { facingMode: "environment" } : { facingMode: "user" };
-        
-        // Add mobile-specific instructions
-        if (isMobileDevice()) {
-            const alertInfo = document.querySelector('#reader .alert-info');
-            if (alertInfo) {
-                alertInfo.innerHTML = 
-                    '<i class="fas fa-info-circle"></i> Position QR code within the frame to scan automatically. Ensure good lighting.';
-            }
-        }
-        
-        function showFeishuLink(url) {
-            // Clear previous content
-            iframeContainer && (iframeContainer.style.display = 'block');
-            preview && (preview.innerHTML = '');
-            
-            // Show iframe and button for all platforms
-            preview && (preview.innerHTML = `
+
+        const cameraConfig = isMobileDevice()
+            ? { facingMode: "environment" }
+            : { facingMode: "user" };
+
+        async function handleScannedUrl(decoded) {
+            barcodeField.value = decoded;
+
+            const shareUrl = await fetchFeishuShareableLink(decoded);
+            if (!shareUrl) return;
+
+            iframeContainer.style.display = "block";
+            iframe.src = shareUrl;
+
+            preview.innerHTML = `
                 <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> QR/Barcode scanned successfully!
-                    <br>
-                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary mt-2">
-                        <i class="fas fa-external-link-alt"></i> Open Record in New Tab
-                    </a>
+                    <i class="fas fa-check-circle"></i> Record loaded successfully!<br>
+                    <button onclick="openInNewTab('${shareUrl}')" class="btn btn-sm btn-primary mt-2">
+                        <i class="fas fa-external-link-alt"></i> Open in New Tab
+                    </button>
                 </div>
-            `);
-            
-            // Set iframe source
-            iframe && (iframe.src = url);
+            `;
         }
-        
-        // Generate filename and capture snapshot from video
+
         function captureSnapshot() {
             const video = document.querySelector('#reader video');
-            if (!video) {
-                console.log('Video element not found for snapshot');
-                return;
-            }
-            
-            // Get key station name and format it
-            const keyStationName = document.getElementById('id_key_station_name')?.value || 'scan';
-            const formattedName = keyStationName.toLowerCase().replace(/\s+/g, '');
-            
-            // Get current date and time
+            if (!video) return;
+
+            const stationName = document.getElementById('id_key_station_name')?.value || 'scan';
+            const formatted = stationName.toLowerCase().replace(/\s+/g, '');
+
             const now = new Date();
-            const day = String(now.getDate()).padStart(2, '0');
-            const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-            const year = now.getFullYear();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            
-            // Format: DDMMYYYYHHMMSS
-            const timestamp = `${day}${month}${year}${hours}${minutes}${seconds}`;
-            const filename = `${formattedName}${timestamp}.png`;
-            
+            const timestamp =
+                String(now.getDate()).padStart(2, '0') +
+                String(now.getMonth() + 1).padStart(2, '0') +
+                now.getFullYear() +
+                String(now.getHours()).padStart(2, '0') +
+                String(now.getMinutes()).padStart(2, '0') +
+                String(now.getSeconds()).padStart(2, '0');
+
+            const filename = `${formatted}${timestamp}.png`;
+
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-            
-            // Convert to blob with custom filename
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
             canvas.toBlob(blob => {
                 const file = new File([blob], filename, { type: 'image/png' });
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
+                const dt = new DataTransfer();
+                dt.items.add(file);
+
                 const fileInput = document.querySelector('[name="scanned_barcode_image"]');
-                if (fileInput) {
-                    fileInput.files = dataTransfer.files;
-                }
-                
-                // Show preview of captured image
-                scanSnapshot && (scanSnapshot.innerHTML = `
-                    <img src="${URL.createObjectURL(blob)}" alt="Scan Snapshot" />
-                    <div class="text-sm text-gray-600 mt-2">✓ Scan snapshot captured (${filename})</div>
-                `);
-                
-                scanStatus && (scanStatus.innerHTML = `
-                    <div class="alert alert-success mt-2">
-                        <i class="fas fa-camera"></i> Scan snapshot automatically saved as: <strong>${filename}</strong>
-                    </div>
-                `);
+                fileInput.files = dt.files;
+
+                scanSnapshot.innerHTML = `
+                    <img src="${URL.createObjectURL(blob)}" class="mt-2" style="max-width:200px;" />
+                    <div class="text-sm">Snapshot saved: <strong>${filename}</strong></div>
+                `;
             });
         }
-        
+
         html5QrCode.start(
             cameraConfig,
             { fps: 10, qrbox: 250 },
             decoded => {
-                console.log('QR Code scanned:', decoded);
-                // Update single form field
-                barcodeField && (barcodeField.value = decoded);
-                
-                // Capture snapshot before stopping
+           	console.log("SCAN:", decoded);
                 captureSnapshot();
-                
                 stopQRScanner();
-                showFeishuLink(decoded);
-                isScanSuccessful = true;
+                handleScannedUrl(decoded);
             },
-            error => {
-                // Ignore scan errors, but log them for debugging
-                console.log('QR scan error:', error);
-            }
+            error => console.log("SCAN ERROR:", error)
         ).catch(err => {
-            console.error(`Unable to start scanning: ${err}`);
             readerDiv.innerHTML = `
                 <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> 
-                    Camera access denied or not available. Please enter the URL manually.
+                    <i class="fas fa-exclamation-triangle"></i> Camera access denied.
                 </div>
             `;
-            scanStatus && (scanStatus.innerHTML = `
-                <div class="alert alert-warning mt-2">
-                    Camera not available. Please upload the scan image manually if needed.
-                </div>
-            `);
         });
     }
-    
+
     function stopQRScanner() {
         if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().then(() => {
-                html5QrCode = null;
-            }).catch(err => {
-                console.error(`Failed to stop scanning: ${err}`);
-            });
+            html5QrCode.stop().then(() => html5QrCode = null);
         }
     }
-    
+
+    function openInNewTab(url) {
+        window.open(url, "_blank", "noopener,noreferrer");
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         updateStepIndicator();
-        // Add event listener to job card status dropdown
         const jobCardStatusSelect = document.getElementById('id_key_station_job_card_status');
-        if (jobCardStatusSelect) {
-            jobCardStatusSelect.addEventListener('change', checkJobCardStatus);
-        } else {
-            console.error('Job card status dropdown not found');
-        }
+        if (jobCardStatusSelect) jobCardStatusSelect.addEventListener('change', checkJobCardStatus);
     });
 </script>
+
 {% endblock content %}
