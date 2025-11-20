@@ -173,12 +173,38 @@ def work_info_view(request):
  
     return render(request, 'ipqc/work_info.html', context)
 
-
+def dispatch(self, request, *args, **kwargs):
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+ 
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+ 
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+ 
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+ 
+        return super().dispatch(request, *args, **kwargs)
+    
+    
+    
 @login_required
 @role_required(["IPQC"])
 def work_info_list(request):
     emp_id = getattr(request.user, 'employee_id', None)
     full_name = getattr(request.user, 'full_name', None)
+    
+    user = request.user
+    emp_id = getattr(user, 'employee_id', None)
     
     # Get current time in user's timezone
     now = timezone.localtime()
@@ -193,6 +219,18 @@ def work_info_list(request):
         start_time = today_8am
     
     end_time = start_time + timedelta(days=1)
+ 
+    if emp_id:
+         
+        has_filled = IPQCWorkInfo.objects.filter(
+            emp_id=emp_id,
+            created_at__range=[start_time, end_time]
+        ).exists()
+ 
+        if not has_filled:
+            messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+            return redirect('ipqc_work_info')
+ 
     
     # Get today's records (within the 24-hour window)
     today_records = IPQCWorkInfo.objects.filter(
