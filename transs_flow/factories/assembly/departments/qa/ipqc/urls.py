@@ -11,6 +11,9 @@ urlpatterns = [
     
     # Work Info URLs
     path('work-info/', views.work_info_view, name='ipqc_work_info'),
+    path('work-info/list/', views.work_info_list, name='work_info_list'),
+    path('work-info/<int:work_info_id>/forms/', views.forms_selection_view, name='forms_selection'),
+    path('work-info/detail/<int:work_info_id>/', views.work_info_detail, name='work_info_detail'),
     path('work-info/success/', views.work_info_success, name='ipqc_work_info_success'),
     path('info_dash/', views.info_dash, name='info_dash'),
     

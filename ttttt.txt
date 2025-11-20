@@ -307,3 +307,27 @@ The solution is backward compatible and will work whether the app is embedded in
 For desktop: show in iframe and a button to open in new tab
 For mobile: show in iframe and a button to open in new tab
 For APK installed app version: same as mobile (show in iframe and a button to open in new tab)
+
+
+
+def dispatch(self, request, *args, **kwargs):
+        user = request.user
+        emp_id = getattr(user, 'employee_id', None)
+ 
+        if emp_id:
+            now = timezone.localtime()
+            today = now.date()
+            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
+            end_time = start_time + timedelta(days=1)
+ 
+            has_filled = IPQCWorkInfo.objects.filter(
+                emp_id=emp_id,
+                created_at__range=[start_time, end_time]
+            ).exists()
+ 
+            if not has_filled:
+                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
+                return redirect('ipqc_work_info')
+ 
+        return super().dispatch(request, *args, **kwargs)

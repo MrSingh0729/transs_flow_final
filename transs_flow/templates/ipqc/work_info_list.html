@@ -1,0 +1,729 @@
+	{% extends "base.html" %}
+	{% load static %}
+	{% block title %}My Work Records{% endblock %}
+	{% block content %}
+	<style>
+	.work-info-list {
+	    max-width: 1200px;
+	    margin: 0 auto;
+	    padding: 16px;
+	}
+	/* Header Section */
+	.header-section {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    margin-bottom: 24px;
+	    flex-wrap: wrap;
+	    gap: 16px;
+	}
+	.page-title {
+	    font-size: 28px;
+	    font-weight: 700;
+	    color: #111827;
+	    margin: 0;
+	}
+	.page-subtitle {
+	    color: #6b7280;
+	    font-size: 16px;
+	    margin: 0;
+	}
+	.btn-new-record {
+	    background: linear-gradient(135deg, #10b981, #059669);
+	    color: white;
+	    border: none;
+	    padding: 12px 24px;
+	    border-radius: 12px;
+	    font-weight: 600;
+	    font-size: 16px;
+	    cursor: pointer;
+	    transition: all 0.3s ease;
+	    display: inline-flex;
+	    align-items: center;
+	    gap: 8px;
+	    text-decoration: none;
+	    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+	}
+	.btn-new-record:hover {
+	    transform: translateY(-2px);
+	    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+	}
+	/* Today's Records Section */
+	.today-section {
+	    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	    border-radius: 16px;
+	    padding: 24px;
+	    margin-bottom: 32px;
+	    color: white;
+	    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+	}
+	.today-header {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    margin-bottom: 20px;
+	    flex-wrap: wrap;
+	    gap: 12px;
+	}
+	.today-title {
+	    font-size: 24px;
+	    font-weight: 700;
+	    display: flex;
+	    align-items: center;
+	    gap: 12px;
+	    margin: 0;
+	}
+	.today-subtitle {
+	    font-size: 14px;
+	    opacity: 0.9;
+	    margin: 0;
+	}
+	.today-stats {
+	    display: flex;
+	    align-items: center;
+	    gap: 12px;
+	}
+	.stat-number {
+	    font-size: 28px;
+	    font-weight: 700;
+	}
+	.stat-label {
+	    font-size: 14px;
+	    opacity: 0.9;
+	}
+	/* Table Responsive */
+	.records-table {
+	    background: white;
+	    border-radius: 12px;
+	    overflow: hidden;
+	    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+	}
+	.table-header {
+	    background: #f9fafb;
+	    padding: 16px 20px;
+	    border-bottom: 1px solid #e5e7eb;
+	}
+	.table-title {
+	    font-size: 18px;
+	    font-weight: 700;
+	    color: #111827;
+	    margin: 0;
+	}
+	.table-container {
+	    overflow-x: auto;
+	}
+	.data-table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    min-width: 600px;
+	}
+	.data-table th {
+	    background: #f9fafb;
+	    padding: 12px 16px;
+	    text-align: left;
+	    font-weight: 600;
+	    color: #374151;
+	    font-size: 13px;
+	    text-transform: uppercase;
+	    letter-spacing: 0.5px;
+	    border-bottom: 1px solid #e5e7eb;
+	    white-space: nowrap;
+	}
+	.data-table td {
+	    padding: 12px 16px;
+	    border-bottom: 1px solid #f3f4f6;
+	    color: #374151;
+	}
+	.data-table tr:hover {
+	    background: #f9fafb;
+	}
+	/* Action Buttons */
+	.btn-fill-forms {
+	    background: linear-gradient(135deg, #3b82f6, #2563eb);
+	    color: white;
+	    border: none;
+	    padding: 6px 12px;
+	    border-radius: 8px;
+	    font-weight: 600;
+	    font-size: 13px;
+	    cursor: pointer;
+	    transition: all 0.2s;
+	    display: inline-flex;
+	    align-items: center;
+	    gap: 4px;
+	    text-decoration: none;
+	}
+	.btn-fill-forms:hover {
+	    transform: translateY(-1px);
+	    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+	}
+	.btn-view-details {
+	    background: linear-gradient(135deg, #10b981, #059669);
+	    color: white;
+	    border: none;
+	    padding: 6px 12px;
+	    border-radius: 8px;
+	    font-weight: 600;
+	    font-size: 13px;
+	    cursor: pointer;
+	    transition: all 0.2s;
+	    display: inline-flex;
+	    align-items: center;
+	    gap: 4px;
+	    text-decoration: none;
+	}
+	.btn-view-details:hover {
+	    transform: translateY(-1px);
+	    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+	}
+	/* Historical Records Section */
+	.historical-section {
+	    background: white;
+	    border-radius: 16px;
+	    padding: 24px;
+	    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+	}
+	.historical-header {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    margin-bottom: 24px;
+	    flex-wrap: wrap;
+	    gap: 16px;
+	}
+	.historical-title {
+	    font-size: 20px;
+	    font-weight: 700;
+	    color: #1f2937;
+	    margin: 0;
+	}
+	/* Filters Section */
+	.filters-section {
+	    background: #f9fafb;
+	    border-radius: 12px;
+	    padding: 20px;
+	    margin-bottom: 24px;
+	    border: 1px solid #e5e7eb;
+	}
+	.filters-title {
+	    font-size: 16px;
+	    font-weight: 600;
+	    color: #374151;
+	    margin-bottom: 16px;
+	}
+	.filters-grid {
+	    display: grid;
+	    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	    gap: 16px;
+	}
+	.filter-group {
+	    display: flex;
+	    flex-direction: column;
+	}
+	.filter-label {
+	    font-size: 14px;
+	    font-weight: 500;
+	    color: #4b5563;
+	    margin-bottom: 6px;
+	}
+	.filter-input, .filter-select {
+	    padding: 10px 12px;
+	    border: 1px solid #d1d5db;
+	    border-radius: 8px;
+	    font-size: 14px;
+	    transition: all 0.2s;
+	}
+	.filter-input:focus, .filter-select:focus {
+	    outline: none;
+	    border-color: #3b82f6;
+	    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+	/* Popup Modal */
+	.popup-overlay {
+	    position: fixed;
+	    top: 0;
+	    left: 0;
+	    right: 0;
+	    bottom: 0;
+	    background: rgba(0, 0, 0, 0.7);
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	    z-index: 1000;
+	    opacity: 0;
+	    visibility: hidden;
+	    transition: all 0.3s ease;
+	    backdrop-filter: blur(4px);
+	}
+	.popup-overlay.active {
+	    opacity: 1;
+	    visibility: visible;
+	}
+	.popup-content {
+	    background: white;
+	    border-radius: 16px;
+	    max-width: 600px;
+	    width: 90%;
+	    max-height: 90vh;
+	    overflow-y: auto;
+	    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+	    transform: scale(0.9);
+	    transition: all 0.3s ease;
+	}
+	.popup-overlay.active .popup-content {
+	    transform: scale(1);
+	}
+	.popup-header {
+	    background: linear-gradient(135deg, #3b82f6, #2563eb);
+	    color: white;
+	    padding: 20px 24px;
+	    border-radius: 16px 16px 0 0;
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	}
+	.popup-title {
+	    font-size: 20px;
+	    font-weight: 700;
+	}
+	.popup-close {
+	    background: none;
+	    border: none;
+	    color: white;
+	    font-size: 24px;
+	    cursor: pointer;
+	    padding: 4px;
+	    border-radius: 4px;
+	    transition: all 0.2s;
+	}
+	.popup-close:hover {
+	    background: rgba(255, 255, 255, 0.2);
+	}
+	.popup-body {
+	    padding: 24px;
+	}
+	.detail-grid {
+	    display: grid;
+	    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	    gap: 16px;
+	}
+	.detail-item {
+	    background: #f9fafb;
+	    padding: 16px;
+	    border-radius: 12px;
+	    border: 1px solid #e5e7eb;
+	}
+	.detail-label {
+	    font-size: 12px;
+	    color: #6b7280;
+	    text-transform: uppercase;
+	    letter-spacing: 0.5px;
+	    margin-bottom: 4px;
+	}
+	.detail-value {
+	    font-size: 16px;
+	    font-weight: 600;
+	    color: #1f2937;
+	}
+	/* Empty States */
+	.empty-state {
+	    text-align: center;
+	    padding: 40px 20px;
+	    color: #6b7280;
+	}
+	.empty-state i {
+	    font-size: 48px;
+	    margin-bottom: 16px;
+	    opacity: 0.5;
+	}
+	.empty-state p {
+	    margin: 0 0 20px 0;
+	    font-size: 16px;
+	}
+	/* Responsive Design */
+	@media (max-width: 1024px) {
+	    .work-info-list {
+	        padding: 16px;
+	    }
+	    .header-section {
+	        flex-direction: column;
+	        align-items: flex-start;
+	    }
+	    .btn-new-record {
+	        width: 100%;
+	        justify-content: center;
+	    }
+	}
+	@media (max-width: 768px) {
+	    .work-info-list {
+	        padding: 12px;
+	    }
+	    .page-title {
+	        font-size: 24px;
+	    }
+	    .today-section {
+	        padding: 20px;
+	        margin-bottom: 24px;
+	    }
+	    .today-header {
+	        flex-direction: column;
+	        align-items: flex-start;
+	        gap: 12px;
+	    }
+	    .today-stats {
+	        width: 100%;
+	        justify-content: space-between;
+	    }
+	    .stat-number {
+	        font-size: 24px;
+	    }
+	    .historical-section {
+	        padding: 20px;
+	    }
+	    .historical-header {
+	        flex-direction: column;
+	        align-items: flex-start;
+	        gap: 12px;
+	    }
+	    .filters-grid {
+	        grid-template-columns: 1fr;
+	    }
+	    .detail-grid {
+	        grid-template-columns: 1fr;
+	    }
+	    .data-table {
+	        font-size: 13px;
+	    }
+	    .data-table th,
+	    .data-table td {
+	        padding: 10px 12px;
+	    }
+	    .btn-fill-forms,
+	    .btn-view-details {
+	        padding: 5px 10px;
+	        font-size: 12px;
+	    }
+	    .popup-content {
+	        width: 95%;
+	        margin: 10px;
+	    }
+	    .popup-body {
+	        padding: 16px;
+	    }
+	}
+	@media (max-width: 480px) {
+	    .work-info-list {
+	        padding: 8px;
+	    }
+	    .page-title {
+	        font-size: 20px;
+	    }
+	    .today-section,
+	    .historical-section {
+	        padding: 16px;
+	        border-radius: 12px;
+	    }
+	    .today-title,
+	    .historical-title {
+	        font-size: 18px;
+	    }
+	    .data-table {
+	        font-size: 12px;
+	    }
+	    .data-table th,
+	    .data-table td {
+	        padding: 8px 10px;
+	    }
+	    .btn-fill-forms,
+	    .btn-view-details {
+	        padding: 4px 8px;
+	        font-size: 11px;
+	    }
+	    .detail-grid {
+	        gap: 12px;
+	    }
+	    .detail-item {
+	        padding: 12px;
+	    }
+	}
+	</style>
+	<div class="work-info-list">
+	    <!-- Header Section -->
+	    <div class="header-section">
+	        <div>
+	            <h1 class="page-title">My Work Records</h1>
+	            <p class="page-subtitle">Manage your work information records</p>
+	        </div>
+	        <a href="{% url 'ipqc_work_info' %}" class="btn-new-record">
+	            <i class="fas fa-plus"></i> Create New Work Info
+	        </a>
+	    </div>
+	    <!-- Today's Records Section -->
+	    <div class="today-section">
+	        <div class="today-header">
+	            <div>
+	                <h2 class="today-title">
+	                    <i class="fas fa-calendar-day"></i>
+	                    Today's Work Info
+	                </h2>
+	                <p class="today-subtitle">
+	                    Records from {{ start_time|date:"Y-m-d H:i" }} to {{ end_time|date:"Y-m-d H:i" }}
+	                </p>
+	            </div>
+	            <div class="today-stats">
+	                <div>
+	                    <div class="stat-number">{{ work_infos|length }}</div>
+	                    <div class="stat-label">Records</div>
+	                </div>
+	            </div>
+	        </div>
+	        {% if work_infos %}
+	        <div class="records-table">
+	            <div class="table-header">
+	                <h3 class="table-title">Active Records</h3>
+	            </div>
+	            <div class="table-container">
+	                <table class="data-table">
+	                    <thead>
+	                        <tr>
+	                            <th>Date</th>
+	                            <th>Shift</th>
+	                            <th>Section</th>
+	                            <th>Line</th>
+	                            <th>Model</th>
+	                            <th>Color</th>
+	                            <th>Actions</th>
+	                        </tr>
+	                    </thead>
+	                    <tbody>
+	                        {% for info in work_infos %}
+	                        <tr>
+	                            <td>{{ info.date|date:"Y-m-d" }}</td>
+	                            <td>{{ info.shift }}</td>
+	                            <td>{{ info.section }}</td>
+	                            <td>{{ info.line }}</td>
+	                            <td>{{ info.model }}</td>
+	                            <td>{{ info.color }}</td>
+	                            <td>
+	                                <a href="{% url 'forms_selection' work_info_id=info.id %}" 
+	                                   class="btn-fill-forms" title="Fill Forms">
+	                                    <i class="fas fa-edit"></i> Fill Forms
+	                                </a>
+	                            </td>
+	                        </tr>
+	                        {% endfor %}
+	                    </tbody>
+	                </table>
+	            </div>
+	        </div>
+	        {% else %}
+	        <div class="empty-state">
+	            <i class="fas fa-inbox"></i>
+	            <p>No work information records found for today's period</p>
+	            <a href="{% url 'ipqc_work_info' %}" class="btn-new-record">
+	                <i class="fas fa-plus"></i> Create New Record
+	            </a>
+	        </div>
+	        {% endif %}
+	    </div>
+	    <!-- Historical Records Section -->
+	    <div class="historical-section">
+	        <div class="historical-header">
+	            <h2 class="historical-title">
+	                <i class="fas fa-history"></i>
+	                All Submitted Work Info
+	            </h2>
+	            <div class="text-sm text-gray-600">
+	                {{ all_work_infos|length }} records
+	            </div>
+	        </div>
+	        <!-- Filters Section -->
+	        <div class="filters-section">
+	            <h3 class="filters-title">Search & Filter</h3>
+	            <form method="get" class="filters-grid">
+	                <div class="filter-group">
+	                    <label class="filter-label">Search</label>
+	                    <input type="text" name="q" class="filter-input" 
+	                           placeholder="Search by line, model, color..." 
+	                           value="{{ search_query }}">
+	                </div>
+	                <div class="filter-group">
+	                    <label class="filter-label">Line</label>
+	                    <select name="line" class="filter-select">
+	                        <option value="">All Lines</option>
+	                        {% for line in unique_lines %}
+	                        <option value="{{ line }}" {% if filter_line == line %}selected{% endif %}>
+	                            {{ line }}
+	                        </option>
+	                        {% endfor %}
+	                    </select>
+	                </div>
+	                <div class="filter-group">
+	                    <label class="filter-label">Section</label>
+	                    <select name="section" class="filter-select">
+	                        <option value="">All Sections</option>
+	                        {% for section in unique_sections %}
+	                        <option value="{{ section }}" {% if filter_section == section %}selected{% endif %}>
+	                            {{ section }}
+	                        </option>
+	                        {% endfor %}
+	                    </select>
+	                </div>
+	                <div class="filter-group">
+	                    <label class="filter-label">Model</label>
+	                    <select name="model" class="filter-select">
+	                        <option value="">All Models</option>
+	                        {% for model in unique_models %}
+	                        <option value="{{ model }}" {% if filter_model == model %}selected{% endif %}>
+	                            {{ model }}
+	                        </option>
+	                        {% endfor %}
+	                    </select>
+	                </div>
+	            </form>
+	        </div>
+	        <!-- Records Table -->
+	        {% if all_work_infos %}
+	        <div class="records-table">
+	            <div class="table-header">
+	                <h3 class="table-title">Historical Records</h3>
+	            </div>
+	            <div class="table-container">
+	                <table class="data-table">
+	                    <thead>
+	                        <tr>
+	                            <th>Date</th>
+	                            <th>Shift</th>
+	                            <th>Section</th>
+	                            <th>Line</th>
+	                            <th>Model</th>
+	                            <th>Color</th>
+	                            <th>Actions</th>
+	                        </tr>
+	                    </thead>
+	                    <tbody>
+	                        {% for info in all_work_infos %}
+	                        <tr>
+	                            <td>{{ info.date|date:"Y-m-d" }}</td>
+	                            <td>{{ info.shift }}</td>
+	                            <td>{{ info.section }}</td>
+	                            <td>{{ info.line }}</td>
+	                            <td>{{ info.model }}</td>
+	                            <td>{{ info.color }}</td>
+	                            <td>
+	                                <button class="btn-view-details" onclick="showDetails({{ info.id }})" title="View Details">
+	                                    <i class="fas fa-eye"></i> View Data
+	                                </button>
+	                            </td>
+	                        </tr>
+	                        {% endfor %}
+	                    </tbody>
+	                </table>
+	            </div>
+	        </div>
+	        {% else %}
+	        <div class="empty-state">
+	            <i class="fas fa-inbox"></i>
+	            <p>No historical records found</p>
+	        </div>
+	        {% endif %}
+	    </div>
+	</div>
+	<!-- Popup Modal -->
+	<div class="popup-overlay" id="detailsPopup" onclick="closePopup(event)">
+	    <div class="popup-content" onclick="event.stopPropagation()">
+	        <div class="popup-header">
+	            <h3 class="popup-title">Work Information Details</h3>
+	            <button class="popup-close" onclick="closePopup()">
+	                <i class="fas fa-times"></i>
+	            </button>
+	        </div>
+	        <div class="popup-body" id="popupBody">
+	            <!-- Content will be loaded here -->
+	        </div>
+	    </div>
+	</div>
+	<script>
+	function showDetails(workInfoId) {
+	    const popup = document.getElementById('detailsPopup');
+	    const popupBody = document.getElementById('popupBody');
+	    // Show loading state
+	    popupBody.innerHTML = `
+	        <div class="text-center py-8">
+	            <i class="fas fa-spinner fa-spin fa-3x text-blue-500"></i>
+	            <p class="mt-3">Loading details...</p>
+	        </div>
+	    `;
+	    popup.classList.add('active');
+	    // Fetch details
+	    fetch(`/ipqc/work-info/detail/${workInfoId}/`)
+	        .then(response => response.json())
+	        .then(data => {
+	            popupBody.innerHTML = `
+	                <div class="detail-grid">
+	                    <div class="detail-item">
+	                        <div class="detail-label">Date</div>
+	                        <div class="detail-value">${data.date}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Shift</div>
+	                        <div class="detail-value">${data.shift}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Employee ID</div>
+	                        <div class="detail-value">${data.emp_id}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Name</div>
+	                        <div class="detail-value">${data.name}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Section</div>
+	                        <div class="detail-value">${data.section}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Line</div>
+	                        <div class="detail-value">${data.line}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Group</div>
+	                        <div class="detail-value">${data.group}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Model</div>
+	                        <div class="detail-value">${data.model}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Color</div>
+	                        <div class="detail-value">${data.color}</div>
+	                    </div>
+	                    <div class="detail-item">
+	                        <div class="detail-label">Created At</div>
+	                        <div class="detail-value">${data.created_at}</div>
+	                    </div>
+	                </div>
+	            `;
+	        })
+	        .catch(error => {
+	            console.error('Error fetching details:', error);
+	            popupBody.innerHTML = `
+	                <div class="text-center py-8 text-red-500">
+	                    <i class="fas fa-exclamation-triangle fa-3x"></i>
+	                    <p class="mt-3">Error loading details. Please try again.</p>
+	                </div>
+	            `;
+	        });
+	}
+	function closePopup(event) {
+	    if (!event || event.target === document.getElementById('detailsPopup')) {
+	        document.getElementById('detailsPopup').classList.remove('active');
+	    }
+	}
+	// Close popup on Escape key
+	document.addEventListener('keydown', function(event) {
+	    if (event.key === 'Escape') {
+	        closePopup();
+	    }
+	});
+	</script>
+	{% endblock %}

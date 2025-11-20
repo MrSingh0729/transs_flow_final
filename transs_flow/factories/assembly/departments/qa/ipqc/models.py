@@ -119,6 +119,8 @@ class  IPQCAssemblyAudit(models. Model):
     model = models. CharField(max_length=100, verbose_name="Model", blank=True, null=True)
     color = models. CharField(max_length=50, default="Unknown", verbose_name="Colour", blank=True, null=True)
     created_at = models. DateTimeField(auto_now_add=True)
+    
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
 
     # MACHINE
     mach_epa_check = models.CharField(max_length=200, blank=True, null=True, choices=AUDIT_CHOICES, verbose_name="Verify EPA compliance—antistatic gear and proper grounding.")
@@ -215,6 +217,8 @@ class  BTBFitmentChecksheet(models. Model):
             verbose_name="Submitted By"
         )
     created_at = models. DateTimeField(auto_now_add=True)
+    
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
     
         # --- Data Grid Fields ---
         
@@ -379,6 +383,8 @@ class AssDummyTest(models.Model):
     operator_name = models.CharField(max_length=100, verbose_name="Operator Name")
     operator_id = models.CharField(max_length=50, verbose_name="Operator ID")
     
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
+    
     RESULT_CHOICES = [
         ('Pass', 'Pass'),
         ('Fail', 'Fail'),
@@ -416,6 +422,8 @@ class IPQCDisassembleCheckList(models.Model):
     group = models.CharField(max_length=100, verbose_name="Group")
     model = models.CharField(max_length=100, verbose_name="Model")
     color = models.CharField(max_length=50, verbose_name="Color")
+    
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
 
     # --- Appearance / Assembly Quality ---
     color_match = models.CharField(max_length=10, choices=FORM_CHOICES, verbose_name="Color matches reference or not")
@@ -511,6 +519,8 @@ class NCIssueTracking(models.Model):
     group = models.CharField(max_length=100, verbose_name="Group")
     model = models.CharField(max_length=100, verbose_name="Model")
     color = models.CharField(max_length=50, verbose_name="Color")
+    
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
 
     # --- Issue Tracking Fields ---
     stage = models.CharField(max_length=100, verbose_name="Stage")
@@ -554,6 +564,8 @@ class ESDComplianceChecklist(models.Model):
     group = models.CharField(max_length=100, verbose_name="Group")
     model = models.CharField(max_length=100, verbose_name="Model")
     color = models.CharField(max_length=50, verbose_name="Color")
+    
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
 
     # --- ESD Compliance Checklist ---
 
@@ -639,6 +651,8 @@ class DustCountCheck(models.Model):
     model = models.CharField(max_length=100, verbose_name="Model")
     color = models.CharField(max_length=50, verbose_name="Color")
     
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
+    
     # Measurements in particles per cubic meter (or as appropriate)
     micrometer_0_3 = models.PositiveIntegerField(verbose_name="≥0.3 micrometer")
     micrometer_0_5 = models.PositiveIntegerField(verbose_name="≥0.5 micrometer")
@@ -714,6 +728,8 @@ class  TestingFirstArticleInspection(models. Model):
     group = models. CharField(max_length=100, verbose_name="Group")
     model = models. CharField(max_length=100, verbose_name="Model")
     color = models. CharField(max_length=50, verbose_name="Color")
+    
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
         
         # --- Production Info ---
     production_work_order_no = models. CharField(max_length=100, verbose_name="Production Work Order No.")
@@ -872,6 +888,8 @@ class OperatorQualificationCheck(models.Model):
     group = models.CharField(max_length=50)
     model = models.CharField(max_length=100)
     color = models.CharField(max_length=50)
+    
+    work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)
     
     # Job Card Scanning
     key_station_name = models.TextField(verbose_name="Select/Write the key station Name")

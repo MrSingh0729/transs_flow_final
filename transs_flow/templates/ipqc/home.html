@@ -44,6 +44,17 @@
     <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8 border border-gray-100">
         <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Quick Access</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            <!-- Work Info Card -->
+            <a href="{% url 'work_info_list' %}"
+            class="group relative p-3 sm:p-4 bg-gradient-to-br from-cyan-50 to-blue-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-300">
+                    <i class="fas fa-clipboard-list text-white text-lg sm:text-xl"></i>
+                </div>
+                <div class="text-center">
+                    <div class="font-semibold text-gray-800 text-sm sm:text-base">Work Records</div>
+                    <div class="text-xs text-gray-600">View All</div>
+                </div>
+            </a>
             <!-- FAI Test -->
             <a href="{% url 'testing_fai_create' %}"
                 class="group relative p-3 sm:p-4 bg-gradient-to-br from-cyan-50 to-blue-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105 border border-cyan-200">

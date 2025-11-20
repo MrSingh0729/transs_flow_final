@@ -99,7 +99,7 @@ def work_info_view(request):
             full_name = employee.full_name
         except Employee.DoesNotExist:
             messages.error(request, "Employee record not found for this user.")
-            return redirect('ipqc_home')
+            return redirect('work_info_list')
  
     today = timezone.localdate()
     start_of_week = today - timedelta(days=today.weekday())
@@ -147,7 +147,7 @@ def work_info_view(request):
             else:
                 messages.warning(request, f'Work info saved but failed to sync: {message}')
  
-            return render(request, 'ipqc/success/work_info_success.html', context)
+            return redirect('work_info_list')
     else:
         form = WorkInfoForm()
  
@@ -172,6 +172,122 @@ def work_info_view(request):
     }
  
     return render(request, 'ipqc/work_info.html', context)
+
+
+@login_required
+@role_required(["IPQC"])
+def work_info_list(request):
+    emp_id = getattr(request.user, 'employee_id', None)
+    full_name = getattr(request.user, 'full_name', None)
+    
+    # Get current time in user's timezone
+    now = timezone.localtime()
+    today = now.date()
+    
+    # Calculate time window: today 08:00 AM to tomorrow 08:00 AM
+    today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
+    # If current time is before 8 AM, use yesterday 8 AM
+    if now < today_8am:
+        start_time = today_8am - timedelta(days=1)
+    else:
+        start_time = today_8am
+    
+    end_time = start_time + timedelta(days=1)
+    
+    # Get today's records (within the 24-hour window)
+    today_records = IPQCWorkInfo.objects.filter(
+        emp_id=emp_id,
+        created_at__range=[start_time, end_time]
+    ).order_by('-created_at')
+    
+    # Get all historical records (excluding today's window)
+    all_records = IPQCWorkInfo.objects.filter(
+        emp_id=emp_id
+    ).exclude(
+        created_at__range=[start_time, end_time]
+    ).order_by('-created_at')
+    
+    # Search functionality
+    search_query = request.GET.get('q', '')
+    if search_query:
+        all_records = all_records.filter(
+            Q(line__icontains=search_query) |
+            Q(model__icontains=search_query) |
+            Q(color__icontains=search_query) |
+            Q(section__icontains=search_query)
+        )
+    
+    # Filter functionality
+    filter_line = request.GET.get('line', '')
+    filter_section = request.GET.get('section', '')
+    filter_model = request.GET.get('model', '')
+    
+    if filter_line:
+        all_records = all_records.filter(line=filter_line)
+    if filter_section:
+        all_records = all_records.filter(section=filter_section)
+    if filter_model:
+        all_records = all_records.filter(model=filter_model)
+    
+    context = {
+        'work_infos': today_records,
+        'all_work_infos': all_records,
+        'today_date': today,
+        'start_time': start_time,
+        'end_time': end_time,
+        'search_query': search_query,
+        'filter_line': filter_line,
+        'filter_section': filter_section,
+        'filter_model': filter_model,
+        'first_name': full_name.split()[0] if full_name else "",
+        'designation': getattr(request.user, "role", ""),
+        'unique_lines': IPQCWorkInfo.objects.filter(emp_id=emp_id).values_list('line', flat=True).distinct(),
+        'unique_sections': IPQCWorkInfo.objects.filter(emp_id=emp_id).values_list('section', flat=True).distinct(),
+        'unique_models': IPQCWorkInfo.objects.filter(emp_id=emp_id).values_list('model', flat=True).distinct(),
+    }
+    
+    return render(request, 'ipqc/work_info_list.html', context)
+
+def work_info_detail(request, work_info_id):
+    try:
+        work_info = IPQCWorkInfo.objects.get(
+            id=work_info_id,
+            emp_id=request.user.employee_id
+        )
+        
+        data = {
+            'date': work_info.date.strftime('%Y-%m-%d'),
+            'shift': work_info.shift,
+            'emp_id': work_info.emp_id,
+            'name': work_info.name,
+            'section': work_info.section,
+            'line': work_info.line,
+            'group': work_info.group,
+            'model': work_info.model,
+            'color': work_info.color,
+            'created_at': work_info.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        }
+        
+        return JsonResponse(data)
+    except IPQCWorkInfo.DoesNotExist:
+        return JsonResponse({'error': 'Work information not found'}, status=404)
+    
+    
+def forms_selection_view(request, work_info_id):
+    try:
+        work_info = IPQCWorkInfo.objects.get(
+            id=work_info_id, 
+            emp_id=request.user.employee_id
+        )
+    except IPQCWorkInfo.DoesNotExist:
+        messages.error(request, "Work information not found")
+        return redirect('work_info_list')
+    
+    context = {
+        'work_info': work_info,
+        'back_url': reverse('work_info_list'),
+    }
+    return render(request, 'ipqc/forms_selection.html', context)
  
 @csrf_exempt
 def lark_bitable_webhook(request):
@@ -566,46 +682,56 @@ class IPQCAssemblyAuditCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateV
     template_name = 'ipqc/ipqc_assembly_audit_form.html'
     success_url = reverse_lazy('ipqc_audit_list')
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
+    
  
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
- 
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
- 
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
- 
-        return super().dispatch(request, *args, **kwargs)
- 
+    
     def get_initial(self):
         initial = super().get_initial()
-        emp_id = getattr(self.request.user, 'employee_id', None)
- 
-        initial['ipqc_sign'] = getattr(self.request.user, 'full_name', self.request.user.employee_id)
- 
-        if emp_id:
+        user = self.request.user
+        emp_id = getattr(user, 'employee_id', None)
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects. filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date, 'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id, 'name': latest_work_info.name,
-                    'section': latest_work_info.section, 'line': latest_work_info.line,
-                    'group': latest_work_info.group, 'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "No Work Information found. Some fields may be empty.")
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
         
         return initial
  
@@ -766,46 +892,56 @@ class BTBFitmentChecksheetCreateView(RoleRequiredMixin, LoginRequiredMixin, Crea
  
     HOURS = ['9','10','11','12','1','2','3','4','5','6']
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
+    
  
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
- 
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
- 
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
- 
-        return super().dispatch(request, *args, **kwargs)
- 
+    
     def get_initial(self):
         initial = super().get_initial()
-        emp_id = getattr(self.request.user, 'employee_id', None)
- 
-        initial['pqe_tl_sign'] = getattr(self.request.user, 'full_name', self.request.user.employee_id)
- 
-        if emp_id:
+        user = self.request.user
+        emp_id = getattr(user, 'employee_id', None)
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects. filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date, 'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id, 'name': latest_work_info.name,
-                    'section': latest_work_info.section, 'line': latest_work_info.line,
-                    'group': latest_work_info.group, 'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "No Work Information found. Some fields may be empty.")
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
         
         return initial
  
@@ -902,51 +1038,57 @@ class AssyDummyTestCreate(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     template_name = 'ipqc/ass_dummy_test_form.html'
     success_url = reverse_lazy('ass_dummy_test_list')
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
+    
  
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
- 
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
- 
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
- 
-        return super().dispatch(request, *args, **kwargs)
- 
+    
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
- 
-        initial['pqe_tl_sign'] = getattr(user, 'full_name', getattr(user, 'employee_id', ''))
- 
         emp_id = getattr(user, 'employee_id', None)
-        if emp_id:
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date,
-                    'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id,
-                    'name': latest_work_info.name,
-                    'section': latest_work_info.section,
-                    'line': latest_work_info.line,
-                    'group': latest_work_info.group,
-                    'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "No Work Information found. Some fields may be empty.")
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+        
         return initial
  
     def form_valid(self, form):
@@ -997,51 +1139,56 @@ class IPQCDisassembleCheckListCreateView(RoleRequiredMixin, LoginRequiredMixin, 
     template_name = 'ipqc/ipqc_disassemble_form.html'
     success_url = reverse_lazy('ipqc_disassemble_list')
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
-
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
-
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
-
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
-
-        return super().dispatch(request, *args, **kwargs)
-
+    
+    
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
         emp_id = getattr(user, 'employee_id', None)
-
-        if emp_id:
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date,
-                    'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id,
-                    'name': latest_work_info.name,
-                    'section': latest_work_info.section,
-                    'line': latest_work_info.line,
-                    'group': latest_work_info.group,
-                    'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
-        else:
-            messages.warning(self.request, "⚠️ Employee ID missing. Please ensure your profile is complete.")
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+        
         return initial
 
     def form_valid(self, form):
@@ -1244,49 +1391,56 @@ class NCIssueTrackingCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateVie
     template_name = 'ipqc/nc_issue_tracking_form.html'
     success_url = reverse_lazy('nc_issue_tracking_list')
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
-
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
-
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
-
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
-
-        return super().dispatch(request, *args, **kwargs)
-
+    
+    
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
-
         emp_id = getattr(user, 'employee_id', None)
-        if emp_id:
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date,
-                    'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id,
-                    'name': latest_work_info.name,
-                    'section': latest_work_info.section,
-                    'line': latest_work_info.line,
-                    'group': latest_work_info.group,
-                    'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+        
         return initial
 
     def form_valid(self, form):
@@ -1350,51 +1504,57 @@ class ESDComplianceChecklistCreateView(RoleRequiredMixin, LoginRequiredMixin, Cr
     template_name = 'ipqc/esd_compliance_checklist_form.html'
     success_url = reverse_lazy('esd_compliance_checklist_list')
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
+    
 
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
-
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
-
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
-
-        return super().dispatch(request, *args, **kwargs)
-
+    
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
         emp_id = getattr(user, 'employee_id', None)
-
-        if emp_id:
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date,
-                    'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id,
-                    'name': latest_work_info.name,
-                    'line': latest_work_info.line,
-                    'group': latest_work_info.group,
-                    'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
-        else:
-            messages.warning(self.request, "⚠️ No Employee ID found for current user.")
-
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+        
         return initial
 
     def form_valid(self, form):
@@ -1599,49 +1759,57 @@ class DustCountCreateView(RoleRequiredMixin, LoginRequiredMixin, CreateView):
     form_class = DustCountCheckForm
     template_name = 'ipqc/dust_count_checklist_form.html'
     success_url = reverse_lazy('dust_count_checklist_list')
+
+
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
-
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
-
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
-
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
-
-        return super().dispatch(request, *args, **kwargs)
-
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
         emp_id = getattr(user, 'employee_id', None)
-        if emp_id:
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date,
-                    'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id,
-                    'name': latest_work_info.name,
-                    'section': latest_work_info.section,
-                    'line': latest_work_info.line,
-                    'group': latest_work_info.group,
-                    'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+        
         return initial
 
     def form_valid(self, form):
@@ -1699,45 +1867,55 @@ class TestingFirstArticleInspectionCreateView(LoginRequiredMixin, CreateView):
     template_name = 'ipqc/testing_fai_form.html'
     success_url = reverse_lazy('testing_fai_list')
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
-
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
-
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
-
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
-
-        return super().dispatch(request, *args, **kwargs)
     
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
         emp_id = getattr(user, 'employee_id', None)
-        if emp_id:
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects. filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date, 'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id, 'name': latest_work_info.name,
-                    'section': getattr(latest_work_info, 'section', ''), 'line': latest_work_info.line,
-                    'group': latest_work_info.group, 'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "⚠️ No pre-filled work information found.")
-        initial['inspector_name'] = getattr(user, 'full_name', None) or user.username
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+        
         return initial
     
     def get_form_kwargs(self):
@@ -1954,44 +2132,56 @@ class OperatorQualificationCheckCreateView(CreateView):
     template_name = "ipqc/operator_qualification_form.html"
     success_url = reverse_lazy("operator_qualification_list")
     
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        emp_id = getattr(user, 'employee_id', None)
 
-        if emp_id:
-            now = timezone.localtime()
-            today = now.date()
-            today_8am = now.replace(hour=8, minute=0, second=0, microsecond=0)
-            start_time = today_8am - timedelta(days=1) if now < today_8am else today_8am
-            end_time = start_time + timedelta(days=1)
-
-            has_filled = IPQCWorkInfo.objects.filter(
-                emp_id=emp_id,
-                created_at__range=[start_time, end_time]
-            ).exists()
-
-            if not has_filled:
-                messages.warning(request, "⚠️ You haven't filled your Work Info for today. Please fill it before proceeding.")
-                return redirect('ipqc_work_info')
-
-        return super().dispatch(request, *args, **kwargs)
-
+    
     def get_initial(self):
         initial = super().get_initial()
         user = self.request.user
         emp_id = getattr(user, 'employee_id', None)
-        if emp_id:
+        
+        # Check if we have a specific work_info_id from GET parameters
+        work_info_id = self.request.GET.get('work_info_id')
+        
+        if work_info_id:
             try:
-                latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                # Get the specific work info record
+                work_info = IPQCWorkInfo.objects.get(
+                    id=work_info_id,
+                    emp_id=emp_id
+                )
                 initial.update({
-                    'date': latest_work_info.date, 'shift': latest_work_info.shift,
-                    'emp_id': latest_work_info.emp_id, 'name': latest_work_info.name,
-                    'section': getattr(latest_work_info, 'section', ''), 'line': latest_work_info.line,
-                    'group': latest_work_info.group, 'model': latest_work_info.model,
-                    'color': latest_work_info.color,
+                    'date': work_info.date,
+                    'shift': work_info.shift,
+                    'emp_id': work_info.emp_id,
+                    'name': work_info.name,
+                    'section': work_info.section,
+                    'line': work_info.line,
+                    'group': work_info.group,
+                    'model': work_info.model,
+                    'color': work_info.color,
                 })
             except IPQCWorkInfo.DoesNotExist:
-                messages.warning(self.request, "⚠️ No pre-filled work information found.")
+                messages.warning(self.request, "⚠️ Work Information not found. Using latest record.")
+        
+        # If no specific work_info_id or not found, use latest work info
+        if not work_info_id or 'work_info' not in locals():
+            if emp_id:
+                try:
+                    latest_work_info = IPQCWorkInfo.objects.filter(emp_id=emp_id).latest('created_at')
+                    initial.update({
+                        'date': latest_work_info.date,
+                        'shift': latest_work_info.shift,
+                        'emp_id': latest_work_info.emp_id,
+                        'name': latest_work_info.name,
+                        'section': latest_work_info.section,
+                        'line': latest_work_info.line,
+                        'group': latest_work_info.group,
+                        'model': latest_work_info.model,
+                        'color': latest_work_info.color,
+                    })
+                except IPQCWorkInfo.DoesNotExist:
+                    messages.warning(self.request, "⚠️ No Work Information found. Some fields may be empty.")
+        
         return initial
 
     def form_valid(self, form):
