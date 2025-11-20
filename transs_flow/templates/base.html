@@ -72,7 +72,7 @@
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            padding-bottom: env(safe-area-inset-bottom);
+             padding-bottom: calc(75px + env(safe-area-inset-bottom));
             /* safe area for iOS */
         }
 
@@ -701,7 +701,7 @@
 
         /* Floating bottom nav safe area padding for iOS */
         .mobile-bottom-nav {
-            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* small helper to truncate text nicely */
