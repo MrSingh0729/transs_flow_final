@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4">
+    <div class="container mx-auto max-w-6xl">
+
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 mb-6 sticky top-0 z-10">
+            <nav class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-industry text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Transs Flow IPQC</h1>
+                        <p class="text-sm text-gray-500">Employee Management System</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button onclick="toggleUserMenu()" 
+                                class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 px-3 py-2">
+                            <i class="fas fa-user-circle text-xl"></i>
+                            <i class="fas fa-chevron-down text-sm"></i>
+                        </button>
+
+                        <div id="userMenu" 
+                             class="absolute right-0 mt-2 w-48 bg-white shadow-lg border border-gray-200 hidden z-50">
+                            <div class="py-2">
+                                <a href="{% url 'user_profile' %}" class="block px-4 py-2 hover:bg-gray-100">My Profile</a>
+                                <a onclick="requestPasswordChange()" class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">Change Password</a>
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Profile Info -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Profile Details</h2>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-2 gap-6">
+
+                    <div>
+                        <label>Full Name</label>
+                        <input type="text" name="full_name"
+                               value="{{ request.user.employee.full_name }}"
+                               class="w-full border px-3 py-2 rounded">
+                    </div>
+
+                    <div>
+                        <label>Email</label>
+                        <input type="email" name="email"
+                               value="{{ request.user.email }}"
+                               class="w-full border px-3 py-2 rounded">
+                    </div>
+
+                    <div>
+                        <label>Phone</label>
+                        <input type="text" name="phone_number"
+                               value="{{ request.user.employee.phone_number|default:'' }}"
+                               class="w-full border px-3 py-2 rounded">
+                    </div>
+
+                    <div>
+                        <label>Department</label>
+                        <input type="text" name="department"
+                               value="{{ request.user.employee.department|default:'' }}"
+                               class="w-full border px-3 py-2 rounded">
+                    </div>
+
+                    <div>
+                        <label>Factory Code</label>
+                        <input type="text" name="factory_code"
+                               value="{{ request.user.employee.factory_code|default:'' }}"
+                               class="w-full border px-3 py-2 rounded">
+                    </div>
+
+                    <div>
+                        <label>Factory Name</label>
+                        <input type="text" name="factory_name"
+                               value="{{ request.user.employee.factory_name|default:'' }}"
+                               class="w-full border px-3 py-2 rounded">
+                    </div>
+
+                </div>
+
+                <div class="text-center mt-6">
+                    <button class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                        Save Profile
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Profile Picture History -->
+        <div class="bg-white rounded-xl shadow p-6">
+            <h3 class="text-lg font-bold mb-4">Profile Picture History</h3>
+
+            {% for change in profile_picture_changes %}
+            <div class="border p-3 rounded mb-2">
+
+                <div class="text-sm text-gray-600">
+                    {{ change.changed_at|date:"Y-m-d H:i" }} |
+                    Changed By:
+                    {% if change.changed_by %}
+                        {{ change.changed_by.full_name }}
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                </div>
+
+                <div class="flex gap-4 mt-2">
+                    {% if change.old_picture %}
+                        <img src="{{ change.old_picture.url }}" class="w-20 h-20 object-cover rounded">
+                    {% endif %}
+                    {% if change.new_picture %}
+                        <img src="{{ change.new_picture.url }}" class="w-20 h-20 object-cover rounded">
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+                <div class="text-gray-500">No history available.</div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<!-- Password Change Modal -->
+<div id="passwordChangeModal" class="fixed inset-0 hidden bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg w-96 p-6">
+        <h3 class="text-lg font-bold mb-4">Request Password Change</h3>
+        <form id="passwordChangeForm">
+            {% csrf_token %}
+            <textarea id="requestReason" rows="4"
+                      class="w-full border px-3 py-2 rounded mb-4"
+                      placeholder="Enter reason..."></textarea>
+            <button type="button" onclick="submitPasswordRequest()" 
+                    class="bg-red-600 text-white px-4 py-2 rounded w-full">
+                Submit
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+
+function toggleUserMenu(){
+    document.getElementById("userMenu").classList.toggle("hidden");
+}
+
+function requestPasswordChange(){
+    document.getElementById("passwordChangeModal").classList.remove("hidden");
+}
+
+function closePasswordModal(){
+    document.getElementById("passwordChangeModal").classList.add("hidden");
+}
+
+function submitPasswordRequest(){
+    const form = document.getElementById("passwordChangeForm");
+    const formData = new FormData(form);
+
+    fetch("{% url 'request_password_change' %}", {
+        method: "POST",
+        body: formData
+    }).then(res => res.json()).then(data =>{
+        alert(data.message);
+        closePasswordModal();
+        location.reload();
+    });
+}
+
+</script>
+{% endblock extra_js %}

@@ -269,3 +269,14 @@ X_CONTENT_TYPE_OPTIONS = 'nosniff'
 FEISHU_APP_ID_1 = "cli_a99693af7ff85ed4"
 FEISHU_APP_SECRET_1 = "9oqJA4pda5klg3D1vGDsxfJmUCnWZUCO"
 FEISHU_REDIRECT_URI_1 = "https://mrsingh29.pythonanywhere.com/feishu/callback/"
+
+# Admin notification settings
+ADMINS = ['admin@example.com', 'manager@example.com', 'hr@example.com']
+# Password change settings
+PASSWORD_CHANGE_ADMIN_APPROVAL = True  # Enable admin approval for password changes
+PASSWORD_CHANGE_NOTIFICATION_TO_ADMINS = True  # Send email notifications to admins
+# Default from email
+DEFAULT_FROM_EMAIL = 'mrsingh2996@gmail.com'
+# Profile picture settings
+MAX_PROFILE_PICTURE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
+ALLOWED_PROFILE_PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/gif']
