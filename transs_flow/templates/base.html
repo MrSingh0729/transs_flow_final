@@ -788,8 +788,13 @@
             <!-- Right: User Dropdown -->
             <div class="flex items-center gap-3 flex-shrink-0">
                 <div class="user-dropdown relative" id="userDropdown">
-                    <div class="user-dropdown-toggle" onclick="toggleUserDropdown()" role="button" aria-haspopup="true"
-                        aria-expanded="false" title="User menu">
+                    <div class="relative user-dropdown-toggle" onclick="toggleUserDropdown()">
+                        {% if pending_password_requests > 0 and user.is_superuser or user.role == "admin" %}
+                            <span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full px-1.5 py-0.5 z-50">
+                                {{ pending_password_requests }}
+                            </span>
+                        {% endif %}
+
                         {% if user.profile_picture %}
                             <img src="{{ user.profile_picture.url }}" alt="User"
                                 class="w-8 h-8 rounded-full border-2 border-gray-200 object-cover">
@@ -833,14 +838,22 @@
                         <a href="{% url 'profile' %}" class="user-dropdown-item">
                             <i class="fas fa-user"></i><span>My Profile</span>
                         </a>
-                        <a href="#" class="user-dropdown-item">
-                            <i class="fas fa-cog"></i><span>Settings</span>
+                        {% if user.is_superuser or user.role == "admin" %}
+                        <a href="{% url 'password_request_list' %}" class="user-dropdown-item flex justify-between items-center">
+                            <div>
+                                <i class="fas fa-bell"></i>
+                                <span>Notifications</span>
+                            </div>
+
+                            {% if pending_password_requests > 0 %}
+                                <span class="ml-2 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                                    {{ pending_password_requests }}
+                                </span>
+                            {% endif %}
                         </a>
+                        {% endif %}
                         <a href="{% url 'password_change_request' %}" class="user-dropdown-item">
                             <i class="fas fa-key"></i><span>Change Password</span>
-                        </a>
-                        <a href="#" class="user-dropdown-item">
-                            <i class="fas fa-bell"></i><span>Notifications</span>
                         </a>
                     </div>
                 </div>
