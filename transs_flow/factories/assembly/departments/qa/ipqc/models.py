@@ -1,9 +1,13 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.conf import settings
 import os
 import uuid
+
+
+
+User = get_user_model()
 
 # class IPQCWorkInfo(models.Model):
     
@@ -96,7 +100,7 @@ class DynamicFormField(models.Model):
 
 class DynamicFormSubmission(models.Model):
     form = models.ForeignKey(DynamicForm, on_delete=models.CASCADE)
-    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    submitted_by = models.ForeignKey( settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False )
     data = models.JSONField()  # store submitted values
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -211,11 +215,14 @@ class  BTBFitmentChecksheet(models. Model):
     model = models.CharField(max_length=50, verbose_name="Model")
     color = models.CharField(max_length=50, verbose_name="Colour")
     frequency = models. CharField(max_length=50, default="Per Hour", verbose_name="Frequency")
-    created_by = models. ForeignKey(
-    settings. AUTH_USER_MODEL, 
-    on_delete=models. CASCADE, 
-            verbose_name="Submitted By"
-        )
+    created_by = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    db_constraint=False,  
+    verbose_name="Submitted By"
+)
     created_at = models. DateTimeField(auto_now_add=True)
     
     work_info = models.ForeignKey(IPQCWorkInfo, on_delete=models.CASCADE, null=True, blank=True)

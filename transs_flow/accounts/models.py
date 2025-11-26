@@ -17,7 +17,7 @@ class EmployeeManager(BaseUserManager):
         return self.create_user(employee_id, full_name, password, **extra_fields)
 
 
-class Employee(AbstractBaseUser, PermissionsMixin):
+class Employee(AbstractBaseUser):
     employee_id = models.CharField(max_length=20, unique=True)
     full_name = models.CharField(max_length=100)
     role = models.CharField(max_length=50)
@@ -26,6 +26,30 @@ class Employee(AbstractBaseUser, PermissionsMixin):
     factory_name = models.CharField(max_length=100)
     country_code = models.CharField(max_length=10)
     country_name = models.CharField(max_length=50)
+    
+    email = models.EmailField(
+        unique=False,
+        blank=True,
+        null=True,
+        verbose_name="Email"
+    )
+    contact_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Contact Number"
+    )
+    bio = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Bio"
+    )
+    profile_picture = models.ImageField(
+        upload_to="profile_pictures/",
+        blank=True,
+        null=True,
+        verbose_name="Profile Picture"
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -34,6 +58,15 @@ class Employee(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "employee_id"
     REQUIRED_FIELDS = ["full_name"]
+    
+    is_superuser = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+
+    def has_perm(self, perm, obj=None):
+        return self.is_superuser
+
+    def has_module_perms(self, app_label):
+        return self.is_superuser
 
     def __str__(self):
         return f"{self.employee_id} - {self.full_name}"

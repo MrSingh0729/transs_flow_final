@@ -17,7 +17,13 @@ class IssueReport(models.Model):
     line_leader = models.CharField(max_length=255)
     operator_id = models.CharField(max_length=100, blank=True, null=True)
 
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_by = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,           # ✅ add this
+    db_constraint=False
+)
     created_at = models.DateTimeField(auto_now_add=True)
 
     reminder_count = models.IntegerField(default=0)

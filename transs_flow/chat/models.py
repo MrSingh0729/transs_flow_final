@@ -8,7 +8,11 @@ User = settings.AUTH_USER_MODEL
 class ChatRoom(models.Model):
     name = models.CharField(max_length=255, blank=True)
     is_group = models.BooleanField(default=False)
-    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chat_rooms')
+    participants = models.ManyToManyField(
+    settings.AUTH_USER_MODEL, 
+    related_name='chat_rooms',
+    db_constraint=False   # <-- ADD THIS
+)
     updated_at = models.DateTimeField(auto_now=True)
 
     def display_name_for(self, user):
@@ -27,7 +31,11 @@ class ChatRoom(models.Model):
 
 class Message(models.Model):
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name="messages")
-    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    sender = models.ForeignKey(
+    User,
+    on_delete=models.CASCADE,
+    db_constraint=False   # <-- ADD THIS
+)
     content = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
 
