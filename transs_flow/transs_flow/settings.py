@@ -95,6 +95,7 @@ MYSQL_PORT = 16775
 MYSQL_USER = "avnadmin"
 MYSQL_PASSWORD = "AVNS_COcv7nfPnntH_BeZ84u"
 MYSQL_DB = "transs_flow_final"
+MYSQL_ACCOUNTS_DB = "accountsdb"
 MYSQL_DB_MODEL = "defaultdb"
 MYSQL_DB_CHAT = "chatdb"
 MYSQL_CA = os.path.join(BASE_DIR, "certs", "aiven-ca.pem")
@@ -130,6 +131,19 @@ DATABASES = {
     'chatdb': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': MYSQL_DB_CHAT,
+        'USER': MYSQL_USER,
+        'PASSWORD': MYSQL_PASSWORD,
+        'HOST': MYSQL_HOST,
+        'PORT': MYSQL_PORT,
+        'OPTIONS': {
+            'ssl': {
+                'ca': MYSQL_CA,
+            },
+        },
+    },
+    'accountsdb': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': MYSQL_ACCOUNTS_DB,
         'USER': MYSQL_USER,
         'PASSWORD': MYSQL_PASSWORD,
         'HOST': MYSQL_HOST,
