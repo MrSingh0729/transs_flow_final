@@ -790,8 +790,13 @@
                 <div class="user-dropdown relative" id="userDropdown">
                     <div class="user-dropdown-toggle" onclick="toggleUserDropdown()" role="button" aria-haspopup="true"
                         aria-expanded="false" title="User menu">
-                        <img src="https://picsum.photos/seed/user/32/32" alt="User"
-                            class="w-8 h-8 rounded-full border-2 border-gray-200 object-cover">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="User"
+                                class="w-8 h-8 rounded-full border-2 border-gray-200 object-cover">
+                        {% else %}
+                            <img src="{% static 'images/default_user.png' %}" alt="User"
+                                class="w-8 h-8 rounded-full border-2 border-gray-200 object-cover">
+                        {% endif %}
                         <div class="hidden md:block">
                             <div class="text-sm font-bold text-gray-900 truncate max-w-[120px]">{{ user.full_name|default:'' }}</div>
                             <div class="text-xs text-gray-600 font-medium truncate max-w-[120px]">
@@ -811,8 +816,13 @@
                     <div class="user-dropdown-menu" role="menu" aria-hidden="true">
                         <div class="user-dropdown-header">
                             <div class="flex items-center gap-3">
-                                <img src="https://picsum.photos/seed/user/40/40" alt="User"
-                                    class="w-10 h-10 rounded-full object-cover">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="User"
+                                        class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                                {% else %}
+                                    <img src="{% static 'images/default_user.png' %}" alt="User"
+                                        class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                                {% endif %}
                                 <div>
                                     <div class="font-semibold text-gray-900">{{ user.full_name|default:'' }}</div>
                                     <div class="text-xs text-gray-600">{{ user.employee_id|default:'' }}</div>
@@ -820,18 +830,18 @@
                             </div>
                         </div>
 
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-user"></i><span>My Profile</span></a>
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-cog"></i><span>Settings</span></a>
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-key"></i><span>Change
-                                Password</span></a>
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-bell"></i><span>Notifications</span></a>
-
-                        <div class="user-dropdown-divider"></div>
-
-                        <a href="#" class="user-dropdown-item"><i class="fas fa-question-circle"></i><span>Help &
-                                Support</span></a>
-                        <a class="user-dropdown-item logout" href="{% url 'logout' %}"><i
-                                class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+                        <a href="{% url 'profile' %}" class="user-dropdown-item">
+                            <i class="fas fa-user"></i><span>My Profile</span>
+                        </a>
+                        <a href="#" class="user-dropdown-item">
+                            <i class="fas fa-cog"></i><span>Settings</span>
+                        </a>
+                        <a href="{% url 'password_change_request' %}" class="user-dropdown-item">
+                            <i class="fas fa-key"></i><span>Change Password</span>
+                        </a>
+                        <a href="#" class="user-dropdown-item">
+                            <i class="fas fa-bell"></i><span>Notifications</span>
+                        </a>
                     </div>
                 </div>
             </div>
